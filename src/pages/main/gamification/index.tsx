@@ -3,8 +3,8 @@
 import { useState } from "react";
 
 import { LevelProgress } from "@/components/level/level-progress";
-import { Button } from "@/components/ui/button";
-import { useGamification } from "@/hooks/useGamification";
+import { Button } from "@/components/ui/button.tsx";
+import { useGamification } from "@/hooks/useGamification.tsx";
 
 export function GamificationModule() {
   const { userLevel, dispatch } = useGamification();
