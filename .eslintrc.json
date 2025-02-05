@@ -1,3 +1,6 @@
 {
-  "extends": ["@aglaya/eslint-config/react-internal.js"]
+  "extends": ["@aglaya/eslint-config/react-internal.js"],
+  "rules": {
+    "no-mixed-spaces-and-tabs": 0
+  }
 }
