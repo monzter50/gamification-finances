@@ -25,10 +25,11 @@
     "baseUrl": ".",
     "paths": {
       "@/*": [
-        "./src/*",
+        "./src/*"
       ],
       "@types/*": ["./src/types/*"]
-    }
+    },
+    "allowSyntheticDefaultImports": true
   },
   "include": ["src"]
 }
