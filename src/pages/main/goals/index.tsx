@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { useGamificationContext } from "@/context/GamificationContext.tsx";
 
 interface Goal {
     id: number
@@ -31,6 +32,15 @@ export default function Goals() {
 
   const [ newGoal, setNewGoal ] = useState({ name: "",
     target: "" });
+
+  const { userProgress, dispatch } = useGamificationContext();
+
+  useEffect(() => {
+    // Award XP for visiting the goals page
+    dispatch({ type: "ADD_XP",
+      payload: 5,
+      section: "goals" });
+  }, [ dispatch ]);
 
   const handleAddGoal = () => {
     if (newGoal.name && newGoal.target) {
@@ -94,6 +104,17 @@ export default function Goals() {
         <CardFooter>
           <Button onClick={handleAddGoal}>Add Goal</Button>
         </CardFooter>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Goals Progress</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Progress value={(userProgress.sections.goals.xp / 100) * 100} className="mt-2" />
+          <p className="text-sm mt-2">
+            Level {userProgress.sections.goals.level} - XP: {userProgress.sections.goals.xp}/100
+          </p>
+        </CardContent>
       </Card>
     </div>
   );

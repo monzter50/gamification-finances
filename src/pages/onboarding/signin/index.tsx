@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {  useNavigate } from "react-router";
 
 import { Button } from "@/components/ui/button";
@@ -8,8 +9,13 @@ import { useAuth } from "@/context/AuthContext";
 
 export default function Signin() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login,isAuthenticated } = useAuth();
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/");
+    }
+  }, [ isAuthenticated, navigate ]);
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);

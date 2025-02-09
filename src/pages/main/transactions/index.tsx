@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
+import { Progress } from "@/components/ui/progress.tsx";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useGamificationContext } from "@/context/GamificationContext.tsx";
 
 interface Transaction {
     id: number
@@ -41,6 +42,15 @@ export default function Transactions() {
     amount: "",
     type: "expense" as "income" | "expense",
   });
+
+  const { userProgress, dispatch } = useGamificationContext();
+
+  useEffect(() => {
+    // Award XP for visiting the transactions page
+    dispatch({ type: "ADD_XP",
+      payload: 5,
+      section: "transactions" });
+  }, [ dispatch ]);
 
   const handleAddTransaction = () => {
     if (newTransaction.date && newTransaction.description && newTransaction.amount) {
@@ -149,6 +159,17 @@ export default function Transactions() {
         <CardFooter>
           <Button onClick={handleAddTransaction}>Add Transaction</Button>
         </CardFooter>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Transactions Progress</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Progress value={(userProgress.sections.transactions.xp / 100) * 100} className="mt-2" />
+          <p className="text-sm mt-2">
+            Level {userProgress.sections.transactions.level} - XP: {userProgress.sections.transactions.xp}/100
+          </p>
+        </CardContent>
       </Card>
     </div>
   );

@@ -16,19 +16,19 @@ export default function Layout() {
                             Dashboard
             </Link>
             <Link
-              to="/dashboard/goals"
+              to="/goals"
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
             >
                             Goals
             </Link>
             <Link
-              to="/dashboard/transactions"
+              to="/transactions"
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
             >
                             Transactions
             </Link>
             <Link
-              to="/dashboard/profile"
+              to="/profile"
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
             >
                             Profile

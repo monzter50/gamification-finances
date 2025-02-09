@@ -1,27 +1,47 @@
-import { Route, Routes } from "react-router";
+import {  createBrowserRouter, Navigate, RouterProvider } from "react-router";
 
-import Layout from "@/layout";
+import { AuthProvider } from "@/context/AuthContext.tsx";
+import { GamificationProvider } from "@/context/GamificationContext.tsx";
 import Dashboard from "@/pages/main/dashboard";
-import { GamificationModule } from "@/pages/main/gamification";
 import Goals from "@/pages/main/goals";
 import Profile from "@/pages/main/profile";
 import Transactions from "@/pages/main/transactions";
-import Signin from "@/pages/onboarding/signin";
+import Signin, { loginAction } from "@/pages/onboarding/signin";
+import { ProtectedRoutes } from "@/routes/protected/ProctectedRoutes.tsx";
+
+const router = createBrowserRouter([
+  {
+    path: "/login",
+    element: <Signin />,
+    action: loginAction,
+  },
+  {
+    path: "/",
+    // eslint-disable-next-line react/jsx-no-undef
+    element: <ProtectedRoutes />,
+    loader: () => null, // We'll handle auth check in the component
+    children: [
+      { index: true,
+        element: <Dashboard /> },
+      { path: "goals",
+        element: <Goals /> },
+      { path: "transactions",
+        element: <Transactions /> },
+      { path: "profile",
+        element: <Profile /> },
+    ],
+  },
+  { path: "*",
+    element: <Navigate to="/" replace /> },
+]);
 
 function App() {
-
   return (
-    <Routes>
-      <Route path="dashboard" element={<Layout />} >
-        <Route index element={<Dashboard />} />
-        <Route path="gamification" element={<GamificationModule />} />
-        <Route path="profile" element={<Profile/>} />
-        <Route path="goals" element={<Goals />} />
-        <Route path="transactions" element={<Transactions/>} />
-        <Route path="*" element={<div>404</div>} />
-      </Route>
-      <Route index element={<Signin />} />
-    </Routes>
+    <AuthProvider>
+      <GamificationProvider>
+        <RouterProvider router={router} />
+      </GamificationProvider>
+    </AuthProvider>
   );
 }
 

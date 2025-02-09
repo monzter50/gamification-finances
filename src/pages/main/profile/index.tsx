@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress.tsx";
+import { useGamificationContext } from "@/context/GamificationContext.tsx";
 
 interface UserProfile {
     name: string
@@ -19,6 +20,15 @@ export default function Profile() {
     email: "john@example.com",
     avatar: "/placeholder.svg",
   });
+
+  const { userProgress, dispatch } = useGamificationContext();
+
+  useEffect(() => {
+    // Award XP for visiting the profile page
+    dispatch({ type: "ADD_XP",
+      payload: 5,
+      section: "profile" });
+  }, [ dispatch ]);
 
   const handleUpdateProfile = (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,6 +79,17 @@ export default function Profile() {
         <CardFooter>
           <Button onClick={handleUpdateProfile}>Save Changes</Button>
         </CardFooter>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Profile Progress</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Progress value={(userProgress.sections.profile.xp / 100) * 100} className="mt-2" />
+          <p className="text-sm mt-2">
+            Level {userProgress.sections.profile.level} - XP: {userProgress.sections.profile.xp}/100
+          </p>
+        </CardContent>
       </Card>
     </div>
   );
