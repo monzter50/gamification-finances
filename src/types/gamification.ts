@@ -7,7 +7,7 @@ export interface UserLevel {
 export interface GamificationAction {
     type: "ADD_XP" | "LEVEL_UP"
     payload: number
-    section?: "dashboard" | "goals" | "transactions" | "profile"
+    section?: "dashboard" | "goals" | "transactions" | "profile" | "expenses"
 }
 
 export interface SectionProgress {
@@ -22,5 +22,6 @@ export interface UserProgress {
         goals: SectionProgress
         transactions: SectionProgress
         profile: SectionProgress
+        expenses: SectionProgress
     }
 }

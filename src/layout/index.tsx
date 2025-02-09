@@ -33,6 +33,12 @@ export default function Layout() {
             >
                             Profile
             </Link>
+            <Link
+              to="/expenses"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+            >
+                  Expenses
+            </Link>
           </nav>
           <div className="flex items-center space-x-4">
             <Button

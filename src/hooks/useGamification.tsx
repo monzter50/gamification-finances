@@ -20,6 +20,7 @@ const INITIAL_STATE: UserProgress = {
     goals: { ...INITIAL_SECTION_PROGRESS },
     transactions: { ...INITIAL_SECTION_PROGRESS },
     profile: { ...INITIAL_SECTION_PROGRESS },
+    expenses: { ...INITIAL_SECTION_PROGRESS }
   },
 };
 
@@ -41,6 +42,8 @@ export function useGamification() {
 
       // Update section progress if specified
       if (action.section) {
+        console.log("action", action);
+        console.log("section", newState.sections[action.section]);
         const sectionProgress = newState.sections[action.section];
         sectionProgress.xp += action.payload;
 

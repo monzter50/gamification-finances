@@ -3,6 +3,7 @@ import {  createBrowserRouter, Navigate, RouterProvider } from "react-router";
 import { AuthProvider } from "@/context/AuthContext.tsx";
 import { GamificationProvider } from "@/context/GamificationContext.tsx";
 import Dashboard from "@/pages/main/dashboard";
+import Expenses from "@/pages/main/expenses";
 import Goals from "@/pages/main/goals";
 import Profile from "@/pages/main/profile";
 import Transactions from "@/pages/main/transactions";
@@ -29,6 +30,8 @@ const router = createBrowserRouter([
         element: <Transactions /> },
       { path: "profile",
         element: <Profile /> },
+      { path:"expenses",
+        element:<Expenses/> }
     ],
   },
   { path: "*",
