@@ -1,10 +1,15 @@
 import { MoonIcon, SunIcon } from "lucide-react";
-import { Link, Outlet } from "react-router";
+import { ReactNode } from "react";
+import { Link } from "react-router";
 
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 
-export default function Layout() {
+interface LayoutProps {
+  children: ReactNode;
+}
+
+export default function Layout({ children }: LayoutProps): ReactNode {
   const { logout } = useAuth();
 
   return (
@@ -56,7 +61,7 @@ export default function Layout() {
         </div>
       </header>
       <main className="container mx-auto py-6 px-4">
-        <Outlet />
+        {children}
       </main>
     </div>
   );

@@ -27,7 +27,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return isValid;
   };
 
-  const login = async (email: string, password: string) => {
+  const login = async () => {
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1000));
     localStorage.setItem("authToken", "dummy_token");

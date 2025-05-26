@@ -2,7 +2,7 @@ import { Trophy } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { UserLevel } from "@types/gamification";
+import { UserLevel } from "@/types/gamification";
 
 interface LevelProgressProps {
     userLevel: UserLevel;
