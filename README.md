@@ -1,6 +1,21 @@
 # Finances Gamification
 - These projects is for practice solid, pattern and other things
 
+## How test dashboard
+
+### Credentials
+- Any username and password combination will work for testing
+- Example: 
+  - Username: `test@example.com`
+  - Password: `password123`
+
+### Test Data
+All data in the dashboard is dummy/mock data for demonstration purposes:
+- Financial transactions
+- Goals and progress
+- User profile information
+- Expense categories and amounts
+
 ## Features
 - [x] Login
 - [ ] Register
