@@ -2,6 +2,7 @@ import {  createBrowserRouter, Navigate, RouterProvider } from "react-router";
 
 import { AuthProvider } from "@/context/AuthContext.tsx";
 import { GamificationProvider } from "@/context/GamificationContext.tsx";
+import { ThemeProvider } from "@/context/ThemeContext.tsx";
 import Dashboard from "@/pages/main/dashboard";
 import Expenses from "@/pages/main/expenses";
 import Goals from "@/pages/main/goals";
@@ -40,11 +41,13 @@ const router = createBrowserRouter([
 
 function App() {
   return (
-    <AuthProvider>
-      <GamificationProvider>
-        <RouterProvider router={router} />
-      </GamificationProvider>
-    </AuthProvider>
+    <ThemeProvider defaultTheme="light">
+      <AuthProvider>
+        <GamificationProvider>
+          <RouterProvider router={router} />
+        </GamificationProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

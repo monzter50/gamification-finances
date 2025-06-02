@@ -6,7 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress.tsx";
+import { ThemeToggle, ThemeToggleWithText, ThemeSelector } from "@/components/ui/ThemeToggle";
 import { useGamificationContext } from "@/context/GamificationContext.tsx";
+import { useTheme } from "@/hooks/useTheme";
 
 interface UserProfile {
     name: string
@@ -22,6 +24,7 @@ export default function Profile() {
   });
 
   const { userProgress, dispatch } = useGamificationContext();
+  const { theme } = useTheme();
 
   useEffect(() => {
     // Award XP for visiting the profile page
@@ -39,6 +42,34 @@ export default function Profile() {
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-bold">User Profile</h2>
+      
+      {/* Theme Settings Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Theme Settings</CardTitle>
+          <CardDescription>Customize your app appearance. Current theme: <span className="font-semibold capitalize">{theme}</span></CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <Label>Theme Toggle (Icon)</Label>
+            <div className="flex items-center space-x-2">
+              <ThemeToggle />
+              <span className="text-sm text-muted-foreground">Click to toggle theme</span>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Theme Toggle (With Text)</Label>
+            <ThemeToggleWithText />
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Theme Selector (Dropdown)</Label>
+            <ThemeSelector className="w-48" />
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Your Information</CardTitle>
