@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 
-import { LevelProgress } from "@/components/level/level-progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
 import { Progress } from "@/components/ui/progress.tsx";
 import { useGamificationContext } from "@/context/GamificationContext";
@@ -19,9 +18,10 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold">Dashboard</h2>
-      <LevelProgress userLevel={userProgress.overall} />
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h2 className="text-2xl font-bold">Dashboard</h2>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Balance</CardTitle>
@@ -60,17 +60,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Dashboard Progress</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Progress value={(userProgress.sections.dashboard.xp / 100) * 100} className="mt-2" />
-          <p className="text-sm mt-2">
-                        Level {userProgress.sections.dashboard.level} - XP: {userProgress.sections.dashboard.xp}/100
-          </p>
-        </CardContent>
-      </Card>
+      {/* Puedes agregar aquí una sección de actividad reciente, tips, etc. */}
     </div>
   );
 }
