@@ -4,6 +4,7 @@ import type React from "react";
 import { createContext, useContext, useState } from "react";
 
 import { useGamification } from "@/hooks/useGamification";
+import { gamificationLogger } from "@/lib/logger";
 import type { GamificationAction, UserProgress } from "@/types/gamification";
 
 interface GamificationContextType {
@@ -22,10 +23,18 @@ export const GamificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   const getCurrentPageProgress = () => {
     const section = userProgress.sections[currentPage as keyof typeof userProgress.sections];
-    if (!section) { return { level: 1,
-      xp: 0,
-      percentage: 0 }; }
-    
+    if (!section) {
+      gamificationLogger.warn(`No section found for page: ${currentPage}`);
+      return { level: 1,
+        xp: 0,
+        percentage: 0 };
+    }
+
+    gamificationLogger.debug(`Getting progress for ${currentPage}`, {
+      level: section.level,
+      xp: section.xp
+    });
+
     return {
       level: section.level,
       xp: section.xp,

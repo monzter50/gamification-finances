@@ -1,4 +1,7 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import { useLocalStorage } from "@aglaya/hooks/useLocalStorage";
+import React, { createContext, useContext, useEffect } from "react";
+
+import { themeLogger } from "@/lib/logger";
 
 type Theme = "light" | "dark";
 
@@ -16,25 +19,24 @@ interface ThemeProviderProps {
 }
 
 export function ThemeProvider({ children, defaultTheme = "light" }: ThemeProviderProps) {
-  // Get initial theme from localStorage or use default
-  const [ theme, setThemeState ] = useState<Theme>(() => {
+  // Get initial theme from localStorage with system preference fallback
+  const getInitialTheme = (): Theme => {
     if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("theme") as Theme;
-      if (stored && (stored === "light" || stored === "dark")) {
-        return stored;
-      }
       // Check system preference
       if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        themeLogger.debug("Detected dark system preference");
         return "dark";
       }
     }
     return defaultTheme;
-  });
+  };
+
+  const [ theme, setThemeState ] = useLocalStorage<Theme>("theme", getInitialTheme());
 
   const setTheme = (newTheme: Theme) => {
+    themeLogger.info(`Theme changed from ${theme} to ${newTheme}`);
     setThemeState(newTheme);
-    localStorage.setItem("theme", newTheme);
-    
+
     // Apply theme to document
     const root = window.document.documentElement;
     root.classList.remove("light", "dark");
@@ -42,11 +44,14 @@ export function ThemeProvider({ children, defaultTheme = "light" }: ThemeProvide
   };
 
   const toggleTheme = () => {
-    setTheme(theme === "light" ? "dark" : "light");
+    const newTheme = theme === "light" ? "dark" : "light";
+    themeLogger.info(`Theme toggled to ${newTheme}`);
+    setTheme(newTheme);
   };
 
   // Apply theme on mount and when theme changes
   useEffect(() => {
+    themeLogger.debug(`Applying theme: ${theme}`);
     const root = window.document.documentElement;
     root.classList.remove("light", "dark");
     root.classList.add(theme);
@@ -56,10 +61,10 @@ export function ThemeProvider({ children, defaultTheme = "light" }: ThemeProvide
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = (e: MediaQueryListEvent) => {
-      // Only auto-change if no manual preference is stored
-      if (!localStorage.getItem("theme")) {
-        setThemeState(e.matches ? "dark" : "light");
-      }
+      const systemTheme = e.matches ? "dark" : "light";
+      themeLogger.info(`System theme changed to ${systemTheme}`);
+      // Note: With useLocalStorage, theme will persist, so system changes won't override
+      // unless we explicitly want that behavior
     };
 
     mediaQuery.addEventListener("change", handleChange);

@@ -34,9 +34,8 @@ export default function Goals() {
   const [ newGoal, setNewGoal ] = useState({ name: "",
     target: "" });
   const [ showModal, setShowModal ] = useState(false);
-  const [ modalClosing, setModalClosing ] = useState(false); // ya no se usará
 
-  const { userProgress, dispatch } = useGamificationContext();
+  const { dispatch } = useGamificationContext();
 
   useEffect(() => {
     // Award XP for visiting the goals page
