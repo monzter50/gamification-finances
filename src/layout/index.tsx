@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { ReactNode } from "react";
-import { Link, NavLink, useLocation } from "react-router";
+import { NavLink, useLocation } from "react-router";
 
 import { Button } from "@/components/ui/button";
 import { ProgressIndicator } from "@/components/ui/ProgressIndicator";

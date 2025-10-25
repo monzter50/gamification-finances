@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress.tsx";
 import { useGamificationContext } from "@/context/GamificationContext";
 
 export default function Dashboard() {
-  const { userProgress, dispatch } = useGamificationContext();
+  const { dispatch } = useGamificationContext();
 
   useEffect(() => {
     // Award XP for visiting the dashboard
