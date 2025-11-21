@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {  useNavigate } from "react-router";
 
 import { Button } from "@/components/ui/button";
@@ -9,24 +9,37 @@ import { useAuth } from "@/context/AuthContext";
 
 export default function Signin() {
   const navigate = useNavigate();
-  const { login,isAuthenticated } = useAuth();
+  const { login, isAuthenticated, loading } = useAuth();
+  const [ error, setError ] = useState<string>("");
+  const [ isSubmitting, setIsSubmitting ] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate("/");
+      navigate("/", { replace: true });
     }
   }, [ isAuthenticated, navigate ]);
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setError("");
+    setIsSubmitting(true);
+
     const formData = new FormData(event.currentTarget);
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
     try {
       await login(email, password);
-      navigate("/");
-    } catch (error) {
-      console.error("Login failed", error);
+      // Navigation will happen via useEffect when isAuthenticated changes
+    } catch (err) {
+      console.error("Login failed", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Error al iniciar sesión. Verifica tus credenciales o la conexión con el servidor."
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -40,17 +53,37 @@ export default function Signin() {
         <CardContent>
           <form onSubmit={handleSubmit}>
             <div className="grid w-full items-center gap-4">
+              {error && (
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 rounded">
+                  <p className="text-sm">{error}</p>
+                </div>
+              )}
+
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" placeholder="Enter your email" type="email" required />
+                <Input
+                  id="email"
+                  name="email"
+                  placeholder="Enter your email"
+                  type="email"
+                  required
+                  disabled={isSubmitting}
+                />
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" name="password" placeholder="Enter your password" type="password" required />
+                <Input
+                  id="password"
+                  name="password"
+                  placeholder="Enter your password"
+                  type="password"
+                  required
+                  disabled={isSubmitting}
+                />
               </div>
             </div>
-            <Button className="w-full mt-4" type="submit">
-                            Log in
+            <Button className="w-full mt-4" type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Iniciando sesión..." : "Log in"}
             </Button>
           </form>
         </CardContent>

@@ -1,56 +1,104 @@
 "use client";
 
-import { useLocalStorage } from "@aglaya/hooks/useLocalStorage";
 import type React from "react";
 import { createContext, useContext, useState, useEffect } from "react";
 
-import { authLogger } from "@/lib/logger";
+import { authService } from "@/services";
+import type { UserProfile } from "@/types/api";
 
 interface AuthContextType {
     isAuthenticated: boolean
+    user: UserProfile | null
     login: (email: string, password: string) => Promise<void>
-    logout: () => void
-    checkAuth: () => Promise<boolean>
+    logout: () => Promise<void>
+    checkAuth: () => Promise<void>
+    loading: boolean
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [ isAuthenticated, setIsAuthenticated ] = useState<boolean>(false);
-  const [ authToken, setAuthToken ] = useLocalStorage<string | null>("authToken", null);
+  const [ user, setUser ] = useState<UserProfile | null>(null);
+  const [ loading, setLoading ] = useState<boolean>(true);
 
   useEffect(() => {
     checkAuth();
   }, []);
 
-  const checkAuth = async () => {
-    // In a real app, you would verify the token with your backend here
-    const isValid = !!authToken; // Simplified check, replace with actual validation
-    setIsAuthenticated(isValid);
-    authLogger.debug("Auth check completed", { isValid });
-    return isValid;
+  const checkAuth = async (): Promise<void> => {
+    try {
+      setLoading(true);
+
+      // Check if token exists
+      if (!authService.isAuthenticated()) {
+        setIsAuthenticated(false);
+        setUser(null);
+        return;
+      }
+
+      // Verify token with backend
+      const response = await authService.getMe();
+
+      if (response.status === "ok" && response.response) {
+        setIsAuthenticated(true);
+        setUser(response.response);
+      } else {
+        setIsAuthenticated(false);
+        setUser(null);
+      }
+    } catch (error) {
+      console.error("Auth check failed:", error);
+      setIsAuthenticated(false);
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const login = async () => {
-    authLogger.info("Login attempt started");
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setAuthToken("dummy_token");
-    setIsAuthenticated(true);
-    authLogger.info("Login successful");
+  const login = async (email: string, password: string): Promise<void> => {
+    try {
+      setLoading(true);
+      const response = await authService.login({ email,
+        password });
+
+      if (response.status === "ok") {
+        // Get user profile after successful login
+        await checkAuth();
+      } else {
+        throw new Error("Login failed");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const logout = () => {
-    authLogger.info("Logout initiated");
-    setAuthToken(null);
-    setIsAuthenticated(false);
-    authLogger.info("Logout completed");
+  const logout = async (): Promise<void> => {
+    try {
+      setLoading(true);
+      await authService.logout();
+      setIsAuthenticated(false);
+      setUser(null);
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Still clear local state even if API call fails
+      setIsAuthenticated(false);
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  return <AuthContext.Provider value={{ isAuthenticated,
+  return <AuthContext.Provider value={{
+    isAuthenticated,
+    user,
     login,
     logout,
-    checkAuth
+    checkAuth,
+    loading
   }}>{children}</AuthContext.Provider>;
 };
 

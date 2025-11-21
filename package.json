@@ -11,6 +11,7 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@aglaya/api-core": "^0.1.0",
     "@aglaya/eslint-config": "^1.2.0",
     "@aglaya/hooks": "^0.1.1",
     "@aglaya/logger": "^0.1.0",
