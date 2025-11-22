@@ -3,11 +3,11 @@
  * Central export for all API services
  */
 
-export { authService } from './auth.service';
-export { userService } from './user.service';
-export { transactionService } from './transaction.service';
-export { achievementService } from './achievement.service';
-export { gamificationService } from './gamification.service';
+export { authService } from "./auth.service";
+export { userService } from "./user.service";
+export { transactionService } from "./transaction.service";
+export { achievementService } from "./achievement.service";
+export { gamificationService } from "./gamification.service";
 
 // Re-export types for convenience
-export type * from '@/types/api';
+export type * from "@/types/api";

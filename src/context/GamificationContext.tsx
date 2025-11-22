@@ -9,8 +9,10 @@ import type { GamificationAction, UserProgress } from "@/types/gamification";
 
 interface GamificationContextType {
     userProgress: UserProgress
+    // eslint-disable-next-line no-unused-vars
     dispatch: (action: GamificationAction) => void
     currentPage: string
+    // eslint-disable-next-line no-unused-vars
     setCurrentPage: (page: string) => void
     getCurrentPageProgress: () => { level: number; xp: number; percentage: number }
 }

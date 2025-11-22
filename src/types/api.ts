@@ -82,7 +82,7 @@ export interface UserStats {
 
 // ==================== Transaction Types ====================
 
-export type TransactionType = 'income' | 'expense' | 'savings';
+export type TransactionType = "income" | "expense" | "savings";
 
 export interface Transaction {
   id: string;
@@ -127,8 +127,8 @@ export interface TransactionSummary {
 
 // ==================== Achievement Types ====================
 
-export type AchievementRarity = 'common' | 'rare' | 'epic' | 'legendary';
-export type AchievementCategory = 'savings' | 'expense' | 'income' | 'streak' | 'level';
+export type AchievementRarity = "common" | "rare" | "epic" | "legendary";
+export type AchievementCategory = "savings" | "expense" | "income" | "streak" | "level";
 
 export interface AchievementCriteria {
   type: string;
@@ -225,7 +225,7 @@ export interface LevelUpResponse {
   coins: number;
 }
 
-export type LeaderboardType = 'level' | 'coins' | 'savings' | 'experience';
+export type LeaderboardType = "level" | "coins" | "savings" | "experience";
 
 export interface LeaderboardEntry {
   position: number;

@@ -3,13 +3,14 @@
  * Handles financial transactions
  */
 
-import type { ApiResponse } from '@aglaya/api-core';
-import { apiClient, getAuthToken } from '@/config/api-client';
+import type { ApiResponse } from "@aglaya/api-core";
+
+import { apiClient, getAuthToken } from "@/config/api-client";
 import type {
   Transaction,
   CreateTransactionRequest,
   TransactionSummary,
-} from '@/types/api';
+} from "@/types/api";
 
 class TransactionService {
   /**
@@ -20,12 +21,15 @@ class TransactionService {
     const token = getAuthToken();
 
     if (!token) {
-      throw new Error('No authentication token found');
+      throw new Error("No authentication token found");
     }
 
-    const response = await apiClient.get<Transaction[]>('/transactions', {
+    const response = await apiClient.get<Transaction[]>("/transactions", {
       authentication: {
         token,
+      },
+      options: {
+        requiredAuth: true,
       },
     });
 
@@ -40,13 +44,16 @@ class TransactionService {
     const token = getAuthToken();
 
     if (!token) {
-      throw new Error('No authentication token found');
+      throw new Error("No authentication token found");
     }
 
-    const response = await apiClient.post<Transaction>('/transactions', {
-      body: data,
+    const response = await apiClient.post<Transaction>("/transactions", {
+      body: { ...data },
       authentication: {
         token,
+      },
+      options: {
+        requiredAuth: true,
       },
     });
 
@@ -61,12 +68,15 @@ class TransactionService {
     const token = getAuthToken();
 
     if (!token) {
-      throw new Error('No authentication token found');
+      throw new Error("No authentication token found");
     }
 
     const response = await apiClient.get<Transaction>(`/transactions/${id}`, {
       authentication: {
         token,
+      },
+      options: {
+        requiredAuth: true,
       },
     });
 
@@ -81,13 +91,16 @@ class TransactionService {
     const token = getAuthToken();
 
     if (!token) {
-      throw new Error('No authentication token found');
+      throw new Error("No authentication token found");
     }
 
     const response = await apiClient.put<Transaction>(`/transactions/${id}`, {
-      body: data,
+      body: { ...data },
       authentication: {
         token,
+      },
+      options: {
+        requiredAuth: true,
       },
     });
 
@@ -102,12 +115,15 @@ class TransactionService {
     const token = getAuthToken();
 
     if (!token) {
-      throw new Error('No authentication token found');
+      throw new Error("No authentication token found");
     }
 
     const response = await apiClient.delete<void>(`/transactions/${id}`, {
       authentication: {
         token,
+      },
+      options: {
+        requiredAuth: true,
       },
     });
 
@@ -122,12 +138,15 @@ class TransactionService {
     const token = getAuthToken();
 
     if (!token) {
-      throw new Error('No authentication token found');
+      throw new Error("No authentication token found");
     }
 
-    const response = await apiClient.get<TransactionSummary>('/transactions/summary', {
+    const response = await apiClient.get<TransactionSummary>("/transactions/summary", {
       authentication: {
         token,
+      },
+      options: {
+        requiredAuth: true,
       },
     });
 
@@ -142,7 +161,7 @@ class TransactionService {
     const token = getAuthToken();
 
     if (!token) {
-      throw new Error('No authentication token found');
+      throw new Error("No authentication token found");
     }
 
     const response = await apiClient.get<TransactionSummary>(
@@ -150,6 +169,9 @@ class TransactionService {
       {
         authentication: {
           token,
+        },
+        options: {
+          requiredAuth: true,
         },
       }
     );

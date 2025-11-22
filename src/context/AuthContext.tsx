@@ -10,6 +10,7 @@ import type { UserProfile } from "@/types/api";
 interface AuthContextType {
     isAuthenticated: boolean
     user: UserProfile | null
+    // eslint-disable-next-line no-unused-vars
     login: (email: string, password: string) => Promise<void>
     logout: () => Promise<void>
     checkAuth: () => Promise<void>

@@ -3,13 +3,14 @@
  * Handles user achievements and unlocking
  */
 
-import type { ApiResponse } from '@aglaya/api-core';
-import { apiClient, getAuthToken } from '@/config/api-client';
+import type { ApiResponse } from "@aglaya/api-core";
+
+import { apiClient, getAuthToken } from "@/config/api-client";
 import type {
   Achievement,
   UserAchievementsResponse,
   UnlockAchievementResponse,
-} from '@/types/api';
+} from "@/types/api";
 
 class AchievementService {
   /**
@@ -20,12 +21,15 @@ class AchievementService {
     const token = getAuthToken();
 
     if (!token) {
-      throw new Error('No authentication token found');
+      throw new Error("No authentication token found");
     }
 
-    const response = await apiClient.get<Achievement[]>('/achievements', {
+    const response = await apiClient.get<Achievement[]>("/achievements", {
       authentication: {
         token,
+      },
+      options: {
+        requiredAuth: true,
       },
     });
 
@@ -40,12 +44,15 @@ class AchievementService {
     const token = getAuthToken();
 
     if (!token) {
-      throw new Error('No authentication token found');
+      throw new Error("No authentication token found");
     }
 
-    const response = await apiClient.get<UserAchievementsResponse>('/achievements/user', {
+    const response = await apiClient.get<UserAchievementsResponse>("/achievements/user", {
       authentication: {
         token,
+      },
+      options: {
+        requiredAuth: true,
       },
     });
 
@@ -60,7 +67,7 @@ class AchievementService {
     const token = getAuthToken();
 
     if (!token) {
-      throw new Error('No authentication token found');
+      throw new Error("No authentication token found");
     }
 
     const response = await apiClient.post<UnlockAchievementResponse>(
@@ -68,6 +75,9 @@ class AchievementService {
       {
         authentication: {
           token,
+        },
+        options: {
+          requiredAuth: true,
         },
       }
     );
@@ -83,7 +93,7 @@ class AchievementService {
     const token = getAuthToken();
 
     if (!token) {
-      throw new Error('No authentication token found');
+      throw new Error("No authentication token found");
     }
 
     const response = await apiClient.get<{ progress: number }>(
@@ -91,6 +101,9 @@ class AchievementService {
       {
         authentication: {
           token,
+        },
+        options: {
+          requiredAuth: true,
         },
       }
     );

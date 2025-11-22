@@ -4,6 +4,7 @@
  */
 
 import type { ApiResponse } from "@aglaya/api-core";
+
 import { apiClient, getAuthToken } from "@/config/api-client";
 import type {
   UserProfileData,

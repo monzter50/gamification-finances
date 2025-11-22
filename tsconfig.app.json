@@ -22,11 +22,8 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
 
-    "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./src/*"
-      ],
+      "@/*": ["./src/*"],
       "@types/*": ["./src/types/*"]
     },
     "allowSyntheticDefaultImports": true

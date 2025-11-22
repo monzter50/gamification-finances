@@ -3,17 +3,17 @@
  * Handles gamification features, levels, leaderboards, and progress
  */
 
-import type { ApiResponse } from '@aglaya/api-core';
-import { apiClient, getAuthToken } from '@/config/api-client';
+import type { ApiResponse } from "@aglaya/api-core";
+
+import { apiClient, getAuthToken } from "@/config/api-client";
 import type {
   GamificationProfile,
   LevelUpResponse,
   LeaderboardResponse,
   LeaderboardType,
   ProgressStats,
-  AddCoinsRequest,
   AddCoinsResponse,
-} from '@/types/api';
+} from "@/types/api";
 
 class GamificationService {
   /**
@@ -24,12 +24,15 @@ class GamificationService {
     const token = getAuthToken();
 
     if (!token) {
-      throw new Error('No authentication token found');
+      throw new Error("No authentication token found");
     }
 
-    const response = await apiClient.get<GamificationProfile>('/gamification/profile', {
+    const response = await apiClient.get<GamificationProfile>("/gamification/profile", {
       authentication: {
         token,
+      },
+      options: {
+        requiredAuth: true,
       },
     });
 
@@ -44,12 +47,15 @@ class GamificationService {
     const token = getAuthToken();
 
     if (!token) {
-      throw new Error('No authentication token found');
+      throw new Error("No authentication token found");
     }
 
-    const response = await apiClient.post<LevelUpResponse>('/gamification/level-up', {
+    const response = await apiClient.post<LevelUpResponse>("/gamification/level-up", {
       authentication: {
         token,
+      },
+      options: {
+        requiredAuth: true,
       },
     });
 
@@ -61,22 +67,25 @@ class GamificationService {
    * GET /gamification/leaderboard
    */
   async getLeaderboard(
-    type: LeaderboardType = 'level',
+    type: LeaderboardType = "level",
     limit: number = 10
   ): Promise<ApiResponse<LeaderboardResponse>> {
     const token = getAuthToken();
 
     if (!token) {
-      throw new Error('No authentication token found');
+      throw new Error("No authentication token found");
     }
 
-    const response = await apiClient.get<LeaderboardResponse>('/gamification/leaderboard', {
+    const response = await apiClient.get<LeaderboardResponse>("/gamification/leaderboard", {
       params: {
         type,
         limit,
       },
       authentication: {
         token,
+      },
+      options: {
+        requiredAuth: true,
       },
     });
 
@@ -91,12 +100,15 @@ class GamificationService {
     const token = getAuthToken();
 
     if (!token) {
-      throw new Error('No authentication token found');
+      throw new Error("No authentication token found");
     }
 
-    const response = await apiClient.get<ProgressStats>('/gamification/progress', {
+    const response = await apiClient.get<ProgressStats>("/gamification/progress", {
       authentication: {
         token,
+      },
+      options: {
+        requiredAuth: true,
       },
     });
 
@@ -111,15 +123,18 @@ class GamificationService {
     const token = getAuthToken();
 
     if (!token) {
-      throw new Error('No authentication token found');
+      throw new Error("No authentication token found");
     }
 
-    const data: AddCoinsRequest = { amount };
-
-    const response = await apiClient.post<AddCoinsResponse>('/gamification/add-coins', {
-      body: data,
+    const response = await apiClient.post<AddCoinsResponse>("/gamification/add-coins", {
+      body: {
+        amount,
+      },
       authentication: {
         token,
+      },
+      options: {
+        requiredAuth: true,
       },
     });
 

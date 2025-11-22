@@ -10,7 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 
 export default function Signin() {
   const navigate = useNavigate();
-  const { login, isAuthenticated, loading } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const [ error, setError ] = useState<string>("");
   const [ isSubmitting, setIsSubmitting ] = useState(false);
 

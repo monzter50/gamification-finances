@@ -5,7 +5,7 @@
 
 import type { ApiResponse } from "@aglaya/api-core";
 
-import { apiClient, getAuthToken, setAuthToken, removeAuthToken, setUserData, clearAuthData } from "@/config/api-client";
+import { apiClient, getAuthToken, setAuthToken, setUserData, clearAuthData } from "@/config/api-client";
 import { authLogger } from "@/config/logger";
 import type {
   RegisterRequest,
@@ -47,7 +47,8 @@ class AuthService {
 
       // The backend returns { success, message, data: { token } }
       // @aglaya/api-core puts this in response.response
-      const token = (response.response as any).data?.token || (response.response as any).token;
+      const responseData = response.response as { data?: { token?: string }; token?: string };
+      const token = responseData.data?.token || responseData.token;
 
       if (token) {
         authLogger.debug("Token extracted successfully");
