@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress.tsx";
 import { ThemeToggle, ThemeToggleWithText, ThemeSelector } from "@/components/ui/ThemeToggle";
+import { userLogger } from "@/config/logger";
 import { useGamificationContext } from "@/context/GamificationContext.tsx";
 import { useTheme } from "@/hooks/useTheme";
 
@@ -36,7 +37,8 @@ export default function Profile() {
   const handleUpdateProfile = (e: React.FormEvent) => {
     e.preventDefault();
     // In a real app, you would send this data to your backend
-    console.log("Profile updated:", profile);
+    userLogger.info("Profile updated", { name: profile.name,
+      email: profile.email });
   };
 
   return (

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { authLogger } from "@/config/logger";
 import { useAuth } from "@/context/AuthContext";
 
 export default function Signin() {
@@ -32,7 +33,7 @@ export default function Signin() {
       await login(email, password);
       // Navigation will happen via useEffect when isAuthenticated changes
     } catch (err) {
-      console.error("Login failed", err);
+      authLogger.error("Login failed in UI", err);
       setError(
         err instanceof Error
           ? err.message

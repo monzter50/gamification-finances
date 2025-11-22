@@ -3,6 +3,7 @@
 import type React from "react";
 import { createContext, useContext, useState, useEffect } from "react";
 
+import { authLogger } from "@/config/logger";
 import { authService } from "@/services";
 import type { UserProfile } from "@/types/api";
 
@@ -29,9 +30,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const checkAuth = async (): Promise<void> => {
     try {
       setLoading(true);
+      authLogger.debug("Checking authentication");
 
       // Check if token exists
       if (!authService.isAuthenticated()) {
+        authLogger.debug("No token found");
         setIsAuthenticated(false);
         setUser(null);
         return;
@@ -41,14 +44,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await authService.getMe();
 
       if (response.status === "ok" && response.response) {
+        authLogger.info("Authentication verified", { userId: response.response.id });
         setIsAuthenticated(true);
         setUser(response.response);
       } else {
+        authLogger.warn("Authentication verification failed");
         setIsAuthenticated(false);
         setUser(null);
       }
     } catch (error) {
-      console.error("Auth check failed:", error);
+      authLogger.error("Auth check failed", error);
       setIsAuthenticated(false);
       setUser(null);
     } finally {
@@ -59,17 +64,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string): Promise<void> => {
     try {
       setLoading(true);
+      authLogger.info("Login initiated", { email });
+
       const response = await authService.login({ email,
         password });
 
       if (response.status === "ok") {
+        authLogger.info("Login successful, fetching user profile");
         // Get user profile after successful login
         await checkAuth();
       } else {
+        authLogger.warn("Login failed", { status: response.status });
         throw new Error("Login failed");
       }
     } catch (error) {
-      console.error("Login error:", error);
+      authLogger.error("Login error", error);
       throw error;
     } finally {
       setLoading(false);
@@ -79,11 +88,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async (): Promise<void> => {
     try {
       setLoading(true);
+      authLogger.info("Logout initiated");
+
       await authService.logout();
       setIsAuthenticated(false);
       setUser(null);
+
+      authLogger.info("Logout completed");
     } catch (error) {
-      console.error("Logout error:", error);
+      authLogger.error("Logout error", error);
       // Still clear local state even if API call fails
       setIsAuthenticated(false);
       setUser(null);

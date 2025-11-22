@@ -3,15 +3,17 @@
  * Handles user authentication, registration, and logout
  */
 
-import type { ApiResponse } from '@aglaya/api-core';
-import { apiClient, getAuthToken, setAuthToken, removeAuthToken, setUserData, clearAuthData } from '@/config/api-client';
+import type { ApiResponse } from "@aglaya/api-core";
+
+import { apiClient, getAuthToken, setAuthToken, removeAuthToken, setUserData, clearAuthData } from "@/config/api-client";
+import { authLogger } from "@/config/logger";
 import type {
   RegisterRequest,
   RegisterResponse,
   LoginRequest,
   LoginResponse,
   UserProfile,
-} from '@/types/api';
+} from "@/types/api";
 
 class AuthService {
   /**
@@ -19,7 +21,7 @@ class AuthService {
    * POST /auth/register
    */
   async register(data: RegisterRequest): Promise<ApiResponse<RegisterResponse>> {
-    const response = await apiClient.post<RegisterResponse>('/auth/register', {
+    const response = await apiClient.post<RegisterResponse>("/auth/register", {
       body: data,
     });
 
@@ -31,36 +33,44 @@ class AuthService {
    * POST /auth/login
    */
   async login(data: LoginRequest): Promise<ApiResponse<LoginResponse>> {
-    const response = await apiClient.post<LoginResponse>('/auth/login', {
+    authLogger.debug("Login attempt", { email: data.email });
+
+    const response = await apiClient.post<LoginResponse>("/auth/login", {
       body: data,
     });
 
-    console.log('Login response:', response);
+    authLogger.debug("Login response received", { status: response.status });
 
     // Save token if login successful
-    if (response.status === 'ok' && response.response) {
-      console.log('Login successful, response.response:', response.response);
+    if (response.status === "ok" && response.response) {
+      authLogger.info("Login successful");
 
       // The backend returns { success, message, data: { token } }
       // @aglaya/api-core puts this in response.response
       const token = (response.response as any).data?.token || (response.response as any).token;
 
       if (token) {
-        console.log('Token found:', token);
+        authLogger.debug("Token extracted successfully");
         setAuthToken(token);
 
         // Fetch and save user profile
         try {
           const userProfile = await this.getMe();
-          if (userProfile.status === 'ok' && userProfile.response) {
+          if (userProfile.status === "ok" && userProfile.response) {
             setUserData(userProfile.response);
+            authLogger.info("User profile loaded", {
+              userId: userProfile.response.id,
+              email: userProfile.response.email,
+            });
           }
         } catch (error) {
-          console.error('Error fetching user profile:', error);
+          authLogger.error("Error fetching user profile", error);
         }
       } else {
-        console.error('No token found in response');
+        authLogger.error("No token found in response");
       }
+    } else {
+      authLogger.warn("Login failed", { status: response.status });
     }
 
     return response;
@@ -74,10 +84,13 @@ class AuthService {
     const token = getAuthToken();
 
     if (!token) {
+      authLogger.warn("Logout attempted without token");
       throw new Error("No authentication token found");
     }
 
     try {
+      authLogger.debug("Logging out user");
+
       const response = await apiClient.post<void>("/auth/logout", {
         authentication: {
           token,
@@ -89,9 +102,11 @@ class AuthService {
 
       // Clear local auth data
       clearAuthData();
+      authLogger.info("User logged out successfully");
 
       return response;
     } catch (error) {
+      authLogger.error("Logout error", error);
       // Clear local data even if API call fails
       clearAuthData();
       throw error;
@@ -106,8 +121,11 @@ class AuthService {
     const token = getAuthToken();
 
     if (!token) {
+      authLogger.warn("getMe called without token");
       throw new Error("No authentication token found");
     }
+
+    authLogger.debug("Fetching user profile");
 
     const response = await apiClient.get<UserProfile>("/auth/me", {
       authentication: {
@@ -117,6 +135,12 @@ class AuthService {
         requiredAuth: true,
       },
     });
+
+    if (response.status === "ok") {
+      authLogger.debug("User profile fetched successfully");
+    } else {
+      authLogger.warn("Failed to fetch user profile", { status: response.status });
+    }
 
     return response;
   }
