@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { createContext, useContext, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useState } from "react";
 
 import { useGamification } from "@/hooks/useGamification";
 import { gamificationLogger } from "@/lib/logger";
@@ -23,7 +23,7 @@ export const GamificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const { userProgress, dispatch } = useGamification();
   const [ currentPage, setCurrentPage ] = useState("dashboard");
 
-  const getCurrentPageProgress = () => {
+  const getCurrentPageProgress = useCallback(() => {
     const section = userProgress.sections[currentPage as keyof typeof userProgress.sections];
     if (!section) {
       gamificationLogger.warn(`No section found for page: ${currentPage}`);
@@ -42,18 +42,18 @@ export const GamificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       xp: section.xp,
       percentage: (section.xp / 100) * 100
     };
-  };
+  }, [ userProgress, currentPage ]);
+
+  const value = useMemo(() => ({
+    userProgress,
+    dispatch,
+    currentPage,
+    setCurrentPage,
+    getCurrentPageProgress
+  }), [ userProgress, dispatch, currentPage, getCurrentPageProgress ]);
 
   return (
-    <GamificationContext.Provider 
-      value={{ 
-        userProgress, 
-        dispatch, 
-        currentPage, 
-        setCurrentPage,
-        getCurrentPageProgress
-      }}
-    >
+    <GamificationContext.Provider value={value}>
       {children}
     </GamificationContext.Provider>
   );

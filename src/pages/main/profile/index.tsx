@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -26,12 +26,16 @@ export default function Profile() {
 
   const { userProgress, dispatch } = useGamificationContext();
   const { theme } = useTheme();
+  const hasAwardedXP = useRef(false);
 
   useEffect(() => {
-    // Award XP for visiting the profile page
-    dispatch({ type: "ADD_XP",
-      payload: 5,
-      section: "profile" });
+    // Award XP for visiting the profile page only once
+    if (!hasAwardedXP.current) {
+      dispatch({ type: "ADD_XP",
+        payload: 5,
+        section: "profile" });
+      hasAwardedXP.current = true;
+    }
   }, [ dispatch ]);
 
   const handleUpdateProfile = (e: React.FormEvent) => {

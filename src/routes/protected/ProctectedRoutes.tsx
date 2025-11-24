@@ -12,10 +12,8 @@ export const ProtectedRoutes = () => {
 
   useEffect(() => {
     // Only check auth after loading is complete
-    if (!loading) {
-      if (!isAuthenticated) {
-        navigate("/login");
-      }
+    if (!loading && !isAuthenticated) {
+      navigate("/login");
     }
   }, [ isAuthenticated, loading, navigate ]);
 

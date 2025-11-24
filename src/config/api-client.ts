@@ -37,6 +37,28 @@ export const removeAuthToken = (): void => {
 };
 
 /**
+ * Set authentication expiry in localStorage
+ */
+export const setAuthExpiry = (expiresIn: number): void => {
+  localStorage.setItem("authExpiry", String(expiresIn));
+};
+
+/**
+ * Get authentication expiry from localStorage
+ */
+export const getAuthExpiry = (): number | null => {
+  const expiresIn = localStorage.getItem("authExpiry");
+  return expiresIn ? Number(expiresIn) : null;
+};
+
+/**
+ * Remove authentication expiry from localStorage
+ */
+export const removeAuthExpiry = (): void => {
+  localStorage.removeItem("authExpiry");
+};
+
+/**
  * Set user data in localStorage
  */
 export const setUserData = (user: unknown): void => {

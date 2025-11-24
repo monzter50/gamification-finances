@@ -2,14 +2,6 @@
  * API Types based on API documentation
  */
 
-// ==================== Common Types ====================
-
-export interface ApiResponse<T = unknown> {
-  success: boolean;
-  message?: string;
-  data?: T;
-}
-
 // ==================== Authentication Types ====================
 
 export interface RegisterRequest {
@@ -25,6 +17,7 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   token: string;
+  expiresIn: number;
 }
 
 export interface RegisterResponse {
@@ -35,10 +28,35 @@ export interface UserProfile {
   id: string;
   email: string;
   name: string;
+  role: string;
+  level: number;
+  experience: number;
+  experienceToNextLevel: number;
+  levelProgress: number;
+  coins: number;
+  totalSavings: number;
+  totalExpenses: number;
+  savingsGoal: number;
+  savingsProgress?: number;
+  achievements: string[];
+  badges: string[];
+  isActive: boolean;
+  lastLogin: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 // ==================== User Types ====================
 
+export interface UserBasicInfo {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  level: number;
+  experience: number;
+  coins: number;
+}
 export interface UserProfileData {
   id: string;
   email: string;

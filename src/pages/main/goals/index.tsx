@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,12 +36,16 @@ export default function Goals() {
   const [ showModal, setShowModal ] = useState(false);
 
   const { dispatch } = useGamificationContext();
+  const hasAwardedXP = useRef(false);
 
   useEffect(() => {
-    // Award XP for visiting the goals page
-    dispatch({ type: "ADD_XP",
-      payload: 5,
-      section: "goals" });
+    // Award XP for visiting the goals page only once
+    if (!hasAwardedXP.current) {
+      dispatch({ type: "ADD_XP",
+        payload: 5,
+        section: "goals" });
+      hasAwardedXP.current = true;
+    }
   }, [ dispatch ]);
 
   const handleAddGoal = () => {

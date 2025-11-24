@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
 import { Progress } from "@/components/ui/progress.tsx";
@@ -8,12 +8,16 @@ import { useGamificationContext } from "@/context/GamificationContext";
 
 export default function Dashboard() {
   const { dispatch } = useGamificationContext();
+  const hasAwardedXP = useRef(false);
 
   useEffect(() => {
-    // Award XP for visiting the dashboard
-    dispatch({ type: "ADD_XP",
-      payload: 5,
-      section: "dashboard" });
+    // Award XP for visiting the dashboard only once
+    if (!hasAwardedXP.current) {
+      dispatch({ type: "ADD_XP",
+        payload: 5,
+        section: "dashboard" });
+      hasAwardedXP.current = true;
+    }
   }, [ dispatch ]);
 
   return (

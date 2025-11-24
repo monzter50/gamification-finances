@@ -3,18 +3,19 @@
 import type React from "react";
 import { createContext, useContext, useState, useEffect } from "react";
 
+import { clearAuthData, setAuthExpiry, setAuthToken } from "@/config/api-client";
 import { authLogger } from "@/config/logger";
 import { authService } from "@/services";
 import type { UserProfile } from "@/types/api";
 
 interface AuthContextType {
-    isAuthenticated: boolean
-    user: UserProfile | null
-    // eslint-disable-next-line no-unused-vars
-    login: (email: string, password: string) => Promise<void>
-    logout: () => Promise<void>
-    checkAuth: () => Promise<void>
-    loading: boolean
+  isAuthenticated: boolean
+  user: UserProfile | null
+  // eslint-disable-next-line no-unused-vars
+  login: (email: string, password: string) => Promise<void>
+  logout: () => Promise<void>
+  checkAuth: () => Promise<void>
+  loading: boolean
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -44,15 +45,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Verify token with backend
       const response = await authService.getMe();
 
-      if (response.status === "ok" && response.response) {
-        authLogger.info("Authentication verified", { userId: response.response.id });
-        setIsAuthenticated(true);
-        setUser(response.response);
-      } else {
-        authLogger.warn("Authentication verification failed");
-        setIsAuthenticated(false);
-        setUser(null);
-      }
+      authLogger.info("Authentication verified", { userId: response.id });
+      setIsAuthenticated(true);
+      setUser(response);
+
     } catch (error) {
       authLogger.error("Auth check failed", error);
       setIsAuthenticated(false);
@@ -67,17 +63,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       authLogger.info("Login initiated", { email });
 
-      const response = await authService.login({ email,
-        password });
+      const { token, expiresIn } = await authService.login({
+        email,
+        password
+      });
 
-      if (response.status === "ok") {
-        authLogger.info("Login successful, fetching user profile");
-        // Get user profile after successful login
-        await checkAuth();
-      } else {
-        authLogger.warn("Login failed", { status: response.status });
-        throw new Error("Login failed");
-      }
+      setAuthToken(token);
+      setAuthExpiry(expiresIn);
+      setIsAuthenticated(true);
+
+      authLogger.info("Login successful, fetching user profile");
+      // Get user profile after successful login
+      await checkAuth();
     } catch (error) {
       authLogger.error("Login error", error);
       throw error;
@@ -94,6 +91,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await authService.logout();
       setIsAuthenticated(false);
       setUser(null);
+      clearAuthData();
 
       authLogger.info("Logout completed");
     } catch (error) {

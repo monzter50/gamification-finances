@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,12 +44,16 @@ export default function Transactions() {
   });
 
   const { userProgress, dispatch } = useGamificationContext();
+  const hasAwardedXP = useRef(false);
 
   useEffect(() => {
-    // Award XP for visiting the transactions page
-    dispatch({ type: "ADD_XP",
-      payload: 5,
-      section: "transactions" });
+    // Award XP for visiting the transactions page only once
+    if (!hasAwardedXP.current) {
+      dispatch({ type: "ADD_XP",
+        payload: 5,
+        section: "transactions" });
+      hasAwardedXP.current = true;
+    }
   }, [ dispatch ]);
 
   const handleAddTransaction = () => {

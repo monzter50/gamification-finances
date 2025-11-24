@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from "recharts";
 
 import { Button } from "@/components/ui/button";
@@ -51,12 +51,16 @@ export default function Expenses() {
   });
 
   const { userProgress, dispatch } = useGamificationContext();
+  const hasAwardedXP = useRef(false);
 
   useEffect(() => {
-    // Award XP for visiting the expenses page
-    dispatch({ type: "ADD_XP",
-      payload: 5,
-      section: "expenses" });
+    // Award XP for visiting the expenses page only once
+    if (!hasAwardedXP.current) {
+      dispatch({ type: "ADD_XP",
+        payload: 5,
+        section: "expenses" });
+      hasAwardedXP.current = true;
+    }
   }, [ dispatch ]);
 
   const handleAddExpense = () => {

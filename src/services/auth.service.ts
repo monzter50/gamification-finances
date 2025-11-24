@@ -5,7 +5,7 @@
 
 import type { ApiResponse } from "@aglaya/api-core";
 
-import { apiClient, getAuthToken, setAuthToken, setUserData, clearAuthData } from "@/config/api-client";
+import { apiClient, getAuthToken, setAuthToken, clearAuthData, setAuthExpiry, removeAuthToken, removeAuthExpiry, getAuthExpiry } from "@/config/api-client";
 import { authLogger } from "@/config/logger";
 import type {
   RegisterRequest,
@@ -22,7 +22,11 @@ class AuthService {
    */
   async register(data: RegisterRequest): Promise<ApiResponse<RegisterResponse>> {
     const response = await apiClient.post<RegisterResponse>("/auth/register", {
-      body: data,
+      body: {
+        email: data.email,
+        password: data.password,
+        name: data.name,
+      },
     });
 
     return response;
@@ -32,49 +36,40 @@ class AuthService {
    * Login user
    * POST /auth/login
    */
-  async login(data: LoginRequest): Promise<ApiResponse<LoginResponse>> {
-    authLogger.debug("Login attempt", { email: data.email });
+  async login(data: LoginRequest): Promise<LoginResponse> {
 
-    const response = await apiClient.post<LoginResponse>("/auth/login", {
-      body: data,
+    const { response, status } = await apiClient.post<LoginResponse>("/auth/login", {
+      body: {
+        email: data.email,
+        password: data.password,
+      },
     });
 
-    authLogger.debug("Login response received", { status: response.status });
-
-    // Save token if login successful
-    if (response.status === "ok" && response.response) {
-      authLogger.info("Login successful");
-
-      // The backend returns { success, message, data: { token } }
-      // @aglaya/api-core puts this in response.response
-      const responseData = response.response as { data?: { token?: string }; token?: string };
-      const token = responseData.data?.token || responseData.token;
-
-      if (token) {
-        authLogger.debug("Token extracted successfully");
-        setAuthToken(token);
-
-        // Fetch and save user profile
-        try {
-          const userProfile = await this.getMe();
-          if (userProfile.status === "ok" && userProfile.response) {
-            setUserData(userProfile.response);
-            authLogger.info("User profile loaded", {
-              userId: userProfile.response.id,
-              email: userProfile.response.email,
-            });
-          }
-        } catch (error) {
-          authLogger.error("Error fetching user profile", error);
-        }
-      } else {
-        authLogger.error("No token found in response");
-      }
-    } else {
-      authLogger.warn("Login failed", { status: response.status });
+    if (!response && status !== "ok") {
+      throw new Error("Login failed with no response");
     }
 
-    return response;
+    if (!response?.token) {
+      throw new Error("Login response missing token");
+    }
+
+    authLogger.debug("Login response received", { status: status });
+
+    // Save token if login successful
+    authLogger.info("Login successful");
+
+    // The backend returns { success, message, data: { token } }
+    // @aglaya/api-core puts this in response.response
+    const token = response?.token ?? "";
+    const expiresIn = response?.expiresIn ?? 0;
+
+    authLogger.debug("Token extracted successfully");
+    setAuthToken(token);
+
+    return {
+      token,
+      expiresIn,
+    };
   }
 
   /**
@@ -118,7 +113,7 @@ class AuthService {
    * Get current user profile
    * GET /auth/me
    */
-  async getMe(): Promise<ApiResponse<UserProfile>> {
+  async getMe(): Promise<UserProfile> {
     const token = getAuthToken();
 
     if (!token) {
@@ -128,7 +123,7 @@ class AuthService {
 
     authLogger.debug("Fetching user profile");
 
-    const response = await apiClient.get<UserProfile>("/auth/me", {
+    const { response, status } = await apiClient.get<UserProfile>("/auth/me", {
       authentication: {
         token,
       },
@@ -137,13 +132,15 @@ class AuthService {
       },
     });
 
-    if (response.status === "ok") {
+    if (status === "ok") {
       authLogger.debug("User profile fetched successfully");
     } else {
-      authLogger.warn("Failed to fetch user profile", { status: response.status });
+      authLogger.warn("Failed to fetch user profile", { status: status });
     }
 
-    return response;
+    return {
+      ...response,
+    };
   }
 
   /**
@@ -159,6 +156,29 @@ class AuthService {
   getToken(): string | null {
     return getAuthToken();
   }
+
+  /**
+   * Get stored auth expiry
+   */
+  getExpiry(): number | null {
+    return getAuthExpiry();
+  }
+
+  /**
+   * Set stored auth expiry
+   */
+  setExpiry(expiresIn: number): void {
+    setAuthExpiry(expiresIn);
+  }
+
+  /**
+   * Clear stored auth data
+   */
+  clearAuthData(): void {
+    removeAuthToken();
+    removeAuthExpiry();
+  }
+
 }
 
 export const authService = new AuthService();

@@ -1,7 +1,7 @@
 "use client";
 
 import { useLocalStorage } from "@aglaya/hooks/useLocalStorage";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 
 import { gamificationLogger } from "@/lib/logger";
 
@@ -96,10 +96,10 @@ export function useGamification() {
 
       return newState;
     });
-  }, [ setUserProgress ]);
+  }, [ ]);
 
-  return {
+  return useMemo(() => ({
     userProgress,
     dispatch,
-  };
+  }), [ userProgress, dispatch ]);
 }
