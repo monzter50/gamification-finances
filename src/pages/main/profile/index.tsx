@@ -8,20 +8,22 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress.tsx";
 import { ThemeToggle, ThemeToggleWithText, ThemeSelector } from "@/components/ui/ThemeToggle";
 import { userLogger } from "@/config/logger";
+import { useAuth } from "@/context/AuthContext";
 import { useGamificationContext } from "@/context/GamificationContext.tsx";
 import { useTheme } from "@/hooks/useTheme";
 
 interface UserProfile {
-    name: string
-    email: string
-    avatar: string
+  name: string
+  email: string
+  avatar: string
 }
 
 export default function Profile() {
+  const { user } = useAuth();
   const [ profile, setProfile ] = useState<UserProfile>({
-    name: "John Doe",
-    email: "john@example.com",
-    avatar: "/placeholder.svg",
+    name: "",
+    email: "",
+    avatar: "",
   });
 
   const { userProgress, dispatch } = useGamificationContext();
@@ -29,11 +31,23 @@ export default function Profile() {
   const hasAwardedXP = useRef(false);
 
   useEffect(() => {
+    if (user) {
+      setProfile({
+        name: user.name || "",
+        email: user.email || "",
+        avatar: "/placeholder.svg",
+      });
+    }
+  }, [ user ]);
+
+  useEffect(() => {
     // Award XP for visiting the profile page only once
     if (!hasAwardedXP.current) {
-      dispatch({ type: "ADD_XP",
+      dispatch({
+        type: "ADD_XP",
         payload: 5,
-        section: "profile" });
+        section: "profile"
+      });
       hasAwardedXP.current = true;
     }
   }, [ dispatch ]);
@@ -41,14 +55,16 @@ export default function Profile() {
   const handleUpdateProfile = (e: React.FormEvent) => {
     e.preventDefault();
     // In a real app, you would send this data to your backend
-    userLogger.info("Profile updated", { name: profile.name,
-      email: profile.email });
+    userLogger.info("Profile updated", {
+      name: profile.name,
+      email: profile.email
+    });
   };
 
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-bold">User Profile</h2>
-      
+
       {/* Theme Settings Card */}
       <Card>
         <CardHeader>
@@ -63,12 +79,12 @@ export default function Profile() {
               <span className="text-sm text-muted-foreground">Click to toggle theme</span>
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <Label>Theme Toggle (With Text)</Label>
             <ThemeToggleWithText />
           </div>
-          
+
           <div className="space-y-2">
             <Label>Theme Selector (Dropdown)</Label>
             <ThemeSelector className="w-48" />
@@ -96,8 +112,10 @@ export default function Profile() {
                 <Input
                   id="name"
                   value={profile.name}
-                  onChange={(e) => setProfile({ ...profile,
-                    name: e.target.value })}
+                  onChange={(e) => setProfile({
+                    ...profile,
+                    name: e.target.value
+                  })}
                 />
               </div>
               <div className="grid w-full items-center gap-1.5">
@@ -106,8 +124,8 @@ export default function Profile() {
                   id="email"
                   type="email"
                   value={profile.email}
-                  onChange={(e) => setProfile({ ...profile,
-                    email: e.target.value })}
+                  disabled
+                  readOnly
                 />
               </div>
             </div>
