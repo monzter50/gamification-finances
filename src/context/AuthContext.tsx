@@ -14,7 +14,8 @@ interface AuthContextType {
   // eslint-disable-next-line no-unused-vars
   login: (email: string, password: string) => Promise<void>
   logout: () => Promise<void>
-  checkAuth: () => Promise<void>
+  checkAuth: () => boolean
+  fetchUserProfile: () => Promise<void>
   loading: boolean
 }
 
@@ -26,33 +27,57 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [ loading, setLoading ] = useState<boolean>(true);
 
   useEffect(() => {
-    checkAuth();
+    let isMounted = true;
+
+    const initAuth = async () => {
+      const isAuth = checkAuth();
+      if (isAuth && isMounted) {
+        await fetchUserProfile();
+      } else if (isMounted) {
+        setLoading(false);
+      }
+    };
+
+    initAuth();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const checkAuth = async (): Promise<void> => {
+  const checkAuth = (): boolean => {
+    authLogger.debug("Checking authentication");
+
+    // Check if token exists
+    if (!authService.isAuthenticated()) {
+      authLogger.debug("No token found");
+      setIsAuthenticated(false);
+      setUser(null);
+      return false;
+    }
+
+    authLogger.debug("Token found");
+    setIsAuthenticated(true);
+    return true;
+  };
+
+  const fetchUserProfile = async (): Promise<void> => {
     try {
       setLoading(true);
-      authLogger.debug("Checking authentication");
+      authLogger.debug("Fetching user profile");
 
-      // Check if token exists
-      if (!authService.isAuthenticated()) {
-        authLogger.debug("No token found");
-        setIsAuthenticated(false);
-        setUser(null);
-        return;
-      }
-
-      // Verify token with backend
+      // Verify token with backend and get user data
       const response = await authService.getMe();
 
-      authLogger.info("Authentication verified", { userId: response.id });
-      setIsAuthenticated(true);
+      authLogger.info("User profile fetched", { userId: response.id });
       setUser(response);
 
     } catch (error) {
-      authLogger.error("Auth check failed", error);
+      authLogger.error("Failed to fetch user profile", error);
+      // If fetching profile fails, clear auth state
       setIsAuthenticated(false);
       setUser(null);
+      clearAuthData();
     } finally {
       setLoading(false);
     }
@@ -69,12 +94,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       setAuthToken(token);
-      setAuthExpiry(expiresIn);
+      // Convert expiresIn (seconds) to absolute timestamp (milliseconds)
+      const expiryTimestamp = Date.now() + (expiresIn * 1000);
+      setAuthExpiry(expiryTimestamp);
       setIsAuthenticated(true);
 
       authLogger.info("Login successful, fetching user profile");
       // Get user profile after successful login
-      await checkAuth();
+      await fetchUserProfile();
     } catch (error) {
       authLogger.error("Login error", error);
       throw error;
@@ -110,6 +137,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     login,
     logout,
     checkAuth,
+    fetchUserProfile,
     loading
   }}>{children}</AuthContext.Provider>;
 };

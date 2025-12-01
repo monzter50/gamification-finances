@@ -144,10 +144,31 @@ class AuthService {
   }
 
   /**
-   * Check if user is authenticated
+   * Check if user is authenticated and token is not expired
    */
   isAuthenticated(): boolean {
-    return !!getAuthToken();
+    const token = getAuthToken();
+    if (!token) {
+      return false;
+    }
+
+    const expiry = getAuthExpiry();
+    if (!expiry) {
+      return false;
+    }
+
+    // Check if token is expired (expiry is in milliseconds)
+    const now = Date.now();
+    if (now >= expiry) {
+      authLogger.debug("Token expired", {
+        expiry,
+        now
+      });
+      this.clearAuthData();
+      return false;
+    }
+
+    return true;
   }
 
   /**
