@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Modal } from "@/components/ui/Modal";
 import { Progress } from "@/components/ui/progress";
-import { useGamificationContext } from "@/context/GamificationContext.tsx";
+import { usePageXP } from "@/hooks";
 
 interface Goal {
     id: number
@@ -35,18 +35,7 @@ export default function Goals() {
     target: "" });
   const [ showModal, setShowModal ] = useState(false);
 
-  const { dispatch } = useGamificationContext();
-  const hasAwardedXP = useRef(false);
-
-  useEffect(() => {
-    // Award XP for visiting the goals page only once
-    if (!hasAwardedXP.current) {
-      dispatch({ type: "ADD_XP",
-        payload: 5,
-        section: "goals" });
-      hasAwardedXP.current = true;
-    }
-  }, [ dispatch ]);
+  usePageXP("goals", 5);
 
   const handleAddGoal = () => {
     if (newGoal.name && newGoal.target) {

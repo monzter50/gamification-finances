@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress.tsx";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useGamificationContext } from "@/context/GamificationContext.tsx";
+import { usePageXP } from "@/hooks";
 
 interface Transaction {
     id: number
@@ -43,18 +44,8 @@ export default function Transactions() {
     type: "expense" as "income" | "expense",
   });
 
-  const { userProgress, dispatch } = useGamificationContext();
-  const hasAwardedXP = useRef(false);
-
-  useEffect(() => {
-    // Award XP for visiting the transactions page only once
-    if (!hasAwardedXP.current) {
-      dispatch({ type: "ADD_XP",
-        payload: 5,
-        section: "transactions" });
-      hasAwardedXP.current = true;
-    }
-  }, [ dispatch ]);
+  const { userProgress } = useGamificationContext();
+  usePageXP("transactions", 5);
 
   const handleAddTransaction = () => {
     if (newTransaction.date && newTransaction.description && newTransaction.amount) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from "recharts";
 
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useGamificationContext } from "@/context/GamificationContext";
+import { usePageXP } from "@/hooks";
 
 interface Expense {
     id: number
@@ -51,17 +52,7 @@ export default function Expenses() {
   });
 
   const { userProgress, dispatch } = useGamificationContext();
-  const hasAwardedXP = useRef(false);
-
-  useEffect(() => {
-    // Award XP for visiting the expenses page only once
-    if (!hasAwardedXP.current) {
-      dispatch({ type: "ADD_XP",
-        payload: 5,
-        section: "expenses" });
-      hasAwardedXP.current = true;
-    }
-  }, [ dispatch ]);
+  usePageXP("expenses", 5);
 
   const handleAddExpense = () => {
     if (newExpense.date && newExpense.description && newExpense.amount && newExpense.category) {
