@@ -11,7 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useGamificationContext } from "@/context/GamificationContext";
-import { usePageXP } from "@/hooks";
+import { usePageXP, useSnackbar } from "@/hooks";
 
 interface Expense {
     id: number
@@ -52,6 +52,7 @@ export default function Expenses() {
   });
 
   const { userProgress, dispatch } = useGamificationContext();
+  const snackbar = useSnackbar();
   usePageXP("expenses", 5);
 
   const handleAddExpense = () => {
@@ -74,6 +75,16 @@ export default function Expenses() {
       dispatch({ type: "ADD_XP",
         payload: 10,
         section: "expenses" });
+
+      snackbar.success({
+        title: "Expense added!",
+        description: `Successfully added expense: ${newExpense.description}`,
+      });
+    } else {
+      snackbar.warning({
+        title: "Missing fields",
+        description: "Please fill in all required fields.",
+      });
     }
   };
 

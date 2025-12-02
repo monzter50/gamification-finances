@@ -16,6 +16,7 @@ import { ProgressIndicator } from "@/components/ui/ProgressIndicator";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { useAuth } from "@/context/AuthContext";
 import { useGamificationContext } from "@/context/GamificationContext";
+import { useSnackbar } from "@/hooks";
 
 interface LayoutProps {
   children: ReactNode;
@@ -24,6 +25,7 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps): ReactNode {
   const { logout } = useAuth();
   const { setCurrentPage } = useGamificationContext();
+  const snackbar = useSnackbar();
   const [ collapsed, setCollapsed ] = useState(false);
   const location = useLocation();
 
@@ -42,6 +44,21 @@ export default function Layout({ children }: LayoutProps): ReactNode {
       setCurrentPage("expenses");
     }
   }, [ location.pathname, setCurrentPage ]);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      snackbar.success({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+      });
+    } catch (error) {
+      snackbar.error({
+        title: "Logout failed",
+        description: "An error occurred while logging out.",
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background font-sans antialiased flex">
@@ -157,7 +174,7 @@ export default function Layout({ children }: LayoutProps): ReactNode {
             <div className="flex items-center space-x-4">
               <ProgressIndicator />
               <ThemeToggle className="mr-2" />
-              <Button onClick={logout}>Logout</Button>
+              <Button onClick={handleLogout}>Logout</Button>
             </div>
           </div>
         </header>

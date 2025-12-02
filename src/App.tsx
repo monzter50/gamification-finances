@@ -1,5 +1,6 @@
 import {  createBrowserRouter, Navigate, RouterProvider } from "react-router";
 
+import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/context/AuthContext.tsx";
 import { GamificationProvider } from "@/context/GamificationContext.tsx";
 import { ThemeProvider } from "@/context/ThemeContext.tsx";
@@ -45,6 +46,7 @@ function App() {
       <AuthProvider>
         <GamificationProvider>
           <RouterProvider router={router} />
+          <Toaster />
         </GamificationProvider>
       </AuthProvider>
     </ThemeProvider>

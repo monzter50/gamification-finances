@@ -7,10 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authLogger } from "@/config/logger";
 import { useAuth } from "@/context/AuthContext";
+import { useSnackbar } from "@/hooks";
 
 export default function Signin() {
   const navigate = useNavigate();
   const { login, isAuthenticated } = useAuth();
+  const snackbar = useSnackbar();
   const [ error, setError ] = useState<string>("");
   const [ isSubmitting, setIsSubmitting ] = useState(false);
 
@@ -31,14 +33,22 @@ export default function Signin() {
 
     try {
       await login(email, password);
+      snackbar.success({
+        title: "Welcome back!",
+        description: "You have successfully logged in.",
+      });
       // Navigation will happen via useEffect when isAuthenticated changes
     } catch (err) {
       authLogger.error("Login failed in UI", err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Error al iniciar sesión. Verifica tus credenciales o la conexión con el servidor."
-      );
+      const errorMessage = err instanceof Error
+        ? err.message
+        : "Error al iniciar sesión. Verifica tus credenciales o la conexión con el servidor.";
+
+      setError(errorMessage);
+      snackbar.error({
+        title: "Login failed",
+        description: errorMessage,
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -54,12 +64,7 @@ export default function Signin() {
         <CardContent>
           <form onSubmit={handleSubmit}>
             <div className="grid w-full items-center gap-4">
-              {error && (
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 rounded">
-                  <p className="text-sm">{error}</p>
-                </div>
-              )}
-
+        
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="email">Email</Label>
                 <Input
