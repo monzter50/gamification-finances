@@ -1,9 +1,7 @@
 import {
   LayoutDashboard,
-  Target,
   ListChecks,
   User,
-  Wallet,
   ChevronLeft,
   ChevronRight,
   PiggyBank,
@@ -87,21 +85,6 @@ export default function Layout({ children }: LayoutProps): ReactNode {
             </span>
           </NavLink>
           <NavLink
-            to="/goals"
-            className={({ isActive }) =>
-              `flex items-center gap-2 text-sm font-medium rounded transition-all duration-300 px-3 py-2 hover:text-primary hover:bg-muted/50${
-                isActive ? " text-primary bg-muted/80" : " text-muted-foreground"
-              } ${collapsed ? "justify-center" : ""}`
-            }
-          >
-            <Target size={20} />
-            <span
-              className={`transition-all duration-300 origin-left ${collapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100 w-auto ml-2"}`}
-            >
-              Goals
-            </span>
-          </NavLink>
-          <NavLink
             to="/transactions"
             className={({ isActive }) =>
               `flex items-center gap-2 text-sm font-medium rounded transition-all duration-300 px-3 py-2 hover:text-primary hover:bg-muted/50${
@@ -129,21 +112,6 @@ export default function Layout({ children }: LayoutProps): ReactNode {
               className={`transition-all duration-300 origin-left ${collapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100 w-auto ml-2"}`}
             >
               Profile
-            </span>
-          </NavLink>
-          <NavLink
-            to="/expenses"
-            className={({ isActive }) =>
-              `flex items-center gap-2 text-sm font-medium rounded transition-all duration-300 px-3 py-2 hover:text-primary hover:bg-muted/50${
-                isActive ? " text-primary bg-muted/80" : " text-muted-foreground"
-              } ${collapsed ? "justify-center" : ""}`
-            }
-          >
-            <Wallet size={20} />
-            <span
-              className={`transition-all duration-300 origin-left ${collapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100 w-auto ml-2"}`}
-            >
-              Expenses
             </span>
           </NavLink>
           <NavLink

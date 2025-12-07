@@ -8,8 +8,6 @@ import BudgetDetail from "@/pages/main/budget/detail";
 import BudgetExpense from "@/pages/main/budget/expense";
 import BudgetIncome from "@/pages/main/budget/income";
 import Dashboard from "@/pages/main/dashboard";
-import Expenses from "@/pages/main/expenses";
-import Goals from "@/pages/main/goals";
 import Profile from "@/pages/main/profile";
 import Transactions from "@/pages/main/transactions";
 import Signin from "@/pages/onboarding/signin";
@@ -28,14 +26,10 @@ const router = createBrowserRouter([
     children: [
       { index: true,
         element: <Dashboard /> },
-      { path: "goals",
-        element: <Goals /> },
       { path: "transactions",
         element: <Transactions /> },
       { path: "profile",
         element: <Profile /> },
-      { path:"expenses",
-        element:<Expenses/> },
       { path:"budget",
         element:<Budget/> },
       { path:"budget/:id",
