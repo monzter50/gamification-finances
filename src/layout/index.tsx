@@ -6,16 +6,15 @@ import {
   Wallet,
   ChevronLeft,
   ChevronRight,
+  PiggyBank,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { ReactNode } from "react";
-import { NavLink, useLocation } from "react-router";
+import { NavLink } from "react-router";
 
 import { Button } from "@/components/ui/button";
-import { ProgressIndicator } from "@/components/ui/ProgressIndicator";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { useAuth } from "@/context/AuthContext";
-import { useGamificationContext } from "@/context/GamificationContext";
 import { useSnackbar } from "@/hooks";
 
 interface LayoutProps {
@@ -24,26 +23,8 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps): ReactNode {
   const { logout } = useAuth();
-  const { setCurrentPage } = useGamificationContext();
   const snackbar = useSnackbar();
   const [ collapsed, setCollapsed ] = useState(false);
-  const location = useLocation();
-
-  // Actualizar la página actual basada en la ruta
-  useEffect(() => {
-    const path = location.pathname;
-    if (path.includes("/dashboard")) {
-      setCurrentPage("dashboard");
-    } else if (path.includes("/goals")) {
-      setCurrentPage("goals");
-    } else if (path.includes("/transactions")) {
-      setCurrentPage("transactions");
-    } else if (path.includes("/profile")) {
-      setCurrentPage("profile");
-    } else if (path.includes("/expenses")) {
-      setCurrentPage("expenses");
-    }
-  }, [ location.pathname, setCurrentPage ]);
 
   const handleLogout = async () => {
     try {
@@ -165,6 +146,21 @@ export default function Layout({ children }: LayoutProps): ReactNode {
               Expenses
             </span>
           </NavLink>
+          <NavLink
+            to="/budget"
+            className={({ isActive }) =>
+              `flex items-center gap-2 text-sm font-medium rounded transition-all duration-300 px-3 py-2 hover:text-primary hover:bg-muted/50${
+                isActive ? " text-primary bg-muted/80" : " text-muted-foreground"
+              } ${collapsed ? "justify-center" : ""}`
+            }
+          >
+            <PiggyBank size={20} />
+            <span
+              className={`transition-all duration-300 origin-left ${collapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100 w-auto ml-2"}`}
+            >
+              Budget
+            </span>
+          </NavLink>
         </nav>
       </aside>
       {/* Main content */}
@@ -172,7 +168,6 @@ export default function Layout({ children }: LayoutProps): ReactNode {
         <header className="border-b">
           <div className="container mx-auto flex h-16 items-center justify-end px-4">
             <div className="flex items-center space-x-4">
-              <ProgressIndicator />
               <ThemeToggle className="mr-2" />
               <Button onClick={handleLogout}>Logout</Button>
             </div>

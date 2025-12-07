@@ -7,11 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useGamificationContext } from "@/context/GamificationContext";
-import { usePageXP, useSnackbar } from "@/hooks";
+import { useSnackbar } from "@/hooks";
 
 interface Expense {
     id: number
@@ -51,9 +49,7 @@ export default function Expenses() {
     category: "",
   });
 
-  const { userProgress, dispatch } = useGamificationContext();
   const snackbar = useSnackbar();
-  usePageXP("expenses", 5);
 
   const handleAddExpense = () => {
     if (newExpense.date && newExpense.description && newExpense.amount && newExpense.category) {
@@ -71,10 +67,6 @@ export default function Expenses() {
         description: "",
         amount: "",
         category: "" });
-      // Award XP for adding a new expense
-      dispatch({ type: "ADD_XP",
-        payload: 10,
-        section: "expenses" });
 
       snackbar.success({
         title: "Expense added!",
@@ -215,17 +207,6 @@ export default function Expenses() {
               ))}
             </TableBody>
           </Table>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Expenses Progress</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Progress value={(userProgress?.sections?.expenses?.xp ?? 0 / 100) * 100} className="mt-2" />
-          <p className="text-sm mt-2">
-                        Level {userProgress?.sections?.expenses?.level ?? 0} - XP: {userProgress?.sections?.expenses?.xp ?? 0}/100
-          </p>
         </CardContent>
       </Card>
     </div>

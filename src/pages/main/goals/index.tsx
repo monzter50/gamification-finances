@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Modal } from "@/components/ui/Modal";
 import { Progress } from "@/components/ui/progress";
-import { usePageXP } from "@/hooks";
 
 interface Goal {
     id: number
@@ -34,8 +33,6 @@ export default function Goals() {
   const [ newGoal, setNewGoal ] = useState({ name: "",
     target: "" });
   const [ showModal, setShowModal ] = useState(false);
-
-  usePageXP("goals", 5);
 
   const handleAddGoal = () => {
     if (newGoal.name && newGoal.target) {

@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { authLogger } from "@/config/logger";
 import { useAuth } from "@/context/AuthContext";
 import { useSnackbar } from "@/hooks";
+import { getAuthErrorMessage } from "@/utils/errors";
 
 export default function Signin() {
   const navigate = useNavigate();
@@ -40,9 +41,7 @@ export default function Signin() {
       // Navigation will happen via useEffect when isAuthenticated changes
     } catch (err) {
       authLogger.error("Login failed in UI", err);
-      const errorMessage = err instanceof Error
-        ? err.message
-        : "Error al iniciar sesión. Verifica tus credenciales o la conexión con el servidor.";
+      const errorMessage = getAuthErrorMessage(err);
 
       setError(errorMessage);
       snackbar.error({
@@ -97,18 +96,3 @@ export default function Signin() {
     </div>
   );
 }
-
-export const loginAction = async ({ request }: { request: Request }) => {
-  const formData = await request.formData();
-  const email = formData.get("email");
-  const password = formData.get("password");
-
-  // Here you would typically validate the credentials with your backend
-  if (email === "user@example.com" && password === "password") {
-    // Successful login
-    return null;
-  }
-
-  // Failed login
-  return { error: "Invalid email or password" };
-};

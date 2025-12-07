@@ -14,6 +14,7 @@ import type {
   LoginResponse,
   UserProfile,
 } from "@/types/api";
+import { ApplicationError } from "@/utils/errors";
 
 class AuthService {
   /**
@@ -37,39 +38,103 @@ class AuthService {
    * POST /auth/login
    */
   async login(data: LoginRequest): Promise<LoginResponse> {
+    try {
+      const {
+        response,
+        status,
+        statusCode
+      } = await apiClient.post<LoginResponse>("/auth/login", {
+        body: {
+          email: data.email,
+          password: data.password,
+        },
+      });
 
-    const { response, status } = await apiClient.post<LoginResponse>("/auth/login", {
-      body: {
-        email: data.email,
-        password: data.password,
-      },
-    });
+      // Handle API errors
+      if (status !== "ok") {
+        authLogger.warn("Login failed", {
+          status,
+          statusCode
+        });
 
-    if (!response && status !== "ok") {
-      throw new Error("Login failed with no response");
+        // Map status codes to specific errors
+        if (statusCode === 401) {
+          throw new ApplicationError(
+            "Invalid email or password. Please try again.",
+            "INVALID_CREDENTIALS",
+            401
+          );
+        }
+
+        if (statusCode === 429) {
+          throw new ApplicationError(
+            "Too many login attempts. Please try again later.",
+            "TOO_MANY_REQUESTS",
+            429
+          );
+        }
+
+        if (statusCode && statusCode >= 500) {
+          throw new ApplicationError(
+            "Server error. Please try again later.",
+            "SERVER_ERROR",
+            statusCode
+          );
+        }
+
+        throw new ApplicationError(
+          "Login failed. Please check your credentials.",
+          "LOGIN_FAILED",
+          statusCode || 400
+        );
+      }
+
+      if (!response?.token) {
+        authLogger.error("Login response missing token");
+        throw new ApplicationError(
+          "Invalid server response. Please try again.",
+          "INVALID_RESPONSE",
+          500
+        );
+      }
+
+      authLogger.debug("Login response received", { status });
+      authLogger.info("Login successful");
+
+      const token = response.token;
+      const expiresIn = response.expiresIn ?? 0;
+
+      authLogger.debug("Token extracted successfully");
+      setAuthToken(token);
+
+      return {
+        token,
+        expiresIn,
+      };
+    } catch (error) {
+      // If it's already an ApplicationError, re-throw it
+      if (error instanceof ApplicationError) {
+        throw error;
+      }
+
+      // Handle network errors
+      if (error && typeof error === "object" && "message" in error) {
+        const message = String(error.message);
+        if (message.includes("network") || message.includes("fetch")) {
+          throw new ApplicationError(
+            "Network error. Please check your internet connection.",
+            "NETWORK_ERROR"
+          );
+        }
+      }
+
+      // Generic error fallback
+      authLogger.error("Unexpected login error", error);
+      throw new ApplicationError(
+        "An unexpected error occurred. Please try again.",
+        "UNKNOWN_ERROR"
+      );
     }
-
-    if (!response?.token) {
-      throw new Error("Login response missing token");
-    }
-
-    authLogger.debug("Login response received", { status: status });
-
-    // Save token if login successful
-    authLogger.info("Login successful");
-
-    // The backend returns { success, message, data: { token } }
-    // @aglaya/api-core puts this in response.response
-    const token = response?.token ?? "";
-    const expiresIn = response?.expiresIn ?? 0;
-
-    authLogger.debug("Token extracted successfully");
-    setAuthToken(token);
-
-    return {
-      token,
-      expiresIn,
-    };
   }
 
   /**

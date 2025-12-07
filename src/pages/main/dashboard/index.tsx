@@ -2,10 +2,8 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
 import { Progress } from "@/components/ui/progress.tsx";
-import { usePageXP } from "@/hooks";
 
 export default function Dashboard() {
-  usePageXP("dashboard", 5);
 
   return (
     <div className="space-y-4">
