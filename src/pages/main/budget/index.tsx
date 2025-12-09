@@ -22,7 +22,7 @@ const currentMonth = new Date().getMonth();
 export default function BudgetList() {
   const navigate = useNavigate();
   const snackbar = useSnackbar();
-  const { budgets, isLoading, fetchBudgets, createBudget } = useBudget();
+  const { budgets, fetchBudgets, createBudget } = useBudget();
   const [ isCreateModalOpen, setIsCreateModalOpen ] = useState(false);
   const [ newBudget, setNewBudget ] = useState({
     year: currentYear.toString(),

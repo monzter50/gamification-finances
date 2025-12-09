@@ -14,7 +14,7 @@ export default function Signin() {
   const navigate = useNavigate();
   const { login, isAuthenticated } = useAuth();
   const snackbar = useSnackbar();
-  const [ error, setError ] = useState<string>("");
+  const [ , setError ] = useState<string>("");
   const [ isSubmitting, setIsSubmitting ] = useState(false);
 
   useEffect(() => {
