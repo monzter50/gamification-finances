@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowLeft, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router";
 
 import { Button } from "@/components/ui/button";
@@ -10,49 +10,48 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Modal } from "@/components/ui/Modal";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useSnackbar } from "@/hooks";
-
-interface ExpenseItem {
-  id: number;
-  description: string;
-  amount: number;
-}
-
-const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
+import { useSnackbar, useBudget } from "@/hooks";
+import { budgetService } from "@/services/budget.service";
+import { MONTHS } from "@/types/budget";
 
 export default function BudgetExpense() {
   const { id } = useParams();
   const navigate = useNavigate();
   const snackbar = useSnackbar();
-
-  // Mock data - In production, this would come from an API/context
-  const [ expenseItems, setExpenseItems ] = useState<ExpenseItem[]>([
-    { id: 1,
-      description: "Rent",
-      amount: 12000 },
-    { id: 2,
-      description: "Groceries",
-      amount: 5000 },
-    { id: 3,
-      description: "Transportation",
-      amount: 2000 },
-  ]);
+  const { currentBudget, isLoading, fetchBudgetById, addExpenseItem, deleteExpenseItem } = useBudget();
+  const hasFetched = useRef(false);
 
   const [ isModalOpen, setIsModalOpen ] = useState(false);
-  const [ newExpenseItem, setNewExpenseItem ] = useState({ description: "",
-    amount: "" });
+  const [ newExpenseItem, setNewExpenseItem ] = useState({
+    description: "",
+    amount: "",
+  });
 
-  // Mock budget info
-  const budgetMonth = 11;
-  const budgetYear = 2025;
+  useEffect(() => {
+    if (id && !hasFetched.current) {
+      hasFetched.current = true;
+      fetchBudgetById(id).catch((error) => {
+        snackbar.error({
+          title: "Failed to load budget",
+          description: error instanceof Error ? error.message : "An error occurred",
+        });
+        navigate("/budget");
+      });
+    }
+  }, [ id, fetchBudgetById, snackbar, navigate ]);
 
-  const totalExpense = expenseItems.reduce((sum, item) => sum + item.amount, 0);
+  if (isLoading || !currentBudget) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Loading budget...</p>
+      </div>
+    );
+  }
 
-  const handleAddExpenseItem = () => {
-    if (!newExpenseItem.description || !newExpenseItem.amount) {
+  const { totalExpense } = budgetService.calculateTotals(currentBudget);
+
+  const handleAddExpenseItem = async () => {
+    if (!newExpenseItem.description || !newExpenseItem.amount || !id) {
       snackbar.warning({
         title: "Missing fields",
         description: "Please fill in description and amount.",
@@ -60,30 +59,44 @@ export default function BudgetExpense() {
       return;
     }
 
-    const newItem: ExpenseItem = {
-      id: expenseItems.length + 1,
-      description: newExpenseItem.description,
-      amount: Number(newExpenseItem.amount),
-    };
+    try {
+      await addExpenseItem(id, {
+        description: newExpenseItem.description,
+        amount: Number(newExpenseItem.amount),
+      });
 
-    setExpenseItems([ ...expenseItems, newItem ]);
-    setNewExpenseItem({ description: "",
-      amount: "" });
-    setIsModalOpen(false);
+      setNewExpenseItem({ description: "",
+        amount: "" });
+      setIsModalOpen(false);
 
-    snackbar.success({
-      title: "Expense added!",
-      description: "Expense item has been added successfully.",
-    });
+      snackbar.success({
+        title: "Expense added!",
+        description: "Expense item has been added successfully.",
+      });
+    } catch (error) {
+      snackbar.error({
+        title: "Failed to add expense",
+        description: error instanceof Error ? error.message : "An error occurred",
+      });
+    }
   };
 
-  const handleRemoveExpenseItem = (itemId: number) => {
-    setExpenseItems(expenseItems.filter((item) => item.id !== itemId));
+  const handleRemoveExpenseItem = async (itemId: string) => {
+    if (!id) { return; }
 
-    snackbar.success({
-      title: "Expense removed",
-      description: "Expense item has been removed.",
-    });
+    try {
+      await deleteExpenseItem(id, itemId);
+
+      snackbar.success({
+        title: "Expense removed",
+        description: "Expense item has been removed.",
+      });
+    } catch (error) {
+      snackbar.error({
+        title: "Failed to remove expense",
+        description: error instanceof Error ? error.message : "An error occurred",
+      });
+    }
   };
 
   return (
@@ -96,7 +109,7 @@ export default function BudgetExpense() {
         <div className="flex-1">
           <h2 className="text-3xl font-bold">Expense Management</h2>
           <p className="text-muted-foreground">
-            {MONTHS[budgetMonth]} {budgetYear}
+            {MONTHS[currentBudget.month]} {currentBudget.year}
           </p>
         </div>
         <Button onClick={() => setIsModalOpen(true)}>
@@ -116,7 +129,7 @@ export default function BudgetExpense() {
             ${totalExpense.toLocaleString("es-MX")} MXN
           </div>
           <p className="text-sm text-muted-foreground mt-2">
-            {expenseItems.length} expense {expenseItems.length === 1 ? "item" : "items"}
+            {currentBudget.expenseItems.length} expense {currentBudget.expenseItems.length === 1 ? "item" : "items"}
           </p>
         </CardContent>
       </Card>
@@ -128,7 +141,7 @@ export default function BudgetExpense() {
           <CardDescription>Manage your expenses for this budget period</CardDescription>
         </CardHeader>
         <CardContent>
-          {expenseItems.length > 0 ? (
+          {currentBudget.expenseItems.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -138,8 +151,8 @@ export default function BudgetExpense() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {expenseItems.map((item) => (
-                  <TableRow key={item.id}>
+                {currentBudget.expenseItems.map((item) => (
+                  <TableRow key={item._id}>
                     <TableCell className="font-medium">{item.description}</TableCell>
                     <TableCell className="text-right text-red-600 dark:text-red-400 font-semibold">
                       ${item.amount.toLocaleString("es-MX")} MXN
@@ -148,7 +161,7 @@ export default function BudgetExpense() {
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => handleRemoveExpenseItem(item.id)}
+                        onClick={() => handleRemoveExpenseItem(item._id!)}
                       >
                         <Trash2 className="h-4 w-4 text-red-500" />
                       </Button>

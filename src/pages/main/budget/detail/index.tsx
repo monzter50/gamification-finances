@@ -1,53 +1,44 @@
 "use client";
 
 import { ArrowLeft, DollarSign, TrendingDown, TrendingUp } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-
-// Mock data - In production, this would come from an API/context
-const MOCK_BUDGET = {
-  id: 1,
-  year: 2025,
-  month: 11,
-  incomeItems: [
-    { id: 1,
-      description: "Salary",
-      amount: 35000 },
-    { id: 2,
-      description: "Freelance",
-      amount: 8000 },
-  ],
-  expenseItems: [
-    { id: 1,
-      description: "Rent",
-      amount: 12000 },
-    { id: 2,
-      description: "Groceries",
-      amount: 5000 },
-    { id: 3,
-      description: "Transportation",
-      amount: 2000 },
-  ],
-};
-
-const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
+import { useBudget, useSnackbar } from "@/hooks";
+import { budgetService } from "@/services/budget.service";
+import { MONTHS } from "@/types/budget";
 
 export default function BudgetDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const snackbar = useSnackbar();
+  const { currentBudget, isLoading, fetchBudgetById } = useBudget();
+  const hasFetched = useRef(false);
 
-  // In production, fetch budget by id
-  const budget = MOCK_BUDGET;
+  useEffect(() => {
+    if (id && !hasFetched.current) {
+      hasFetched.current = true;
+      fetchBudgetById(id).catch((error) => {
+        snackbar.error({
+          title: "Failed to load budget",
+          description: error instanceof Error ? error.message : "An error occurred",
+        });
+        navigate("/budget");
+      });
+    }
+  }, [ id, fetchBudgetById, snackbar, navigate ]);
 
-  const totalIncome = budget.incomeItems.reduce((sum, item) => sum + item.amount, 0);
-  const totalExpense = budget.expenseItems.reduce((sum, item) => sum + item.amount, 0);
-  const savings = totalIncome - totalExpense;
-  const savingsRate = totalIncome > 0 ? (savings / totalIncome) * 100 : 0;
+  if (isLoading || !currentBudget) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Loading budget...</p>
+      </div>
+    );
+  }
+
+  const { totalIncome, totalExpense, savings, savingsRate } = budgetService.calculateTotals(currentBudget);
 
   return (
     <div className="space-y-6">
@@ -58,7 +49,7 @@ export default function BudgetDetail() {
         </Button>
         <div>
           <h2 className="text-3xl font-bold">
-            {MONTHS[budget.month]} {budget.year}
+            {MONTHS[currentBudget.month]} {currentBudget.year}
           </h2>
           <p className="text-muted-foreground">Budget Overview</p>
         </div>
@@ -78,7 +69,7 @@ export default function BudgetDetail() {
               ${totalIncome.toLocaleString("es-MX")} MXN
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {budget.incomeItems.length} items
+              {currentBudget.incomeItems.length} items
             </p>
           </CardContent>
         </Card>
@@ -95,7 +86,7 @@ export default function BudgetDetail() {
               ${totalExpense.toLocaleString("es-MX")} MXN
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {budget.expenseItems.length} items
+              {currentBudget.expenseItems.length} items
             </p>
           </CardContent>
         </Card>

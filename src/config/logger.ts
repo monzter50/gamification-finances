@@ -23,4 +23,5 @@ export const userLogger = appLogger.child("User");
 export const transactionLogger = appLogger.child("Transaction");
 export const achievementLogger = appLogger.child("Achievement");
 export const gamificationLogger = appLogger.child("Gamification");
+export const budgetLogger = appLogger.child("Budget");
 export const apiLogger = appLogger.child("API");

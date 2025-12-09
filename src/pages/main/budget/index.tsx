@@ -1,7 +1,7 @@
 "use client";
 
 import { Plus, Eye } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 
 import { Button } from "@/components/ui/button";
@@ -11,86 +11,38 @@ import { Modal } from "@/components/ui/Modal";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useSnackbar } from "@/hooks";
-
-interface IncomeItem {
-  id: number;
-  description: string;
-  amount: number;
-}
-
-interface ExpenseItem {
-  id: number;
-  description: string;
-  amount: number;
-}
-
-interface Budget {
-  id: number;
-  year: number;
-  month: number;
-  incomeItems: IncomeItem[];
-  expenseItems: ExpenseItem[];
-}
-
-const MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
+import { useSnackbar, useBudget } from "@/hooks";
+import { budgetService } from "@/services/budget.service";
+import type { Budget } from "@/types/budget";
+import { MONTHS } from "@/types/budget";
 
 const currentYear = new Date().getFullYear();
 const currentMonth = new Date().getMonth();
 
-// Mock data - In production, this would come from an API/context
-const INITIAL_BUDGETS: Budget[] = [
-  {
-    id: 1,
-    year: currentYear,
-    month: currentMonth,
-    incomeItems: [
-      { id: 1,
-        description: "Salary",
-        amount: 35000 },
-      { id: 2,
-        description: "Freelance",
-        amount: 8000 },
-    ],
-    expenseItems: [
-      { id: 1,
-        description: "Rent",
-        amount: 12000 },
-      { id: 2,
-        description: "Groceries",
-        amount: 5000 },
-      { id: 3,
-        description: "Transportation",
-        amount: 2000 },
-    ],
-  },
-];
-
 export default function BudgetList() {
   const navigate = useNavigate();
-  const [ budgets, setBudgets ] = useState<Budget[]>(INITIAL_BUDGETS);
+  const snackbar = useSnackbar();
+  const { budgets, isLoading, fetchBudgets, createBudget } = useBudget();
   const [ isCreateModalOpen, setIsCreateModalOpen ] = useState(false);
   const [ newBudget, setNewBudget ] = useState({
     year: currentYear.toString(),
     month: currentMonth.toString(),
   });
+  const hasFetched = useRef(false);
 
-  const snackbar = useSnackbar();
+  useEffect(() => {
+    if (!hasFetched.current) {
+      hasFetched.current = true;
+      fetchBudgets().catch((error) => {
+        snackbar.error({
+          title: "Failed to load budgets",
+          description: error instanceof Error ? error.message : "An error occurred",
+        });
+      });
+    }
+  }, [ fetchBudgets, snackbar ]);
 
-  const handleCreateBudget = () => {
+  const handleCreateBudget = async () => {
     // Check if budget already exists
     const exists = budgets.some(
       (b) => b.year === Number(newBudget.year) && b.month === Number(newBudget.month)
@@ -104,44 +56,39 @@ export default function BudgetList() {
       return;
     }
 
-    // Create empty budget
-    const newBudgetData: Budget = {
-      id: budgets.length + 1,
-      year: Number(newBudget.year),
-      month: Number(newBudget.month),
-      incomeItems: [],
-      expenseItems: [],
-    };
+    try {
+      await createBudget({
+        year: Number(newBudget.year),
+        month: Number(newBudget.month),
+      });
 
-    setBudgets([ ...budgets, newBudgetData ]);
-    setIsCreateModalOpen(false);
+      setIsCreateModalOpen(false);
 
-    // Reset form
-    setNewBudget({
-      year: currentYear.toString(),
-      month: currentMonth.toString(),
-    });
+      // Reset form
+      setNewBudget({
+        year: currentYear.toString(),
+        month: currentMonth.toString(),
+      });
 
-    snackbar.success({
-      title: "Budget created!",
-      description: `Budget for ${MONTHS[Number(newBudget.month)]} ${newBudget.year} has been created.`,
-    });
+      snackbar.success({
+        title: "Budget created!",
+        description: `Budget for ${MONTHS[Number(newBudget.month)]} ${newBudget.year} has been created.`,
+      });
+    } catch (error) {
+      snackbar.error({
+        title: "Failed to create budget",
+        description: error instanceof Error ? error.message : "An error occurred",
+      });
+    }
   };
 
-  const handleViewBudget = (budgetId: number) => {
+  const handleViewBudget = (budgetId: string) => {
     navigate(`/budget/${budgetId}`);
   };
 
   // Calculate totals for a budget
   const calculateBudgetTotals = (budget: Budget) => {
-    const totalIncome = budget.incomeItems.reduce((sum, item) => sum + item.amount, 0);
-    const totalExpense = budget.expenseItems.reduce((sum, item) => sum + item.amount, 0);
-    const savings = totalIncome - totalExpense;
-    const savingsRate = totalIncome > 0 ? (savings / totalIncome) * 100 : 0;
-    return { totalIncome,
-      totalExpense,
-      savings,
-      savingsRate };
+    return budgetService.calculateTotals(budget);
   };
 
   // Calculate yearly totals
@@ -249,7 +196,7 @@ export default function BudgetList() {
                 const { totalIncome, totalExpense, savings, savingsRate } = calculateBudgetTotals(budget);
 
                 return (
-                  <TableRow key={budget.id}>
+                  <TableRow key={budget._id}>
                     <TableCell className="font-medium">
                       {MONTHS[budget.month]} {budget.year}
                     </TableCell>
@@ -273,7 +220,7 @@ export default function BudgetList() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Button size="sm" variant="outline" onClick={() => handleViewBudget(budget.id)}>
+                      <Button size="sm" variant="outline" onClick={() => handleViewBudget(budget._id)}>
                         <Eye className="h-4 w-4 mr-1" />
                         View
                       </Button>

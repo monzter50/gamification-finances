@@ -2,6 +2,18 @@
  * API Types based on API documentation
  */
 
+// ==================== Generic API Response Types ====================
+
+/**
+ * Generic API response structure
+ * @template T - The type of data in the response
+ */
+export interface ApiResponse<T> {
+  data: T;
+  message: string;
+  success: boolean;
+}
+
 // ==================== Authentication Types ====================
 
 export interface RegisterRequest {
@@ -201,101 +213,4 @@ export interface UnlockAchievementResponse {
     coins: number;
     totalAchievements: number;
   };
-}
-
-// ==================== Gamification Types ====================
-
-export interface GamificationProfile {
-  level: number;
-  experience: number;
-  experienceToNextLevel: number;
-  levelProgress: number;
-  coins: number;
-  totalSavings: number;
-  totalExpenses: number;
-  savingsGoal: number;
-  savingsProgress: number;
-  achievements: {
-    total: number;
-    unlocked: number;
-    completionPercentage: number;
-  };
-  badges: {
-    total: number;
-    unlocked: number;
-  };
-  stats: {
-    daysActive: number;
-    lastLogin: string;
-    isActive: boolean;
-  };
-}
-
-export interface LevelUpResponse {
-  oldLevel: number;
-  newLevel: number;
-  oldExperience: number;
-  newExperience: number;
-  experienceGained: number;
-  leveledUp: boolean;
-  levelProgress: number;
-  experienceToNextLevel: number;
-  coins: number;
-}
-
-export type LeaderboardType = "level" | "coins" | "savings" | "experience";
-
-export interface LeaderboardEntry {
-  position: number;
-  name: string;
-  level: number;
-  experience: number;
-  coins: number;
-  totalSavings: number;
-  totalExpenses: number;
-}
-
-export interface LeaderboardResponse {
-  leaderboard: LeaderboardEntry[];
-  type: LeaderboardType;
-  limit: number;
-  userPosition: number;
-  userStats: {
-    name: string;
-    level: number;
-    experience: number;
-    coins: number;
-    totalSavings: number;
-    totalExpenses: number;
-  };
-}
-
-export interface ProgressStats {
-  weekly: {
-    experience: number;
-    coins: number;
-    transactions: number;
-  };
-  monthly: {
-    experience: number;
-    coins: number;
-    transactions: number;
-  };
-  allTime: {
-    experience: number;
-    coins: number;
-    transactions: number;
-    level: number;
-    achievements: number;
-  };
-}
-
-export interface AddCoinsRequest {
-  amount: number;
-}
-
-export interface AddCoinsResponse {
-  oldCoins: number;
-  newCoins: number;
-  coinsAdded: number;
 }
