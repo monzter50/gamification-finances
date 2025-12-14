@@ -9,6 +9,8 @@ export type IncomeType =
   | "Check"
   | "Other";
 
+export type ExpenseType = "Fixed" | "Variable";
+
 export interface IncomeItem {
   _id?: string;
   description: string;
@@ -20,6 +22,7 @@ export interface ExpenseItem {
   _id?: string;
   description: string;
   amount: number;
+  type: ExpenseType;
 }
 
 export interface Budget {
@@ -54,6 +57,7 @@ export interface AddIncomeItemDTO {
 export interface AddExpenseItemDTO {
   description: string;
   amount: number;
+  type: ExpenseType;
 }
 
 export interface BudgetStats {
@@ -76,6 +80,11 @@ export const INCOME_TYPES: IncomeType[] = [
   "Transfer",
   "Check",
   "Other",
+];
+
+export const EXPENSE_TYPES: ExpenseType[] = [
+  "Fixed",
+  "Variable",
 ];
 
 export const MONTHS = [
