@@ -72,6 +72,21 @@ export interface BudgetStats {
   };
 }
 
+export interface PaginationParams {
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  pagination: {
+    page: number;
+    pages: number;
+    total: number;
+    limit: number;
+  };
+}
+
 export const INCOME_TYPES: IncomeType[] = [
   "Debit Card",
   "Credit Card",

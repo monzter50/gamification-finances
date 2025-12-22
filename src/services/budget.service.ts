@@ -1,12 +1,16 @@
 import { apiClient, getAuthToken } from "@/config/api-client";
 import { budgetLogger } from "@/config/logger";
-import type { ApiResponse } from "@/types/api";
+import type { ApiResponse, Pagination } from "@/types/api";
 import type {
   AddExpenseItemDTO,
   AddIncomeItemDTO,
   Budget,
   BudgetStats,
   CreateBudgetDTO,
+  IncomeItem,
+  ExpenseItem,
+  PaginationParams,
+  PaginatedResponse,
 } from "@/types/budget";
 
 const BASE_URL = "/budgets";
@@ -315,6 +319,65 @@ class BudgetService {
   }
 
   /**
+   * Get paginated income items
+   */
+  async getIncomeItemsPaginated(
+    budgetId: string,
+    params?: PaginationParams
+  ): Promise<PaginatedResponse<IncomeItem>> {
+    budgetLogger.debug("Fetching paginated income items", {
+      budgetId,
+      params,
+    });
+    const token = getAuthToken();
+
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
+
+    const queryParams = new URLSearchParams();
+    if (params?.page) {
+      queryParams.append("page", params.page.toString());
+    }
+    if (params?.limit) {
+      queryParams.append("limit", params.limit.toString());
+    }
+
+    const url = queryParams.toString()
+      ? `${BASE_URL}/${budgetId}/income?${queryParams}`
+      : `${BASE_URL}/${budgetId}/income`;
+
+    const { response, status, statusCode } = await apiClient.get<ApiResponse<IncomeItem[]> & { pagination: Pagination }>(url, {
+      authentication: {
+        token,
+      },
+      options: {
+        requiredAuth: true,
+      },
+    });
+
+    if (status === "error" || statusCode !== 200) {
+      budgetLogger.error("Failed to fetch paginated income items", {
+        status,
+        statusCode,
+        response,
+      });
+      throw new Error(response?.message || "Failed to fetch income items");
+    }
+
+    budgetLogger.info("Paginated income items fetched successfully", { budgetId });
+    return {
+      items: response.data ?? [],
+      pagination: {
+        page: response.pagination.page,
+        pages: response.pagination.pages,
+        total: response.pagination.total,
+        limit: response.pagination.limit
+      }
+    };
+  }
+
+  /**
    * Add a single expense item to a budget
    */
   async addExpenseItem(budgetId: string, data: AddExpenseItemDTO): Promise<Budget> {
@@ -420,6 +483,65 @@ class BudgetService {
     budgetLogger.info("Expense item deleted successfully", { budgetId,
       itemId });
     return response.data;
+  }
+
+  /**
+   * Get paginated expense items
+   */
+  async getExpenseItemsPaginated(
+    budgetId: string,
+    params?: PaginationParams
+  ): Promise<PaginatedResponse<ExpenseItem>> {
+    budgetLogger.debug("Fetching paginated expense items", {
+      budgetId,
+      params,
+    });
+    const token = getAuthToken();
+
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
+
+    const queryParams = new URLSearchParams();
+    if (params?.page) {
+      queryParams.append("page", params.page.toString());
+    }
+    if (params?.limit) {
+      queryParams.append("limit", params.limit.toString());
+    }
+
+    const url = queryParams.toString()
+      ? `${BASE_URL}/${budgetId}/expense?${queryParams}`
+      : `${BASE_URL}/${budgetId}/expense`;
+
+    const { response, status, statusCode } = await apiClient.get<ApiResponse<ExpenseItem[]> & { pagination: Pagination }>(url, {
+      authentication: {
+        token,
+      },
+      options: {
+        requiredAuth: true,
+      },
+    });
+
+    if (status === "error" || statusCode !== 200) {
+      budgetLogger.error("Failed to fetch paginated expense items", {
+        status,
+        statusCode,
+        response,
+      });
+      throw new Error(response?.message || "Failed to fetch expense items");
+    }
+
+    budgetLogger.info("Paginated expense items fetched successfully", { budgetId });
+    return {
+      items: response.data ?? [],
+      pagination: {
+        page: response.pagination.page,
+        pages: response.pagination.pages,
+        total: response.pagination.total,
+        limit: response.pagination.limit
+      }
+    };
   }
 
   /**

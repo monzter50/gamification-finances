@@ -2,6 +2,8 @@
  * API Types based on API documentation
  */
 
+import exp from "constants";
+
 // ==================== Generic API Response Types ====================
 
 /**
@@ -15,6 +17,12 @@ export interface ApiResponse<T> {
 }
 
 // ==================== Authentication Types ====================
+export interface Pagination {
+  page: number;
+  pages: number;
+  total: number;
+  limit: number;
+}
 
 export interface RegisterRequest {
   email: string;

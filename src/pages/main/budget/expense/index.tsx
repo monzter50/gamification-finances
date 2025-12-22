@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Plus, Trash2, Pencil } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router";
 
@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useSnackbar, useBudget } from "@/hooks";
 import { budgetService } from "@/services/budget.service";
 import { MONTHS } from "@/types/budget";
-import type { ExpenseType } from "@/types/budget";
+import type { ExpenseType, ExpenseItem } from "@/types/budget";
 
 import { ExpenseModal } from "./components/ExpenseModal";
 
@@ -18,7 +18,15 @@ export default function BudgetExpense() {
   const { id } = useParams();
   const navigate = useNavigate();
   const snackbar = useSnackbar();
-  const { currentBudget, isLoading, fetchBudgetById, addExpenseItem, updateExpenseItems, deleteExpenseItem } = useBudget();
+  const {
+    currentBudget,
+    isLoading,
+    fetchBudgetById,
+    addExpenseItem,
+    updateExpenseItems,
+    deleteExpenseItem,
+    fetchExpenseItemsPaginated,
+  } = useBudget();
   const hasFetched = useRef(false);
 
   const [ isModalOpen, setIsModalOpen ] = useState(false);
@@ -29,6 +37,13 @@ export default function BudgetExpense() {
     amount: "",
     type: "" as ExpenseType | "",
   });
+
+  // Pagination state
+  const [ expenseItems, setExpenseItems ] = useState<ExpenseItem[]>([]);
+  const [ currentPage, setCurrentPage ] = useState(1);
+  const [ totalPages, setTotalPages ] = useState(1);
+  const [ totalItems, setTotalItems ] = useState(0);
+  const itemsPerPage = 5;
 
   useEffect(() => {
     if (id && !hasFetched.current) {
@@ -42,6 +57,44 @@ export default function BudgetExpense() {
       });
     }
   }, [ id, fetchBudgetById, snackbar, navigate ]);
+
+  // Load paginated expense items
+  useEffect(() => {
+    if (id && currentBudget) {
+      loadExpenseItems();
+    }
+  }, [ id, currentBudget, currentPage ]);
+
+  const loadExpenseItems = async () => {
+    if (!id) { return; }
+
+    try {
+      const data = await fetchExpenseItemsPaginated(id, {
+        page: currentPage,
+        limit: itemsPerPage,
+      });
+      setExpenseItems(data.items);
+      setTotalPages(data.pagination.pages);
+      setTotalItems(data.pagination.total);
+    } catch (error) {
+      snackbar.error({
+        title: "Failed to load expense items",
+        description: error instanceof Error ? error.message : "An error occurred",
+      });
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage((prev) => prev + 1);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage((prev) => prev - 1);
+    }
+  };
 
   if (isLoading || !currentBudget) {
     return (
@@ -135,6 +188,8 @@ export default function BudgetExpense() {
       }
 
       handleCloseModal();
+      // Reload paginated data
+      await loadExpenseItems();
     } catch (error) {
       snackbar.error({
         title: isEditMode ? "Failed to update expense" : "Failed to add expense",
@@ -153,6 +208,9 @@ export default function BudgetExpense() {
         title: "Expense removed",
         description: "Expense item has been removed.",
       });
+
+      // Reload paginated data
+      await loadExpenseItems();
     } catch (error) {
       snackbar.error({
         title: "Failed to remove expense",
@@ -191,7 +249,7 @@ export default function BudgetExpense() {
             ${totalExpense.toLocaleString("es-MX")} MXN
           </div>
           <p className="text-sm text-muted-foreground mt-2">
-            {currentBudget.expenseItems.length} expense {currentBudget.expenseItems.length === 1 ? "item" : "items"}
+            {totalItems} expense {totalItems === 1 ? "item" : "items"}
           </p>
         </CardContent>
       </Card>
@@ -203,54 +261,83 @@ export default function BudgetExpense() {
           <CardDescription>Manage your expenses for this budget period</CardDescription>
         </CardHeader>
         <CardContent>
-          {currentBudget.expenseItems.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead className="w-24"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {currentBudget.expenseItems.map((item) => (
-                  <TableRow key={item._id}>
-                    <TableCell className="font-medium">{item.description}</TableCell>
-                    <TableCell>
-                      <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                        item.type === "Fixed"
-                          ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
-                          : "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300"
-                      }`}>
-                        {item.type === "Fixed" ? "📌 Fixed" : "💸 Variable"}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right text-red-600 dark:text-red-400 font-semibold">
-                      ${item.amount.toLocaleString("es-MX")} MXN
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleOpenEditModal(item._id!, item.description, item.amount, item.type)}
-                        >
-                          <Pencil className="h-4 w-4 text-blue-500" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleRemoveExpenseItem(item._id!)}
-                        >
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
-                      </div>
-                    </TableCell>
+          {expenseItems && expenseItems.length > 0 ? (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead className="w-24"></TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {expenseItems.map((item) => (
+                    <TableRow key={item._id}>
+                      <TableCell className="font-medium">{item.description}</TableCell>
+                      <TableCell>
+                        <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                          item.type === "Fixed"
+                            ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                            : "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300"
+                        }`}>
+                          {item.type === "Fixed" ? "📌 Fixed" : "💸 Variable"}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right text-red-600 dark:text-red-400 font-semibold">
+                        ${item.amount.toLocaleString("es-MX")} MXN
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleOpenEditModal(item._id!, item.description, item.amount, item.type)}
+                          >
+                            <Pencil className="h-4 w-4 text-blue-500" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleRemoveExpenseItem(item._id!)}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+
+              {/* Pagination Controls */}
+              <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                <p className="text-sm text-muted-foreground">
+                  Page {currentPage} of {totalPages} ({totalItems} total items)
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handlePreviousPage}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleNextPage}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+              </div>
+            </>
           ) : (
             <div className="text-center py-8 text-muted-foreground">
               No expense items yet. Add your first expense above.

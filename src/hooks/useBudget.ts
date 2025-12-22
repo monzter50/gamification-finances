@@ -1,7 +1,16 @@
 import { useState, useCallback } from "react";
 
 import { budgetService } from "@/services/budget.service";
-import type { Budget, CreateBudgetDTO, AddIncomeItemDTO, AddExpenseItemDTO } from "@/types/budget";
+import type {
+  Budget,
+  CreateBudgetDTO,
+  AddIncomeItemDTO,
+  AddExpenseItemDTO,
+  PaginationParams,
+  PaginatedResponse,
+  IncomeItem,
+  ExpenseItem,
+} from "@/types/budget";
 
 export const useBudget = () => {
   const [ budgets, setBudgets ] = useState<Budget[]>([]);
@@ -208,6 +217,42 @@ export const useBudget = () => {
     }
   }, [ currentBudget ]);
 
+  const fetchIncomeItemsPaginated = useCallback(
+    async (budgetId: string, params?: PaginationParams): Promise<PaginatedResponse<IncomeItem>> => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const data = await budgetService.getIncomeItemsPaginated(budgetId, params);
+        return data;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to fetch income items";
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
+
+  const fetchExpenseItemsPaginated = useCallback(
+    async (budgetId: string, params?: PaginationParams): Promise<PaginatedResponse<ExpenseItem>> => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const data = await budgetService.getExpenseItemsPaginated(budgetId, params);
+        return data;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to fetch expense items";
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
+
   return {
     budgets,
     currentBudget,
@@ -221,8 +266,10 @@ export const useBudget = () => {
     addIncomeItem,
     updateIncomeItems,
     deleteIncomeItem,
+    fetchIncomeItemsPaginated,
     addExpenseItem,
     updateExpenseItems,
     deleteExpenseItem,
+    fetchExpenseItemsPaginated,
   };
 };
