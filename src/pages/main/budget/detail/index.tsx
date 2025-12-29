@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, DollarSign, TrendingDown, TrendingUp } from "lucide-react";
+import { ArrowLeft, DollarSign, Receipt, TrendingDown, TrendingUp } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router";
 
@@ -112,7 +112,7 @@ export default function BudgetDetail() {
       </div>
 
       {/* Navigation Cards */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card
           className="cursor-pointer hover:border-green-500 transition-colors"
           onClick={() => navigate(`/budget/${id}/income`)}
@@ -158,6 +158,32 @@ export default function BudgetDetail() {
                 <p className="text-sm text-muted-foreground">Current Expenses</p>
                 <p className="text-2xl font-bold text-red-600 dark:text-red-400">
                   ${totalExpense.toLocaleString("es-MX")} MXN
+                </p>
+              </div>
+              <Button variant="ghost">View Details →</Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card
+          className="cursor-pointer hover:border-blue-500 transition-colors"
+          onClick={() => navigate(`/budget/${id}/transactions`)}
+        >
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Receipt className="h-5 w-5 text-blue-600" />
+              Transaction Tracking
+            </CardTitle>
+            <CardDescription>
+              Track all your financial transactions
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-sm text-muted-foreground">Track & Manage</p>
+                <p className="text-lg font-semibold text-blue-600 dark:text-blue-400">
+                  All Transactions
                 </p>
               </div>
               <Button variant="ghost">View Details →</Button>

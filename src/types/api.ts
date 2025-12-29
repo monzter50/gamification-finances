@@ -2,8 +2,6 @@
  * API Types based on API documentation
  */
 
-import exp from "constants";
-
 // ==================== Generic API Response Types ====================
 
 /**

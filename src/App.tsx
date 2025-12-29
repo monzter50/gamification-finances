@@ -7,6 +7,7 @@ import Budget from "@/pages/main/budget";
 import BudgetDetail from "@/pages/main/budget/detail";
 import BudgetExpense from "@/pages/main/budget/expense";
 import BudgetIncome from "@/pages/main/budget/income";
+import BudgetTransactions from "@/pages/main/budget/transactions";
 import Dashboard from "@/pages/main/dashboard";
 import Profile from "@/pages/main/profile";
 import Transactions from "@/pages/main/transactions";
@@ -37,7 +38,9 @@ const router = createBrowserRouter([
       { path:"budget/:id/income",
         element:<BudgetIncome/> },
       { path:"budget/:id/expense",
-        element:<BudgetExpense/> }
+        element:<BudgetExpense/> },
+      { path:"budget/:id/transactions",
+        element:<BudgetTransactions/> }
     ],
   },
   { path: "*",
