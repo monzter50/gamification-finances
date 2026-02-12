@@ -95,9 +95,11 @@ export default function BudgetList() {
   const yearlyBudgets = budgets.reduce(
     (acc, budget) => {
       if (!acc[budget.year]) {
-        acc[budget.year] = { income: 0,
+        acc[budget.year] = {
+          income: 0,
           expense: 0,
-          savings: 0 };
+          savings: 0
+        };
       }
       const { totalIncome, totalExpense } = calculateBudgetTotals(budget);
       acc[budget.year].income += totalIncome;
@@ -154,10 +156,9 @@ export default function BudgetList() {
                   <div className="flex justify-between text-sm mb-1">
                     <span className="font-semibold">Net Savings</span>
                     <span
-                      className={`font-bold ${
-                        data.savings >= 0
-                          ? "text-green-600 dark:text-green-400"
-                          : "text-red-600 dark:text-red-400"
+                      className={`font-bold ${data.savings >= 0
+                        ? "text-green-600 dark:text-green-400"
+                        : "text-red-600 dark:text-red-400"
                       }`}
                     >
                       ${data.savings.toLocaleString("es-MX")} MXN
@@ -196,7 +197,7 @@ export default function BudgetList() {
                 const { totalIncome, totalExpense, savings, savingsRate } = calculateBudgetTotals(budget);
 
                 return (
-                  <TableRow key={budget._id}>
+                  <TableRow key={budget.id}>
                     <TableCell className="font-medium">
                       {MONTHS[budget.month]} {budget.year}
                     </TableCell>
@@ -207,8 +208,7 @@ export default function BudgetList() {
                       ${totalExpense.toLocaleString("es-MX")} MXN
                     </TableCell>
                     <TableCell
-                      className={`text-right font-medium ${
-                        savings >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
+                      className={`text-right font-medium ${savings >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
                       }`}
                     >
                       ${savings.toLocaleString("es-MX")} MXN
@@ -220,7 +220,7 @@ export default function BudgetList() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Button size="sm" variant="outline" onClick={() => handleViewBudget(budget._id)}>
+                      <Button size="sm" variant="outline" onClick={() => handleViewBudget(budget.id)}>
                         <Eye className="h-4 w-4 mr-1" />
                         View
                       </Button>
@@ -250,8 +250,10 @@ export default function BudgetList() {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="year">Year</Label>
-              <Select value={newBudget.year} onValueChange={(value) => setNewBudget({ ...newBudget,
-                year: value })}>
+              <Select value={newBudget.year} onValueChange={(value) => setNewBudget({
+                ...newBudget,
+                year: value
+              })}>
                 <SelectTrigger id="year">
                   <SelectValue placeholder="Select year" />
                 </SelectTrigger>
@@ -267,8 +269,10 @@ export default function BudgetList() {
 
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="month">Month</Label>
-              <Select value={newBudget.month} onValueChange={(value) => setNewBudget({ ...newBudget,
-                month: value })}>
+              <Select value={newBudget.month} onValueChange={(value) => setNewBudget({
+                ...newBudget,
+                month: value
+              })}>
                 <SelectTrigger id="month">
                   <SelectValue placeholder="Select month" />
                 </SelectTrigger>
