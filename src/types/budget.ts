@@ -26,7 +26,7 @@ export interface ExpenseItem {
 }
 
 export interface Budget {
-  _id: string;
+  id: string;
   userId: string;
   year: number;
   month: number;

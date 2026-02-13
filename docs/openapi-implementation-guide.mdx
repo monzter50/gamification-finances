@@ -1,0 +1,785 @@
+# Guía de Implementación de OpenAPI/Swagger en el Backend
+
+Esta guía te ayudará a implementar OpenAPI/Swagger en tu backend de Node.js/Express para generar documentación automática de la API y permitir que el frontend genere tipos TypeScript automáticamente.
+
+## Stack Tecnológico del Backend
+
+- **Runtime**: Node.js con TypeScript
+- **Framework**: Express
+- **Documentación**: Swagger/OpenAPI 3.0+
+- **Autenticación**: JWT Bearer Token
+
+---
+
+## Paso 1: Instalación de Dependencias
+
+```bash
+npm install swagger-jsdoc swagger-ui-express
+npm install --save-dev @types/swagger-jsdoc @types/swagger-ui-express
+```
+
+---
+
+## Paso 2: Configuración de Swagger
+
+Crea el archivo `src/config/swagger.config.ts`:
+
+```typescript
+import swaggerJsdoc from 'swagger-jsdoc';
+
+const options: swaggerJsdoc.Options = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'Gamification Finances API',
+      version: '1.0.0',
+      description: 'API para gestión de finanzas personales con gamificación',
+      contact: {
+        name: 'API Support',
+        email: 'support@example.com',
+      },
+    },
+    servers: [
+      {
+        url: 'http://localhost:3000',
+        description: 'Development server',
+      },
+      {
+        url: 'https://api.production.com',
+        description: 'Production server',
+      },
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          description: 'Enter your JWT token in the format: Bearer <token>',
+        },
+      },
+      schemas: {
+        ApiResponse: {
+          type: 'object',
+          properties: {
+            response: {
+              description: 'The actual data returned',
+            },
+            status: {
+              type: 'string',
+              enum: ['ok', 'error'],
+              description: 'Status of the response',
+            },
+            statusCode: {
+              type: 'number',
+              description: 'HTTP status code',
+            },
+            headers: {
+              type: 'object',
+              additionalProperties: {
+                type: 'string',
+              },
+            },
+          },
+        },
+        Transaction: {
+          type: 'object',
+          required: ['id', 'type', 'category', 'amount', 'description', 'date', 'userId'],
+          properties: {
+            id: {
+              type: 'string',
+              description: 'Unique identifier',
+              example: '507f1f77bcf86cd799439011',
+            },
+            type: {
+              type: 'string',
+              enum: ['income', 'expense', 'savings'],
+              description: 'Type of transaction',
+              example: 'expense',
+            },
+            category: {
+              type: 'string',
+              description: 'Category of the transaction',
+              example: 'Food',
+            },
+            amount: {
+              type: 'number',
+              format: 'float',
+              minimum: 0.01,
+              description: 'Amount in MXN',
+              example: 150.50,
+            },
+            description: {
+              type: 'string',
+              minLength: 1,
+              description: 'Description of the transaction',
+              example: 'Grocery shopping at supermarket',
+            },
+            date: {
+              type: 'string',
+              format: 'date',
+              description: 'Date of the transaction (ISO 8601)',
+              example: '2025-12-29',
+            },
+            userId: {
+              type: 'string',
+              description: 'ID of the user who owns this transaction',
+              example: '507f1f77bcf86cd799439011',
+            },
+          },
+        },
+        CreateTransactionRequest: {
+          type: 'object',
+          required: ['type', 'category', 'amount', 'description', 'date'],
+          properties: {
+            type: {
+              type: 'string',
+              enum: ['income', 'expense', 'savings'],
+              description: 'Type of transaction',
+              example: 'expense',
+            },
+            category: {
+              type: 'string',
+              minLength: 1,
+              description: 'Category of the transaction',
+              example: 'Food',
+            },
+            amount: {
+              type: 'number',
+              format: 'float',
+              minimum: 0.01,
+              description: 'Amount in MXN',
+              example: 150.50,
+            },
+            description: {
+              type: 'string',
+              minLength: 1,
+              description: 'Description of the transaction',
+              example: 'Grocery shopping at supermarket',
+            },
+            date: {
+              type: 'string',
+              format: 'date',
+              description: 'Date of the transaction (ISO 8601)',
+              example: '2025-12-29',
+            },
+          },
+        },
+        TransactionSummary: {
+          type: 'object',
+          properties: {
+            income: {
+              type: 'object',
+              properties: {
+                total: { type: 'number', example: 50000 },
+                count: { type: 'number', example: 5 },
+                experience: { type: 'number', example: 100 },
+                coins: { type: 'number', example: 50 },
+              },
+            },
+            expense: {
+              type: 'object',
+              properties: {
+                total: { type: 'number', example: 30000 },
+                count: { type: 'number', example: 15 },
+                experience: { type: 'number', example: 75 },
+                coins: { type: 'number', example: 30 },
+              },
+            },
+            savings: {
+              type: 'object',
+              properties: {
+                total: { type: 'number', example: 20000 },
+                count: { type: 'number', example: 3 },
+                experience: { type: 'number', example: 50 },
+                coins: { type: 'number', example: 20 },
+              },
+            },
+            netWorth: {
+              type: 'number',
+              description: 'Income - Expense',
+              example: 20000,
+            },
+            savingsProgress: {
+              type: 'number',
+              description: 'Percentage of savings goal achieved',
+              example: 65.5,
+            },
+          },
+        },
+        Error: {
+          type: 'object',
+          properties: {
+            response: {
+              type: 'object',
+              properties: {
+                message: {
+                  type: 'string',
+                  example: 'An error occurred',
+                },
+                error: {
+                  type: 'string',
+                  example: 'Detailed error message',
+                },
+              },
+            },
+            status: {
+              type: 'string',
+              enum: ['error'],
+            },
+            statusCode: {
+              type: 'number',
+              example: 400,
+            },
+          },
+        },
+      },
+      responses: {
+        UnauthorizedError: {
+          description: 'Access token is missing or invalid',
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/Error',
+              },
+              example: {
+                response: {
+                  message: 'Unauthorized',
+                  error: 'No authentication token found',
+                },
+                status: 'error',
+                statusCode: 401,
+              },
+            },
+          },
+        },
+        NotFoundError: {
+          description: 'Resource not found',
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/Error',
+              },
+              example: {
+                response: {
+                  message: 'Not Found',
+                  error: 'Transaction not found',
+                },
+                status: 'error',
+                statusCode: 404,
+              },
+            },
+          },
+        },
+        BadRequestError: {
+          description: 'Invalid request data',
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/Error',
+              },
+              example: {
+                response: {
+                  message: 'Bad Request',
+                  error: 'Amount must be greater than 0',
+                },
+                status: 'error',
+                statusCode: 400,
+              },
+            },
+          },
+        },
+      },
+    },
+    tags: [
+      {
+        name: 'Transactions',
+        description: 'Transaction management endpoints',
+      },
+      {
+        name: 'Authentication',
+        description: 'User authentication endpoints',
+      },
+    ],
+  },
+  apis: ['./src/routes/*.ts', './src/controllers/*.ts'],
+};
+
+export const swaggerSpec = swaggerJsdoc(options);
+```
+
+---
+
+## Paso 3: Configurar el Servidor Express
+
+Actualiza tu archivo `src/app.ts` o `src/server.ts`:
+
+```typescript
+import express from 'express';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './config/swagger.config';
+import cors from 'cors';
+
+const app = express();
+
+// Middleware
+app.use(express.json());
+app.use(cors({
+  origin: ['http://localhost:5173'], // Frontend dev server
+  credentials: true,
+}));
+
+// Swagger UI
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  explorer: true,
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Gamification Finances API Docs',
+}));
+
+// Endpoint para obtener el schema JSON (para generar tipos en frontend)
+app.get('/api/schema.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
+
+// Tus rutas aquí
+app.use('/transactions', transactionRoutes);
+
+export default app;
+```
+
+---
+
+## Paso 4: Documentar los Endpoints
+
+### Ejemplo: GET /transactions
+
+```typescript
+/**
+ * @swagger
+ * /transactions:
+ *   get:
+ *     summary: Obtener todas las transacciones del usuario
+ *     description: Retorna todas las transacciones del usuario autenticado
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de transacciones obtenida exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 response:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Transaction'
+ *                 status:
+ *                   type: string
+ *                   example: ok
+ *                 statusCode:
+ *                   type: number
+ *                   example: 200
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       500:
+ *         description: Error interno del servidor
+ */
+router.get('/', authMiddleware, transactionController.getAll);
+```
+
+### Ejemplo: POST /transactions
+
+```typescript
+/**
+ * @swagger
+ * /transactions:
+ *   post:
+ *     summary: Crear una nueva transacción
+ *     description: Crea una nueva transacción para el usuario autenticado
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateTransactionRequest'
+ *           example:
+ *             type: expense
+ *             category: Food
+ *             amount: 150.50
+ *             description: Grocery shopping at supermarket
+ *             date: '2025-12-29'
+ *     responses:
+ *       201:
+ *         description: Transacción creada exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 response:
+ *                   $ref: '#/components/schemas/Transaction'
+ *                 status:
+ *                   type: string
+ *                   example: ok
+ *                 statusCode:
+ *                   type: number
+ *                   example: 201
+ *       400:
+ *         $ref: '#/components/responses/BadRequestError'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ */
+router.post('/', authMiddleware, transactionController.create);
+```
+
+### Ejemplo: GET /transactions/:id
+
+```typescript
+/**
+ * @swagger
+ * /transactions/{id}:
+ *   get:
+ *     summary: Obtener transacción por ID
+ *     description: Retorna una transacción específica del usuario autenticado
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID de la transacción
+ *         example: 507f1f77bcf86cd799439011
+ *     responses:
+ *       200:
+ *         description: Transacción obtenida exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 response:
+ *                   $ref: '#/components/schemas/Transaction'
+ *                 status:
+ *                   type: string
+ *                   example: ok
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       404:
+ *         $ref: '#/components/responses/NotFoundError'
+ */
+router.get('/:id', authMiddleware, transactionController.getById);
+```
+
+### Ejemplo: PUT /transactions/:id
+
+```typescript
+/**
+ * @swagger
+ * /transactions/{id}:
+ *   put:
+ *     summary: Actualizar transacción
+ *     description: Actualiza una transacción existente del usuario autenticado
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID de la transacción
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               type:
+ *                 type: string
+ *                 enum: [income, expense, savings]
+ *               category:
+ *                 type: string
+ *               amount:
+ *                 type: number
+ *               description:
+ *                 type: string
+ *               date:
+ *                 type: string
+ *                 format: date
+ *           example:
+ *             amount: 200.00
+ *             description: Updated description
+ *     responses:
+ *       200:
+ *         description: Transacción actualizada exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 response:
+ *                   $ref: '#/components/schemas/Transaction'
+ *                 status:
+ *                   type: string
+ *                   example: ok
+ *       400:
+ *         $ref: '#/components/responses/BadRequestError'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       404:
+ *         $ref: '#/components/responses/NotFoundError'
+ */
+router.put('/:id', authMiddleware, transactionController.update);
+```
+
+### Ejemplo: DELETE /transactions/:id
+
+```typescript
+/**
+ * @swagger
+ * /transactions/{id}:
+ *   delete:
+ *     summary: Eliminar transacción
+ *     description: Elimina una transacción del usuario autenticado
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID de la transacción
+ *     responses:
+ *       204:
+ *         description: Transacción eliminada exitosamente
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       404:
+ *         $ref: '#/components/responses/NotFoundError'
+ */
+router.delete('/:id', authMiddleware, transactionController.delete);
+```
+
+### Ejemplo: GET /transactions/summary
+
+```typescript
+/**
+ * @swagger
+ * /transactions/summary:
+ *   get:
+ *     summary: Obtener resumen financiero
+ *     description: Retorna un resumen de todas las transacciones del usuario
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Resumen obtenido exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 response:
+ *                   $ref: '#/components/schemas/TransactionSummary'
+ *                 status:
+ *                   type: string
+ *                   example: ok
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ */
+router.get('/summary', authMiddleware, transactionController.getSummary);
+```
+
+### Ejemplo: GET /transactions/monthly/:year/:month
+
+```typescript
+/**
+ * @swagger
+ * /transactions/monthly/{year}/{month}:
+ *   get:
+ *     summary: Obtener resumen mensual
+ *     description: Retorna un resumen de transacciones para un mes específico
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: year
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           minimum: 2000
+ *           maximum: 2100
+ *         description: Año
+ *         example: 2025
+ *       - in: path
+ *         name: month
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           minimum: 0
+ *           maximum: 11
+ *         description: Mes (0-11, donde 0 es Enero)
+ *         example: 11
+ *     responses:
+ *       200:
+ *         description: Resumen mensual obtenido exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 response:
+ *                   $ref: '#/components/schemas/TransactionSummary'
+ *                 status:
+ *                   type: string
+ *                   example: ok
+ *       400:
+ *         $ref: '#/components/responses/BadRequestError'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ */
+router.get('/monthly/:year/:month', authMiddleware, transactionController.getMonthlySummary);
+```
+
+---
+
+## Paso 5: Scripts en package.json
+
+Añade estos scripts en el `package.json` del backend:
+
+```json
+{
+  "scripts": {
+    "dev": "nodemon src/server.ts",
+    "start": "node dist/server.js",
+    "build": "tsc",
+    "docs": "echo 'OpenAPI docs: http://localhost:3000/api-docs'",
+    "export:schema": "curl http://localhost:3000/api/schema.json > openapi-schema.json"
+  }
+}
+```
+
+---
+
+## Paso 6: Verificación
+
+1. **Inicia el servidor**:
+   ```bash
+   npm run dev
+   ```
+
+2. **Accede a la documentación**:
+   ```
+   http://localhost:3000/api-docs
+   ```
+
+3. **Verifica el schema JSON**:
+   ```
+   http://localhost:3000/api/schema.json
+   ```
+
+4. **Exporta el schema** (opcional):
+   ```bash
+   npm run export:schema
+   ```
+
+---
+
+## Paso 7: Generar Tipos en el Frontend
+
+Una vez que el backend esté funcionando, desde el frontend ejecuta:
+
+```bash
+# Instalar la herramienta
+npm install -D openapi-typescript
+
+# Generar tipos
+npx openapi-typescript http://localhost:3000/api/schema.json -o src/types/api-generated.ts
+
+# Agregar script en package.json
+{
+  "scripts": {
+    "generate:types": "openapi-typescript http://localhost:3000/api/schema.json -o src/types/api-generated.ts",
+    "predev": "yarn generate:types"
+  }
+}
+```
+
+---
+
+## Notas Importantes
+
+### Formato de Respuesta API
+
+Todas las respuestas exitosas deben seguir este formato:
+
+```typescript
+{
+  response: T,        // Los datos solicitados
+  status: "ok" | "error",
+  statusCode?: number,
+  headers?: Record<string, string>
+}
+```
+
+### Autenticación
+
+- **Tipo**: Bearer token JWT
+- **Header**: `Authorization: Bearer <token>`
+- La documentación incluye un botón "Authorize" para probar con token
+
+### CORS
+
+Configurar CORS para permitir peticiones desde:
+- `http://localhost:5173` (frontend dev)
+- Tu dominio de producción
+
+### Validaciones
+
+Documenta las validaciones esperadas:
+- Campos obligatorios
+- Formatos (ISO 8601 para fechas)
+- Rangos numéricos (amount > 0)
+- Enums (type, category)
+
+---
+
+## Recursos Adicionales
+
+- [OpenAPI Specification](https://swagger.io/specification/)
+- [Swagger JSDoc](https://github.com/Surnet/swagger-jsdoc)
+- [Swagger UI Express](https://github.com/scottie1984/swagger-ui-express)
+- [OpenAPI TypeScript Generator](https://github.com/drwpow/openapi-typescript)
+
+---
+
+## Checklist de Implementación
+
+- [ ] Instalar dependencias (swagger-jsdoc, swagger-ui-express)
+- [ ] Crear archivo de configuración swagger.config.ts
+- [ ] Configurar Express con Swagger UI en /api-docs
+- [ ] Crear endpoint /api/schema.json
+- [ ] Documentar todos los endpoints con JSDoc
+- [ ] Configurar seguridad (bearerAuth)
+- [ ] Definir schemas de componentes
+- [ ] Agregar ejemplos de request/response
+- [ ] Documentar códigos de error
+- [ ] Probar la documentación en navegador
+- [ ] Exportar schema JSON
+- [ ] Generar tipos TypeScript en el frontend
+- [ ] Configurar script de sincronización automática

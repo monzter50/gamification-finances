@@ -71,8 +71,8 @@ export const useBudget = () => {
       setIsLoading(true);
       setError(null);
       const updatedBudget = await budgetService.updateBudget(id, data);
-      setBudgets((prev) => prev.map((b) => (b._id === id ? updatedBudget : b)));
-      if (currentBudget?._id === id) {
+      setBudgets((prev) => prev.map((b) => (b.id === id ? updatedBudget : b)));
+      if (currentBudget?.id === id) {
         setCurrentBudget(updatedBudget);
       }
       return updatedBudget;
@@ -90,8 +90,8 @@ export const useBudget = () => {
       setIsLoading(true);
       setError(null);
       await budgetService.deleteBudget(id);
-      setBudgets((prev) => prev.filter((b) => b._id !== id));
-      if (currentBudget?._id === id) {
+      setBudgets((prev) => prev.filter((b) => b.id !== id));
+      if (currentBudget?.id === id) {
         setCurrentBudget(null);
       }
     } catch (err) {
@@ -108,8 +108,8 @@ export const useBudget = () => {
       setIsLoading(true);
       setError(null);
       const updatedBudget = await budgetService.addIncomeItem(budgetId, data);
-      setBudgets((prev) => prev.map((b) => (b._id === budgetId ? updatedBudget : b)));
-      if (currentBudget?._id === budgetId) {
+      setBudgets((prev) => prev.map((b) => (b.id === budgetId ? updatedBudget : b)));
+      if (currentBudget?.id === budgetId) {
         setCurrentBudget(updatedBudget);
       }
       return updatedBudget;
@@ -127,8 +127,8 @@ export const useBudget = () => {
       setIsLoading(true);
       setError(null);
       const updatedBudget = await budgetService.updateIncomeItems(budgetId, incomeItems);
-      setBudgets((prev) => prev.map((b) => (b._id === budgetId ? updatedBudget : b)));
-      if (currentBudget?._id === budgetId) {
+      setBudgets((prev) => prev.map((b) => (b.id === budgetId ? updatedBudget : b)));
+      if (currentBudget?.id === budgetId) {
         setCurrentBudget(updatedBudget);
       }
       return updatedBudget;
@@ -146,8 +146,8 @@ export const useBudget = () => {
       setIsLoading(true);
       setError(null);
       const updatedBudget = await budgetService.deleteIncomeItem(budgetId, itemId);
-      setBudgets((prev) => prev.map((b) => (b._id === budgetId ? updatedBudget : b)));
-      if (currentBudget?._id === budgetId) {
+      setBudgets((prev) => prev.map((b) => (b.id === budgetId ? updatedBudget : b)));
+      if (currentBudget?.id === budgetId) {
         setCurrentBudget(updatedBudget);
       }
       return updatedBudget;
@@ -165,8 +165,8 @@ export const useBudget = () => {
       setIsLoading(true);
       setError(null);
       const updatedBudget = await budgetService.addExpenseItem(budgetId, data);
-      setBudgets((prev) => prev.map((b) => (b._id === budgetId ? updatedBudget : b)));
-      if (currentBudget?._id === budgetId) {
+      setBudgets((prev) => prev.map((b) => (b.id === budgetId ? updatedBudget : b)));
+      if (currentBudget?.id === budgetId) {
         setCurrentBudget(updatedBudget);
       }
       return updatedBudget;
@@ -184,8 +184,8 @@ export const useBudget = () => {
       setIsLoading(true);
       setError(null);
       const updatedBudget = await budgetService.updateExpenseItems(budgetId, expenseItems);
-      setBudgets((prev) => prev.map((b) => (b._id === budgetId ? updatedBudget : b)));
-      if (currentBudget?._id === budgetId) {
+      setBudgets((prev) => prev.map((b) => (b.id === budgetId ? updatedBudget : b)));
+      if (currentBudget?.id === budgetId) {
         setCurrentBudget(updatedBudget);
       }
       return updatedBudget;
@@ -203,8 +203,8 @@ export const useBudget = () => {
       setIsLoading(true);
       setError(null);
       const updatedBudget = await budgetService.deleteExpenseItem(budgetId, itemId);
-      setBudgets((prev) => prev.map((b) => (b._id === budgetId ? updatedBudget : b)));
-      if (currentBudget?._id === budgetId) {
+      setBudgets((prev) => prev.map((b) => (b.id === budgetId ? updatedBudget : b)));
+      if (currentBudget?.id === budgetId) {
         setCurrentBudget(updatedBudget);
       }
       return updatedBudget;
