@@ -22,8 +22,8 @@ export default function BudgetList() {
   const navigate = useNavigate();
   const snackbar = useSnackbar();
   const { budgets, fetchBudgets, createBudget } = useBudget();
-  const [ isCreateModalOpen, setIsCreateModalOpen ] = useState(false);
-  const [ newBudget, setNewBudget ] = useState({
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newBudget, setNewBudget] = useState({
     year: currentYear.toString(),
     month: currentMonth.toString(),
   });
@@ -39,7 +39,7 @@ export default function BudgetList() {
         });
       });
     }
-  }, [ fetchBudgets, snackbar ]);
+  }, [fetchBudgets, snackbar]);
 
   const handleCreateBudget = async () => {
     // Check if budget already exists
