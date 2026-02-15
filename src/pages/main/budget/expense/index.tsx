@@ -7,7 +7,7 @@ import { useNavigate, useParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useSnackbar, useBudget } from "@/hooks";
+import { useSnackbar, useBudget, useMounted } from "@/hooks";
 import { budgetService } from "@/services/budget.service";
 import { MONTHS } from "@/types/budget";
 import type { ExpenseType, ExpenseItem } from "@/types/budget";
@@ -18,6 +18,7 @@ export default function BudgetExpense() {
   const { id } = useParams();
   const navigate = useNavigate();
   const snackbar = useSnackbar();
+  const isMounted = useMounted();
   const {
     currentBudget,
     isLoading,
@@ -46,7 +47,7 @@ export default function BudgetExpense() {
   const itemsPerPage = 5;
 
   useEffect(() => {
-    if (id && !hasFetched.current) {
+    if (id && !hasFetched.current && isMounted) {
       hasFetched.current = true;
       fetchBudgetById(id).catch((error) => {
         snackbar.error({
@@ -109,9 +110,11 @@ export default function BudgetExpense() {
   const handleOpenAddModal = () => {
     setIsEditMode(false);
     setEditingItemId(null);
-    setExpenseItemForm({ description: "",
+    setExpenseItemForm({
+      description: "",
       amount: "",
-      type: "" });
+      type: ""
+    });
     setIsModalOpen(true);
   };
 
@@ -127,17 +130,21 @@ export default function BudgetExpense() {
   };
 
   const handleFormChange = (field: "description" | "amount" | "type", value: string) => {
-    setExpenseItemForm((prev) => ({ ...prev,
-      [field]: value }));
+    setExpenseItemForm((prev) => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setIsEditMode(false);
     setEditingItemId(null);
-    setExpenseItemForm({ description: "",
+    setExpenseItemForm({
+      description: "",
       amount: "",
-      type: "" });
+      type: ""
+    });
   };
 
   const handleSaveExpenseItem = async () => {
@@ -277,10 +284,9 @@ export default function BudgetExpense() {
                     <TableRow key={item._id}>
                       <TableCell className="font-medium">{item.description}</TableCell>
                       <TableCell>
-                        <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                          item.type === "Fixed"
-                            ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
-                            : "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300"
+                        <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${item.type === "Fixed"
+                          ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                          : "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300"
                         }`}>
                           {item.type === "Fixed" ? "📌 Fixed" : "💸 Variable"}
                         </span>

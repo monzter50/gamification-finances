@@ -1,20 +1,20 @@
 "use client";
 
-import { Plus, Eye } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Modal } from "@/components/ui/Modal";
-import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useSnackbar, useBudget } from "@/hooks";
 import { budgetService } from "@/services/budget.service";
 import type { Budget } from "@/types/budget";
 import { MONTHS } from "@/types/budget";
+
+import { MonthlyBudgetTable } from "./components/MonthlyBudgetTable";
+import { YearlySummary } from "./components/YearlySummary";
 
 const currentYear = new Date().getFullYear();
 const currentMonth = new Date().getMonth();
@@ -23,8 +23,8 @@ export default function BudgetList() {
   const navigate = useNavigate();
   const snackbar = useSnackbar();
   const { budgets, fetchBudgets, createBudget } = useBudget();
-  const [ isCreateModalOpen, setIsCreateModalOpen ] = useState(false);
-  const [ newBudget, setNewBudget ] = useState({
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newBudget, setNewBudget] = useState({
     year: currentYear.toString(),
     month: currentMonth.toString(),
   });
@@ -40,7 +40,7 @@ export default function BudgetList() {
         });
       });
     }
-  }, [ fetchBudgets, snackbar ]);
+  }, [fetchBudgets, snackbar]);
 
   const handleCreateBudget = async () => {
     // Check if budget already exists
@@ -90,7 +90,6 @@ export default function BudgetList() {
   const calculateBudgetTotals = (budget: Budget) => {
     return budgetService.calculateTotals(budget);
   };
-
   // Calculate yearly totals
   const yearlyBudgets = budgets.reduce(
     (acc, budget) => {
@@ -110,12 +109,6 @@ export default function BudgetList() {
     {} as Record<number, { income: number; expense: number; savings: number }>
   );
 
-  // Sort budgets by year and month (most recent first)
-  const sortedBudgets = [ ...budgets ].sort((a, b) => {
-    if (a.year !== b.year) { return b.year - a.year; }
-    return b.month - a.month;
-  });
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -127,118 +120,10 @@ export default function BudgetList() {
       </div>
 
       {/* Yearly Summary */}
-      <div className="grid gap-4 md:grid-cols-3">
-        {Object.entries(yearlyBudgets)
-          .sort(([ a ], [ b ]) => Number(b) - Number(a))
-          .map(([ year, data ]) => (
-            <Card key={year}>
-              <CardHeader>
-                <CardTitle>{year} Summary</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-muted-foreground">Total Income</span>
-                    <span className="font-medium text-green-600 dark:text-green-400">
-                      ${data.income.toLocaleString("es-MX")} MXN
-                    </span>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-muted-foreground">Total Expenses</span>
-                    <span className="font-medium text-red-600 dark:text-red-400">
-                      ${data.expense.toLocaleString("es-MX")} MXN
-                    </span>
-                  </div>
-                </div>
-                <div className="pt-2 border-t">
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="font-semibold">Net Savings</span>
-                    <span
-                      className={`font-bold ${data.savings >= 0
-                        ? "text-green-600 dark:text-green-400"
-                        : "text-red-600 dark:text-red-400"
-                      }`}
-                    >
-                      ${data.savings.toLocaleString("es-MX")} MXN
-                    </span>
-                  </div>
-                  <Progress
-                    value={data.income > 0 ? ((data.income - data.expense) / data.income) * 100 : 0}
-                    className="mt-2"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-      </div>
+      <YearlySummary yearlyBudgets={yearlyBudgets} />
 
       {/* Monthly Budgets Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Monthly Budgets</CardTitle>
-          <CardDescription>Track your income and expenses by month</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Period</TableHead>
-                <TableHead className="text-right">Income</TableHead>
-                <TableHead className="text-right">Expenses</TableHead>
-                <TableHead className="text-right">Savings</TableHead>
-                <TableHead className="text-right">Savings Rate</TableHead>
-                <TableHead className="w-24"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedBudgets.map((budget) => {
-                const { totalIncome, totalExpense, savings, savingsRate } = calculateBudgetTotals(budget);
-
-                return (
-                  <TableRow key={budget.id}>
-                    <TableCell className="font-medium">
-                      {MONTHS[budget.month]} {budget.year}
-                    </TableCell>
-                    <TableCell className="text-right text-green-600 dark:text-green-400">
-                      ${totalIncome.toLocaleString("es-MX")} MXN
-                    </TableCell>
-                    <TableCell className="text-right text-red-600 dark:text-red-400">
-                      ${totalExpense.toLocaleString("es-MX")} MXN
-                    </TableCell>
-                    <TableCell
-                      className={`text-right font-medium ${savings >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
-                      }`}
-                    >
-                      ${savings.toLocaleString("es-MX")} MXN
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <span className="text-sm">{savingsRate.toFixed(1)}%</span>
-                        <Progress value={Math.max(0, Math.min(100, savingsRate))} className="w-20" />
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Button size="sm" variant="outline" onClick={() => handleViewBudget(budget.id)}>
-                        <Eye className="h-4 w-4 mr-1" />
-                        View
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-              {sortedBudgets.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                    No budgets created yet. Create your first budget above!
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <MonthlyBudgetTable budgets={budgets} onViewBudget={handleViewBudget} />
 
       {/* Create Budget Modal */}
       <Modal open={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title="Create New Budget">

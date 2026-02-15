@@ -1,4 +1,4 @@
-import {  createBrowserRouter, Navigate, RouterProvider } from "react-router";
+import { createBrowserRouter, Navigate, RouterProvider } from "react-router";
 
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/context/AuthContext.tsx";
@@ -25,26 +25,44 @@ const router = createBrowserRouter([
     element: <ProtectedRoutes />,
     loader: () => null, // We'll handle auth check in the component
     children: [
-      { index: true,
-        element: <Dashboard /> },
-      { path: "transactions",
-        element: <Transactions /> },
-      { path: "profile",
-        element: <Profile /> },
-      { path:"budget",
-        element:<Budget/> },
-      { path:"budget/:id",
-        element:<BudgetDetail/> },
-      { path:"budget/:id/income",
-        element:<BudgetIncome/> },
-      { path:"budget/:id/expense",
-        element:<BudgetExpense/> },
-      { path:"budget/:id/transactions",
-        element:<BudgetTransactions/> }
+      {
+        index: true,
+        element: <Dashboard />
+      },
+      {
+        path: "transactions",
+        element: <Transactions />
+      },
+      {
+        path: "profile",
+        element: <Profile />
+      },
+      {
+        path: "budget",
+        element: <Budget />
+      },
+      {
+        path: "budget/:id",
+        element: <BudgetDetail />
+      },
+      {
+        path: "budget/:id/income",
+        element: <BudgetIncome />
+      },
+      {
+        path: "budget/:id/expense",
+        element: <BudgetExpense />
+      },
+      {
+        path: "budget/:id/transactions",
+        element: <BudgetTransactions />
+      }
     ],
   },
-  { path: "*",
-    element: <Navigate to="/" replace /> },
+  {
+    path: "*",
+    element: <Navigate to="/" replace />
+  },
 ]);
 
 function App() {
