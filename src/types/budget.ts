@@ -12,14 +12,14 @@ export type IncomeType =
 export type ExpenseType = "Fixed" | "Variable";
 
 export interface IncomeItem {
-  _id?: string;
+  id?: string;
   description: string;
   amount: number;
   type: IncomeType;
 }
 
 export interface ExpenseItem {
-  _id?: string;
+  id?: string;
   description: string;
   amount: number;
   type: ExpenseType;

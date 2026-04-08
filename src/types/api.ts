@@ -118,25 +118,151 @@ export interface UserStats {
 
 // ==================== Transaction Types ====================
 
-export type TransactionType = "income" | "expense" | "savings";
+export type TransactionType = "income" | "expense";
 
 export interface Transaction {
   id: string;
-  type: TransactionType;
-  category: string;
-  amount: number;
-  description: string;
-  date: string;
   userId: string;
+  budgetId: string | null;
+  date: string; // ISO 8601
+  amount: number;
+  vendor: string;
+  category: string;
+  type: TransactionType;
+  owner: string;
+  accountId: string;
+  description: string | null;
+  incomeItemId: string | null;
+  expenseItemId: string | null;
+  isInstallment: boolean;
+  installmentCurrent: number | null;
+  installmentTotal: number | null;
+  installmentOriginal: number | null;
+  createdAt: string;
+  updatedAt: string;
+  // Relations
+  budget?: {
+    id: string;
+    year: number;
+    month: number;
+  } | null;
+  incomeItem?: {
+    id: string;
+    description: string;
+    amount: number;
+    type: string;
+  } | null;
+  expenseItem?: {
+    id: string;
+    description: string;
+    amount: number;
+    type: string;
+  } | null;
 }
 
-export interface CreateTransactionRequest {
-  type: TransactionType;
-  category: string;
+export interface CreateTransactionDto {
+  budgetId: string;
+  date: string; // ISO 8601 e.g. "2026-02-16"
   amount: number;
-  description: string;
-  date: string;
+  vendor: string;
+  category: string;
+  type: TransactionType;
+  owner: string;
+  accountId: string;
+  description?: string;
+  incomeItemId?: string;
+  expenseItemId?: string;
+  isInstallment?: boolean;
+  installmentCurrent?: number;
+  installmentTotal?: number;
+  installmentOriginal?: number;
 }
+
+export interface UpdateTransactionDto extends Partial<CreateTransactionDto> {}
+
+export interface TransactionFilters {
+  page?: number;
+  limit?: number;
+  type?: TransactionType;
+  budgetId?: string;
+  startDate?: string; // ISO 8601
+  endDate?: string; // ISO 8601
+}
+
+export interface PaginatedResponse<T> {
+  success: boolean;
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+  message: string;
+}
+
+export interface ApiError {
+  success: false;
+  error: string;
+  statusCode: number;
+}
+
+export interface ValidationError {
+  success: false;
+  errors: Array<{
+    field: string;
+    message: string;
+  }>;
+}
+
+export interface FinancialSummary {
+  totalIncome: number;
+  totalExpense: number;
+  incomeCount: number;
+  expenseCount: number;
+  netBalance: number;
+}
+
+export interface CategoryBreakdown {
+  category: string;
+  total: number;
+  count: number;
+}
+
+export interface MonthlySummary extends FinancialSummary {
+  year: number;
+  month: number;
+  categoryBreakdown: CategoryBreakdown[];
+}
+
+export interface IncomeBreakdown {
+  id: string;
+  description: string;
+  available: number;
+  used: number;
+  remaining: number;
+  percentUsed: number;
+}
+
+export interface ExpenseBreakdown {
+  id: string;
+  description: string;
+  budgeted: number;
+  spent: number;
+  remaining: number;
+  percentUsed: number;
+}
+
+export interface BudgetBalance {
+  budgetId: string;
+  totalBudgetedIncome: number;
+  totalBudgetedExpense: number;
+  incomeBreakdown: IncomeBreakdown[];
+  expenseBreakdown: ExpenseBreakdown[];
+}
+
+// Legacy types (kept for backward compatibility)
+export interface CreateTransactionRequest extends CreateTransactionDto {}
 
 export interface TransactionSummary {
   income: {
@@ -159,6 +285,32 @@ export interface TransactionSummary {
   };
   netWorth: number;
   savingsProgress: number;
+}
+
+// ==================== Account Types ====================
+
+export type AccountType = "checking" | "savings" | "credit_card" | "vales";
+
+export interface Account {
+  id: string;
+  userId: string;
+  name: string;
+  type: AccountType;
+  balance: number;
+  currency: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateAccountDto {
+  name: string;
+  type: AccountType;
+}
+
+export interface UpdateAccountDto {
+  name?: string;
+  type?: AccountType;
 }
 
 // ==================== Achievement Types ====================

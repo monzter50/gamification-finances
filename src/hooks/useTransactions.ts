@@ -1,13 +1,20 @@
 import { logger } from "@aglaya/logger";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 
-import type { Transaction, CreateTransactionRequest } from "@/types/api";
+import { transactionService } from "@/services/transaction.service";
+import type {
+  Transaction,
+  CreateTransactionDto,
+  UpdateTransactionDto,
+  TransactionFilters
+} from "@/types/api";
 
 import { useSnackbar } from "./useSnackbar";
 
 interface UseTransactionsOptions {
-  budgetYear: number;
-  budgetMonth: number;
+  budgetId?: string;
+  filters?: TransactionFilters;
+  autoLoad?: boolean;
   onLoadSuccess?: (transactions: Transaction[]) => void;
   onLoadError?: (error: Error) => void;
 }
@@ -16,11 +23,17 @@ interface UseTransactionsReturn {
   // State
   transactions: Transaction[];
   isLoading: boolean;
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  } | null;
 
   // Actions
   loadTransactions: () => Promise<void>;
-  addTransaction: (data: CreateTransactionRequest) => Promise<void>;
-  updateTransaction: (id: string, data: Partial<CreateTransactionRequest>) => Promise<void>;
+  addTransaction: (data: CreateTransactionDto) => Promise<void>;
+  updateTransaction: (id: string, data: UpdateTransactionDto) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
 }
 
@@ -28,51 +41,63 @@ interface UseTransactionsReturn {
  * Custom hook to manage transactions with CRUD operations
  *
  * This hook encapsulates the business logic for transaction management.
- * The parent component is responsible for handling mounted state.
  *
  * @param options Configuration options
- * @param options.budgetYear Year to filter transactions
- * @param options.budgetMonth Month to filter transactions (0-11)
+ * @param options.budgetId Optional budget ID to filter transactions
+ * @param options.filters Optional filters for pagination and filtering
+ * @param options.autoLoad Whether to automatically load transactions when budgetId or filters change (default: true)
  * @param options.onLoadSuccess Callback when transactions load successfully
  * @param options.onLoadError Callback when transactions fail to load
  *
  * @example
  * ```tsx
- * const { isMounted } = useMounted();
  * const { transactions, isLoading, addTransaction } = useTransactions({
- *   budgetYear: 2024,
- *   budgetMonth: 5,
+ *   budgetId: 'budget-uuid',
+ *   filters: { page: 1, limit: 20, type: 'expense' },
+ *   autoLoad: true,
  *   onLoadSuccess: (data) => {
- *     if (isMounted()) {
- *       // Handle success
- *     }
+ *     console.log('Loaded transactions:', data);
  *   }
  * });
  * ```
  */
 export function useTransactions({
-  budgetYear,
-  budgetMonth,
+  budgetId,
+  filters,
+  autoLoad = true,
   onLoadSuccess,
   onLoadError,
 }: UseTransactionsOptions): UseTransactionsReturn {
   const [ transactions, setTransactions ] = useState<Transaction[]>([]);
+  const [ pagination, setPagination ] = useState<{
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  } | null>(null);
   const [ isLoading, setIsLoading ] = useState(false);
   const snackbar = useSnackbar();
 
+  // Track if we need to load on mount
+  const hasLoadedRef = useRef(false);
+  const prevFiltersRef = useRef<string>("");
+
   /**
-   * Load and filter transactions by budget period
-   * Returns the filtered transactions for parent to handle
+   * Load transactions with filters and pagination
    */
   const loadTransactions = useCallback(async (): Promise<void> => {
     setIsLoading(true);
     try {
-      const response: Transaction[] = [];
+      const combinedFilters: TransactionFilters = {
+        ...filters,
+        ...(budgetId && { budgetId }),
+      };
 
-      // Filter transactions by budget month and year
-  
-      setTransactions(response);
-      onLoadSuccess?.(response);
+      const response = await transactionService.getAll(combinedFilters);
+
+      setTransactions(response.data);
+      setPagination(response.pagination);
+      onLoadSuccess?.(response.data);
 
     } catch (error) {
       const err = error instanceof Error ? error : new Error("An error occurred");
@@ -87,16 +112,37 @@ export function useTransactions({
     } finally {
       setIsLoading(false);
     }
-  }, [ budgetYear, budgetMonth, onLoadSuccess, onLoadError, snackbar ]);
+  }, [ budgetId, filters, onLoadSuccess, onLoadError, snackbar ]);
+
+  // Auto-load transactions when budgetId or filters change
+  useEffect(() => {
+    if (!autoLoad || !budgetId) {
+      return;
+    }
+
+    const filtersKey = JSON.stringify(filters);
+    const hasFiltersChanged = prevFiltersRef.current !== filtersKey;
+
+    // Load if:
+    // 1. First mount and hasn't loaded yet
+    // 2. Filters have changed
+    if (!hasLoadedRef.current || hasFiltersChanged) {
+      hasLoadedRef.current = true;
+      prevFiltersRef.current = filtersKey;
+      loadTransactions();
+    }
+  }, [ autoLoad, budgetId, filters, loadTransactions ]);
 
   /**
    * Add a new transaction and reload the list
    */
   const addTransaction = useCallback(
-    async (data: CreateTransactionRequest) => {
+    async (data: CreateTransactionDto) => {
       setIsLoading(true);
       try {
         logger.debug("Adding transaction", data);
+
+        await transactionService.create(data);
 
         snackbar.success({
           title: "Transaction added!",
@@ -110,7 +156,7 @@ export function useTransactions({
           title: "Failed to add transaction",
           description: error instanceof Error ? error.message : "An error occurred",
         });
-       
+        throw error;
       } finally {
         setIsLoading(false);
       }
@@ -122,11 +168,13 @@ export function useTransactions({
    * Update an existing transaction and reload the list
    */
   const updateTransaction = useCallback(
-    async (id: string, data: Partial<CreateTransactionRequest>) => {
+    async (id: string, data: UpdateTransactionDto) => {
       setIsLoading(true);
       try {
         logger.debug("Updating transaction", { id,
           data });
+
+        await transactionService.update(id, data);
 
         snackbar.success({
           title: "Transaction updated!",
@@ -157,6 +205,8 @@ export function useTransactions({
       try {
         logger.debug("Deleting transaction", { id });
 
+        await transactionService.delete(id);
+
         snackbar.success({
           title: "Transaction removed",
           description: "Transaction has been removed.",
@@ -180,6 +230,7 @@ export function useTransactions({
   return {
     transactions,
     isLoading,
+    pagination,
     loadTransactions,
     addTransaction,
     updateTransaction,

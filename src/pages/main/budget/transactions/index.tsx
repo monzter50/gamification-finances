@@ -7,9 +7,10 @@ import { useNavigate, useParams } from "react-router";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useSnackbar, useBudget, useMounted } from "@/hooks";
+import { useAuth } from "@/context/AuthContext";
+import { useSnackbar, useBudget } from "@/hooks";
 import { useTransactions } from "@/hooks/useTransactions";
-import type { TransactionType, CreateTransactionRequest } from "@/types/api";
+import type { TransactionType, CreateTransactionDto } from "@/types/api";
 import { MONTHS } from "@/types/budget";
 
 import { TransactionModal } from "./components/TransactionModal";
@@ -19,6 +20,7 @@ export default function BudgetTransactions() {
   const { id } = useParams();
   const navigate = useNavigate();
   const snackbar = useSnackbar();
+  const { accounts } = useAuth();
   const { currentBudget, isLoading, fetchBudgetById } = useBudget();
   const hasFetched = useRef(false);
 
@@ -34,12 +36,16 @@ export default function BudgetTransactions() {
     setValue,
     watch,
     formState: { errors },
-  } = useForm<CreateTransactionRequest>({
+  } = useForm<CreateTransactionDto>({
     defaultValues: {
+      budgetId: id || "",
       description: "",
       amount: 0,
       type: "expense",
       category: "",
+      vendor: "",
+      owner: "",
+      accountId: "",
       date: new Date().toISOString().split("T")[0],
     },
   });
@@ -48,20 +54,24 @@ export default function BudgetTransactions() {
   const [ currentPage, setCurrentPage ] = useState(1);
   const itemsPerPage = 5;
 
+  // Memoize filters to prevent unnecessary re-renders
+  const filters = useMemo(() => ({
+    page: currentPage,
+    limit: itemsPerPage,
+  }), [ currentPage, itemsPerPage ]);
+
   // Use the transactions hook
   const {
     transactions: allTransactions,
     isLoading: isLoadingTransactions,
-    loadTransactions,
+    pagination,
     addTransaction,
     updateTransaction,
     deleteTransaction,
   } = useTransactions({
-    budgetYear: currentBudget?.year || new Date().getFullYear(),
-    budgetMonth: currentBudget?.month || new Date().getMonth(),
+    budgetId: id,
+    filters,
   });
-
-  const { isMounted, cleanup } = useMounted();
 
   useEffect(() => {
     if (id && !hasFetched.current) {
@@ -76,25 +86,9 @@ export default function BudgetTransactions() {
     }
   }, [ id, fetchBudgetById, snackbar, navigate ]);
 
-  // Load transactions when budget is ready
-  useEffect(() => {
-    if (!currentBudget) { return; }
-
-    if (isMounted()) {
-      loadTransactions().catch(null);
-    }
-
-    return cleanup;
-  }, [ currentBudget, loadTransactions, isMounted, cleanup ]);
-
-  // Paginated transactions
-  const paginatedTransactions = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return allTransactions.slice(startIndex, endIndex);
-  }, [ allTransactions, currentPage, itemsPerPage ]);
-
-  const totalPages = Math.ceil(allTransactions.length / itemsPerPage);
+  // Use pagination from API or calculate from local data
+  const paginatedTransactions = allTransactions;
+  const totalPages = pagination?.pages || Math.ceil(allTransactions.length / itemsPerPage);
 
   // Calculate totals
   const totals = useMemo(() => {
@@ -109,9 +103,11 @@ export default function BudgetTransactions() {
         }
         return acc;
       },
-      { income: 0,
+      {
+        income: 0,
         expense: 0,
-        savings: 0 }
+        savings: 0
+      }
     );
   }, [ allTransactions ]);
 
@@ -139,10 +135,14 @@ export default function BudgetTransactions() {
     setIsEditMode(false);
     setEditingItemId(null);
     reset({
+      budgetId: id || "",
       description: "",
       amount: 0,
       type: "expense",
       category: "",
+      vendor: "",
+      owner: "",
+      accountId: "",
       date: new Date().toISOString().split("T")[0],
     });
     setIsModalOpen(true);
@@ -154,15 +154,22 @@ export default function BudgetTransactions() {
     amount: number,
     type: TransactionType,
     category: string,
-    date: string
+    date: string,
+    vendor?: string,
+    owner?: string,
+    accountId?: string
   ) => {
     setIsEditMode(true);
     setEditingItemId(itemId);
     reset({
+      budgetId: id || "",
       description,
       amount,
       type,
       category,
+      vendor: vendor || "",
+      owner: owner || "",
+      accountId: accountId || "",
       date: new Date(date).toISOString().split("T")[0],
     });
     setIsModalOpen(true);
@@ -173,10 +180,14 @@ export default function BudgetTransactions() {
     setIsEditMode(false);
     setEditingItemId(null);
     reset({
+      budgetId: id || "",
       description: "",
       amount: 0,
       type: "expense",
       category: "",
+      vendor: "",
+      owner: "",
+      accountId: "",
       date: new Date().toISOString().split("T")[0],
     });
   };
@@ -282,7 +293,7 @@ export default function BudgetTransactions() {
             isLoading={isLoadingTransactions}
             currentPage={currentPage}
             totalPages={totalPages}
-            totalItems={allTransactions.length}
+            totalItems={pagination?.total || allTransactions.length}
             onEdit={handleOpenEditModal}
             onRemove={handleRemoveTransaction}
             onNextPage={handleNextPage}
@@ -301,6 +312,7 @@ export default function BudgetTransactions() {
         setValue={setValue}
         watch={watch}
         errors={errors}
+        accounts={accounts}
       />
     </div>
   );

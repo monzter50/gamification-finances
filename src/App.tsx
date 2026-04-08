@@ -3,6 +3,7 @@ import { createBrowserRouter, Navigate, RouterProvider } from "react-router";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/context/AuthContext.tsx";
 import { ThemeProvider } from "@/context/ThemeContext.tsx";
+import Accounts from "@/pages/main/accounts";
 import Budget from "@/pages/main/budget";
 import BudgetDetail from "@/pages/main/budget/detail";
 import BudgetExpense from "@/pages/main/budget/expense";
@@ -56,6 +57,10 @@ const router = createBrowserRouter([
       {
         path: "budget/:id/transactions",
         element: <BudgetTransactions />
+      },
+      {
+        path: "accounts",
+        element: <Accounts />
       }
     ],
   },

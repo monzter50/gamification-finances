@@ -6,11 +6,13 @@ import { createContext, useContext, useState, useEffect } from "react";
 import { clearAuthData, setAuthExpiry, setAuthToken } from "@/config/api-client";
 import { authLogger } from "@/config/logger";
 import { authService } from "@/services";
-import type { UserProfile } from "@/types/api";
+import { accountService } from "@/services/account.service";
+import type { UserProfile, Account } from "@/types/api";
 
 interface AuthContextType {
   isAuthenticated: boolean
   user: UserProfile | null
+  accounts: Account[]
   // eslint-disable-next-line no-unused-vars
   login: (email: string, password: string) => Promise<void>
   logout: () => Promise<void>
@@ -24,6 +26,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [ isAuthenticated, setIsAuthenticated ] = useState<boolean>(false);
   const [ user, setUser ] = useState<UserProfile | null>(null);
+  const [ accounts, setAccounts ] = useState<Account[]>([]);
   const [ loading, setLoading ] = useState<boolean>(true);
 
   useEffect(() => {
@@ -33,6 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const isAuth = checkAuth();
       if (isAuth && isMounted) {
         await fetchUserProfile();
+        await fetchAccounts();
       } else if (isMounted) {
         setLoading(false);
       }
@@ -83,6 +87,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const fetchAccounts = async (): Promise<void> => {
+    try {
+      const response = await accountService.getAll();
+      if (response.success) {
+        setAccounts(response.data ?? []);
+      }
+    } catch (error) {
+      authLogger.error("Failed to fetch accounts", error);
+    }
+  };
+
   const login = async (email: string, password: string): Promise<void> => {
     try {
       setLoading(true);
@@ -100,8 +115,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsAuthenticated(true);
 
       authLogger.info("Login successful, fetching user profile");
-      // Get user profile after successful login
+      // Get user profile and accounts after successful login
       await fetchUserProfile();
+      await fetchAccounts();
     } catch (error) {
       authLogger.error("Login error", error);
       throw error;
@@ -118,6 +134,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await authService.logout();
       setIsAuthenticated(false);
       setUser(null);
+      setAccounts([]);
       clearAuthData();
 
       authLogger.info("Logout completed");
@@ -126,6 +143,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Still clear local state even if API call fails
       setIsAuthenticated(false);
       setUser(null);
+      setAccounts([]);
     } finally {
       setLoading(false);
     }
@@ -134,6 +152,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return <AuthContext.Provider value={{
     isAuthenticated,
     user,
+    accounts,
     login,
     logout,
     checkAuth,

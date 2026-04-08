@@ -5,6 +5,7 @@ import {
   ChevronLeft,
   ChevronRight,
   PiggyBank,
+  Wallet,
 } from "lucide-react";
 import { useState } from "react";
 import { ReactNode } from "react";
@@ -127,6 +128,21 @@ export default function Layout({ children }: LayoutProps): ReactNode {
               className={`transition-all duration-300 origin-left ${collapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100 w-auto ml-2"}`}
             >
               Budget
+            </span>
+          </NavLink>
+          <NavLink
+            to="/accounts"
+            className={({ isActive }) =>
+              `flex items-center gap-2 text-sm font-medium rounded transition-all duration-300 px-3 py-2 hover:text-primary hover:bg-muted/50${
+                isActive ? " text-primary bg-muted/80" : " text-muted-foreground"
+              } ${collapsed ? "justify-center" : ""}`
+            }
+          >
+            <Wallet size={20} />
+            <span
+              className={`transition-all duration-300 origin-left ${collapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100 w-auto ml-2"}`}
+            >
+              Accounts
             </span>
           </NavLink>
         </nav>

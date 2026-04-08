@@ -5,9 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Modal } from "@/components/ui/Modal";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { TransactionType, CreateTransactionRequest } from "@/types/api";
+import type { TransactionType, CreateTransactionRequest, Account } from "@/types/api";
 
-const TRANSACTION_TYPES: TransactionType[] = [ "income", "expense", "savings" ];
+const TRANSACTION_TYPES: TransactionType[] = [ "income", "expense" ];
 
 const TRANSACTION_CATEGORIES = {
   income: [ "Salary", "Freelance", "Investment", "Bonus", "Gift", "Other" ],
@@ -24,6 +24,7 @@ interface TransactionModalProps {
   setValue: UseFormSetValue<CreateTransactionRequest>;
   watch: UseFormWatch<CreateTransactionRequest>;
   errors: FieldErrors<CreateTransactionRequest>;
+  accounts: Account[];
 }
 
 export function TransactionModal({
@@ -35,6 +36,7 @@ export function TransactionModal({
   setValue,
   watch,
   errors,
+  accounts,
 }: TransactionModalProps) {
   const transactionType = watch("type");
   const availableCategories = transactionType ? TRANSACTION_CATEGORIES[transactionType] : [];
@@ -109,6 +111,40 @@ export function TransactionModal({
             </Select>
             {errors.category && (
               <p className="text-sm text-destructive">{errors.category.message}</p>
+            )}
+          </div>
+
+          <div className="flex flex-col space-y-1.5">
+            <Label htmlFor="vendor">Vendor</Label>
+            <Input
+              id="vendor"
+              placeholder="e.g., Amazon, Walmart"
+              {...register("vendor", { required: "Vendor is required" })}
+            />
+            {errors.vendor && (
+              <p className="text-sm text-destructive">{errors.vendor.message}</p>
+            )}
+          </div>
+
+          <div className="flex flex-col space-y-1.5">
+            <Label htmlFor="accountId">Account</Label>
+            <Select
+              value={watch("accountId")}
+              onValueChange={(value) => setValue("accountId", value, { shouldValidate: true })}
+            >
+              <SelectTrigger id="accountId">
+                <SelectValue placeholder="Select account" />
+              </SelectTrigger>
+              <SelectContent>
+                {accounts.map((account) => (
+                  <SelectItem key={account.id} value={account.id}>
+                    {account.name} ({account.type})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.accountId && (
+              <p className="text-sm text-destructive">{errors.accountId.message}</p>
             )}
           </div>
 
