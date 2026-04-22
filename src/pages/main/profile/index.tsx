@@ -111,7 +111,8 @@ export default function Profile() {
     reset,
     formState: { isDirty, errors },
   } = useForm<ProfileFormValues>({
-    defaultValues: { name: "", savingsGoal: "" },
+    defaultValues: { name: "",
+      savingsGoal: "" },
   });
 
   // Reset the form whenever the server payload lands so the inputs reflect
@@ -355,7 +356,8 @@ export default function Profile() {
                   aria-invalid={errors.name ? "true" : "false"}
                   {...register("name", {
                     required: "Name is required",
-                    minLength: { value: 2, message: "Name must be at least 2 characters" },
+                    minLength: { value: 2,
+                      message: "Name must be at least 2 characters" },
                   })}
                 />
                 {errors.name && (

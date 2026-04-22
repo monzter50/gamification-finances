@@ -76,14 +76,16 @@ export default function Dashboard() {
     hasFetchedBudget.current = true;
 
     setIsLoadingBudget(true);
-    fetchBudgets({ year: currentYear, month: currentMonth })
+    fetchBudgets({ year: currentYear,
+      month: currentMonth })
       .then((list) => setCurrentBudget(list?.[0] ?? null))
       .catch(() => setCurrentBudget(null))
       .finally(() => setIsLoadingBudget(false));
   }, [ fetchBudgets, currentYear, currentMonth ]);
 
   // ---- Recent transactions ----
-  const recentFilters = useMemo(() => ({ page: 1, limit: 5 }), []);
+  const recentFilters = useMemo(() => ({ page: 1,
+    limit: 5 }), []);
   const { transactions: recentTx, isLoading: isLoadingRecent } = useTransactions({
     filters: recentFilters,
   });
@@ -101,7 +103,10 @@ export default function Dashboard() {
     const totalSpent   = monthly?.totalExpense ?? 0;
     const pct          = totalPlanned > 0 ? Math.min(100, (totalSpent / totalPlanned) * 100) : 0;
     const remaining    = totalPlanned - totalSpent;
-    return { totalPlanned, totalSpent, pct, remaining };
+    return { totalPlanned,
+      totalSpent,
+      pct,
+      remaining };
   }, [ currentBudget, monthly ]);
 
   // ---- Top 4 accounts for the snapshot ----
@@ -360,7 +365,6 @@ export default function Dashboard() {
           )}
         </CardContent>
       </Card>
-
     </div>
   );
 }
