@@ -1,123 +1,444 @@
-import { useEffect, useState } from "react";
+"use client";
+
+import {
+  Award,
+  Calendar,
+  Coins,
+  Flame,
+  Loader2,
+  Sparkles,
+  Target,
+  TrendingDown,
+  TrendingUp,
+  Trophy,
+} from "lucide-react";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ThemeToggle, ThemeToggleWithText, ThemeSelector } from "@/components/ui/ThemeToggle";
-import { userLogger } from "@/config/logger";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  ThemeSelector,
+  ThemeToggle,
+  ThemeToggleWithText,
+} from "@/components/ui/ThemeToggle";
 import { useAuth } from "@/context/AuthContext";
+import { useProfile } from "@/hooks";
 import { useTheme } from "@/hooks/useTheme";
 
-interface UserProfile {
-  name: string
-  email: string
-  avatar: string
+interface ProfileFormValues {
+  name: string;
+  savingsGoal: string; // input type=number returns string
+}
+
+const MXN = (n: number) =>
+  `$${n.toLocaleString("es-MX", {
+    maximumFractionDigits: 0,
+  })} MXN`;
+
+function StatCell({
+  icon: Icon,
+  label,
+  value,
+  accent = "text-foreground",
+}: {
+  // eslint-disable-next-line no-unused-vars
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: React.ReactNode;
+  accent?: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-lg border bg-muted/30 p-3">
+      <div className="flex h-9 w-9 items-center justify-center rounded-md bg-background">
+        <Icon className={`h-4 w-4 ${accent}`} />
+      </div>
+      <div className="flex flex-col">
+        <span className="text-xs text-muted-foreground">{label}</span>
+        <span className={`text-sm font-semibold ${accent}`}>{value}</span>
+      </div>
+    </div>
+  );
 }
 
 export default function Profile() {
   const { user } = useAuth();
-  const [ profile, setProfile ] = useState<UserProfile>({
-    name: "",
-    email: "",
-    avatar: "",
+  const { theme } = useTheme();
+  const {
+    profile,
+    stats,
+    isLoadingProfile,
+    isLoadingStats,
+    isMutating,
+    updateProfile,
+  } = useProfile();
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { isDirty, errors },
+  } = useForm<ProfileFormValues>({
+    defaultValues: {
+      name: "",
+      savingsGoal: "",
+    },
   });
 
-  const { theme } = useTheme();
-
+  // Reset the form whenever the server payload lands so the inputs reflect
+  // canonical state (and `isDirty` stays meaningful).
   useEffect(() => {
-    if (user) {
-      setProfile({
-        name: user.name || "",
-        email: user.email || "",
-        avatar: "/placeholder.svg",
-      });
-    }
-  }, [ user ]);
-
-  const handleUpdateProfile = (e: React.FormEvent) => {
-    e.preventDefault();
-    // In a real app, you would send this data to your backend
-    userLogger.info("Profile updated", {
-      name: profile.name,
-      email: profile.email
+    if (!profile) { return; }
+    reset({
+      name: profile.name ?? "",
+      savingsGoal: profile.savingsGoal != null ? String(profile.savingsGoal) : "0",
     });
+  }, [ profile, reset ]);
+
+  const onSubmit = async (values: ProfileFormValues) => {
+    const payload: { name?: string; savingsGoal?: number } = {};
+
+    // Only send what actually changed — respects the PATCH-like semantics
+    // of the backend PUT endpoint (per docs/api-routes.md §User Management).
+    if (values.name.trim() && values.name.trim() !== profile?.name) {
+      payload.name = values.name.trim();
+    }
+    const parsedGoal = Number(values.savingsGoal);
+    if (!Number.isNaN(parsedGoal) && parsedGoal !== profile?.savingsGoal) {
+      payload.savingsGoal = parsedGoal;
+    }
+
+    if (Object.keys(payload).length === 0) { return; }
+    await updateProfile(payload);
   };
 
+  const displayName = profile?.name ?? user?.name ?? "";
+  const email = profile?.email ?? user?.email ?? "";
+
+  // --- Gamification derived values ---
+  // Priority: stats (freshest) → profile (/users/profile) → user (/auth/me).
+  // `/users/stats` may 404 until the backend wires it up — everything falls
+  // back gracefully. Fields only exposed by /auth/me (experienceToNextLevel,
+  // levelProgress, achievements[], badges[]) come from AuthContext.
+  const level = stats?.level ?? profile?.level ?? user?.level ?? 0;
+  const experience = stats?.experience ?? profile?.experience ?? user?.experience ?? 0;
+  const xpToNext = stats?.experienceToNextLevel ?? user?.experienceToNextLevel ?? 0;
+  const xpProgress = stats?.levelProgress ?? user?.levelProgress ?? 0;
+  const coins = stats?.coins ?? profile?.coins ?? user?.coins ?? 0;
+
+  const totalSavings = stats?.totalSavings ?? profile?.totalSavings ?? user?.totalSavings ?? 0;
+  const savingsGoal = stats?.savingsGoal ?? profile?.savingsGoal ?? user?.savingsGoal ?? 0;
+
+  // Compute savings progress client-side when stats isn't available.
+  const computedSavingsProgress =
+    savingsGoal > 0 ? Math.min((totalSavings / savingsGoal) * 100, 100) : 0;
+  const savingsProgress = stats?.savingsProgress ?? computedSavingsProgress;
+  const goalReached = stats?.savingsGoalReached ?? (savingsGoal > 0 && totalSavings >= savingsGoal);
+
+  // Only from /auth/me or /users/stats — render "—" if neither is available.
+  const achievementsCount = stats?.totalAchievements ?? user?.achievements?.length ?? 0;
+  const badgesCount = stats?.totalBadges ?? user?.badges?.length ?? 0;
+
+  // Only from /users/stats. Show a placeholder when stats endpoint is missing.
+  const hasStats = stats != null;
+  const streak = stats?.currentStreak ?? 0;
+  const totalTransactions = stats?.totalTransactions ?? 0;
+  const daysSinceRegistration = stats?.daysSinceRegistration ?? 0;
+
   return (
-    <div className="space-y-4">
-      <h2 className="text-2xl font-bold">User Profile</h2>
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h2 className="text-3xl font-bold">Your Profile</h2>
+        <p className="text-muted-foreground">
+          Level up, track your streak, and manage your savings goal.
+        </p>
+      </div>
 
-      {/* Theme Settings Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Theme Settings</CardTitle>
-          <CardDescription>Customize your app appearance. Current theme: <span className="font-semibold capitalize">{theme}</span></CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label>Theme Toggle (Icon)</Label>
-            <div className="flex items-center space-x-2">
-              <ThemeToggle />
-              <span className="text-sm text-muted-foreground">Click to toggle theme</span>
+      {/* Gamification summary */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        {/* Level & XP */}
+        <Card className="lg:col-span-2">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Trophy className="h-5 w-5 text-yellow-500" />
+                  Level {level}
+                </CardTitle>
+                <CardDescription>
+                  {isLoadingStats
+                    ? "Loading your progress…"
+                    : xpToNext > 0
+                      ? `${xpToNext.toLocaleString()} XP to level ${level + 1}`
+                      : "Max level reached"}
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2 rounded-full bg-yellow-500/10 px-3 py-1 text-yellow-600 dark:text-yellow-400">
+                <Coins className="h-4 w-4" />
+                <span className="text-sm font-semibold">
+                  {coins.toLocaleString()}
+                </span>
+              </div>
             </div>
-          </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {isLoadingStats ? (
+              <Skeleton className="h-2 w-full" />
+            ) : (
+              <>
+                <Progress value={Math.min(xpProgress, 100)} />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{experience.toLocaleString()} XP</span>
+                  <span>{Math.round(xpProgress)}%</span>
+                </div>
+              </>
+            )}
 
-          <div className="space-y-2">
-            <Label>Theme Toggle (With Text)</Label>
-            <ThemeToggleWithText />
-          </div>
+            <div className="grid grid-cols-2 gap-3 pt-2 sm:grid-cols-4">
+              <StatCell
+                icon={Flame}
+                label="Streak"
+                value={hasStats ? `${streak} day${streak === 1 ? "" : "s"}` : "—"}
+                accent="text-orange-500"
+              />
+              <StatCell
+                icon={Sparkles}
+                label="Achievements"
+                value={achievementsCount}
+                accent="text-purple-500"
+              />
+              <StatCell
+                icon={Award}
+                label="Badges"
+                value={badgesCount}
+                accent="text-blue-500"
+              />
+              <StatCell
+                icon={Calendar}
+                label="Member for"
+                value={hasStats ? `${daysSinceRegistration}d` : "—"}
+                accent="text-emerald-500"
+              />
+            </div>
+          </CardContent>
+        </Card>
 
-          <div className="space-y-2">
-            <Label>Theme Selector (Dropdown)</Label>
-            <ThemeSelector className="w-48" />
-          </div>
-        </CardContent>
-      </Card>
+        {/* Savings goal */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5 text-green-500" />
+              Savings Goal
+            </CardTitle>
+            <CardDescription>
+              {goalReached ? "Goal reached — nice work." : "Progress toward your target."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {isLoadingStats ? (
+              <Skeleton className="h-2 w-full" />
+            ) : savingsGoal > 0 ? (
+              <>
+                <Progress
+                  value={Math.min(savingsProgress, 100)}
+                  className={goalReached ? "bg-green-500/20" : undefined}
+                />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{MXN(totalSavings)}</span>
+                  <span>{MXN(savingsGoal)}</span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {Math.round(savingsProgress)}% complete
+                </div>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Set a savings goal below to start tracking progress.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
+      {/* Financial snapshot */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium">
+              <TrendingUp className="h-4 w-4 text-green-500" />
+              Total Savings
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoadingStats ? (
+              <Skeleton className="h-8 w-32" />
+            ) : (
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                {MXN(totalSavings)}
+              </div>
+            )}
+            <p className="mt-1 text-xs text-muted-foreground">
+              {hasStats ? `${totalTransactions} transactions recorded` : "Lifetime balance"}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium">
+              <TrendingDown className="h-4 w-4 text-red-500" />
+              Total Expenses
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoadingStats ? (
+              <Skeleton className="h-8 w-32" />
+            ) : (
+              <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+                {MXN(stats?.totalExpenses ?? profile?.totalExpenses ?? 0)}
+              </div>
+            )}
+            <p className="mt-1 text-xs text-muted-foreground">Lifetime spending</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Profile form */}
       <Card>
         <CardHeader>
           <CardTitle>Your Information</CardTitle>
-          <CardDescription>Update your profile information here.</CardDescription>
+          <CardDescription>
+            Update your display name and savings goal. Email is managed by your account.
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleUpdateProfile}>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-4">
-                <Avatar className="h-20 w-20">
-                  <AvatarImage src={profile.avatar} alt={profile.name} />
-                  <AvatarFallback>{profile.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <Button variant="outline">Change Avatar</Button>
-              </div>
-              <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  value={profile.name}
-                  onChange={(e) => setProfile({
-                    ...profile,
-                    name: e.target.value
-                  })}
-                />
-              </div>
-              <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={profile.email}
-                  disabled
-                  readOnly
-                />
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <CardContent className="space-y-6">
+            <div className="flex items-center space-x-4">
+              <Avatar className="h-20 w-20">
+                <AvatarImage src="/placeholder.svg" alt={displayName} />
+                <AvatarFallback className="text-lg">
+                  {displayName ? displayName.charAt(0).toUpperCase() : "?"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col">
+                <span className="text-lg font-semibold">{displayName || "—"}</span>
+                <span className="text-sm text-muted-foreground">{email || "—"}</span>
               </div>
             </div>
-          </form>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="name">Display Name</Label>
+                <Input
+                  id="name"
+                  disabled={isLoadingProfile || isMutating}
+                  placeholder="Your name"
+                  aria-invalid={errors.name ? "true" : "false"}
+                  {...register("name", {
+                    required: "Name is required",
+                    minLength: {
+                      value: 2,
+                      message: "Name must be at least 2 characters",
+                    },
+                  })}
+                />
+                {errors.name && (
+                  <p className="text-xs text-destructive">{errors.name.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="savingsGoal">Savings Goal (MXN)</Label>
+                <Input
+                  id="savingsGoal"
+                  type="number"
+                  min={0}
+                  step={100}
+                  disabled={isLoadingProfile || isMutating}
+                  placeholder="10000"
+                  {...register("savingsGoal", {
+                    validate: (v) => {
+                      const n = Number(v);
+                      if (Number.isNaN(n)) { return "Must be a number"; }
+                      if (n < 0) { return "Must be ≥ 0"; }
+                      return true;
+                    },
+                  })}
+                />
+                {errors.savingsGoal && (
+                  <p className="text-xs text-destructive">
+                    {errors.savingsGoal.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-1.5 md:col-span-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" type="email" value={email} disabled readOnly />
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter className="flex gap-2">
+            <Button type="submit" disabled={!isDirty || isMutating}>
+              {isMutating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Changes
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={!isDirty || isMutating}
+              onClick={() =>
+                reset({
+                  name: profile?.name ?? "",
+                  savingsGoal:
+                    profile?.savingsGoal != null ? String(profile.savingsGoal) : "0",
+                })
+              }
+            >
+              Reset
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
+
+      {/* Theme Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Appearance</CardTitle>
+          <CardDescription>
+            Customize how the app looks. Current theme:{" "}
+            <span className="font-semibold capitalize">{theme}</span>
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-6 md:grid-cols-3">
+          <div className="space-y-2">
+            <Label>Quick Toggle</Label>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <span className="text-xs text-muted-foreground">Click the icon</span>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Toggle (with text)</Label>
+            <ThemeToggleWithText />
+          </div>
+          <div className="space-y-2">
+            <Label>Theme Selector</Label>
+            <ThemeSelector className="w-full" />
+          </div>
         </CardContent>
-        <CardFooter>
-          <Button onClick={handleUpdateProfile}>Save Changes</Button>
-        </CardFooter>
       </Card>
     </div>
   );

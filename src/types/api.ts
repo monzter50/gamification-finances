@@ -306,11 +306,21 @@ export interface Account {
 export interface CreateAccountDto {
   name: string;
   type: AccountType;
+  balance?: number;   // defaults to 0 server-side
+  currency?: string;  // defaults to "MXN" server-side
 }
 
+/**
+ * Fields accepted by PUT /api/accounts/:id per the backend contract.
+ * `balance` should almost never be edited directly — it moves through
+ * transactions. Exposed here only for admin-style corrections.
+ */
 export interface UpdateAccountDto {
   name?: string;
   type?: AccountType;
+  balance?: number;
+  currency?: string;
+  isActive?: boolean;
 }
 
 // ==================== Achievement Types ====================

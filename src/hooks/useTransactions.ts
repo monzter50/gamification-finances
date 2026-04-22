@@ -114,21 +114,24 @@ export function useTransactions({
     }
   }, [ budgetId, filters, onLoadSuccess, onLoadError, snackbar ]);
 
-  // Auto-load transactions when budgetId or filters change
+  // Auto-load transactions when budgetId or filters change.
+  // NB: `budgetId` is optional now — the cross-budget list page relies on
+  // loading the user's full transaction feed without a budget filter.
   useEffect(() => {
-    if (!autoLoad || !budgetId) {
+    if (!autoLoad) {
       return;
     }
 
-    const filtersKey = JSON.stringify(filters);
-    const hasFiltersChanged = prevFiltersRef.current !== filtersKey;
+    const cacheKey = JSON.stringify({ budgetId,
+      filters });
+    const hasKeyChanged = prevFiltersRef.current !== cacheKey;
 
     // Load if:
     // 1. First mount and hasn't loaded yet
-    // 2. Filters have changed
-    if (!hasLoadedRef.current || hasFiltersChanged) {
+    // 2. Filters or budgetId have changed
+    if (!hasLoadedRef.current || hasKeyChanged) {
       hasLoadedRef.current = true;
-      prevFiltersRef.current = filtersKey;
+      prevFiltersRef.current = cacheKey;
       loadTransactions();
     }
   }, [ autoLoad, budgetId, filters, loadTransactions ]);

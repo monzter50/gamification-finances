@@ -18,6 +18,15 @@ interface AuthContextType {
   logout: () => Promise<void>
   checkAuth: () => boolean
   fetchUserProfile: () => Promise<void>
+  /**
+   * Refresh the account list from the server. Call this after any operation
+   * that can change an Account.balance — transactions, direct edits, deletes.
+   * Per frontend-integration-guide.md §9, any transaction mutation changes
+   * `Account.balance` and must invalidate the accounts list.
+   */
+  refreshAccounts: () => Promise<void>
+  // eslint-disable-next-line no-unused-vars
+  setAccounts: (accounts: Account[]) => void
   loading: boolean
 }
 
@@ -157,6 +166,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     logout,
     checkAuth,
     fetchUserProfile,
+    refreshAccounts: fetchAccounts,
+    setAccounts,
     loading
   }}>{children}</AuthContext.Provider>;
 };

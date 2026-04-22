@@ -1,7 +1,7 @@
 "use client";
 
-import { CreditCard, Pencil, Plus, Wallet } from "lucide-react";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { CreditCard, Pencil, Plus, Trash2, Wallet } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
@@ -9,8 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Modal } from "@/components/ui/Modal";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useSnackbar } from "@/hooks";
-import { accountService } from "@/services/account.service";
+import { useAccounts } from "@/hooks";
 import type { Account, AccountType, CreateAccountDto } from "@/types/api";
 
 const ACCOUNT_TYPES: { value: AccountType; label: string }[] = [
@@ -46,12 +45,21 @@ const CARD_STYLES: Record<AccountType, { gradient: string; textColor: string; ch
     chipColor: "from-yellow-300 to-yellow-500" },
 };
 
-interface AccountCardProps {
-  account: Account;
-  onEdit: (account: Account) => void;
+interface AccountFormValues extends CreateAccountDto {
+  // react-hook-form's `<input type="number">` returns strings unless we
+  // convert — declared explicitly so the form stays honest about types.
+  balance?: number;
 }
 
-function AccountCard({ account, onEdit }: AccountCardProps) {
+interface AccountCardProps {
+  account: Account;
+  // eslint-disable-next-line no-unused-vars
+  onEdit: (account: Account) => void;
+  // eslint-disable-next-line no-unused-vars
+  onDelete: (account: Account) => void;
+}
+
+function AccountCard({ account, onEdit, onDelete }: AccountCardProps) {
   const style = CARD_STYLES[account.type] ?? CARD_STYLES.checking;
 
   return (
@@ -60,17 +68,28 @@ function AccountCard({ account, onEdit }: AccountCardProps) {
       <div className="absolute -top-10 -right-10 w-44 h-44 rounded-full bg-white/10 pointer-events-none" />
       <div className="absolute -bottom-14 -left-8 w-52 h-52 rounded-full bg-white/5 pointer-events-none" />
 
-      {/* Edit button — visible on hover */}
-      <button
-        onClick={() => onEdit(account)}
-        className={`absolute top-3 right-3 z-20 p-1.5 rounded-full bg-white/10 hover:bg-white/25 transition-opacity opacity-0 group-hover:opacity-100 ${style.textColor}`}
-        aria-label="Edit account"
-      >
-        <Pencil size={13} />
-      </button>
+      {/* Action buttons — visible on hover */}
+      <div className="absolute top-3 right-3 z-20 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          onClick={() => onEdit(account)}
+          className={`p-1.5 rounded-full bg-white/10 hover:bg-white/25 transition-colors ${style.textColor}`}
+          aria-label="Edit account"
+          type="button"
+        >
+          <Pencil size={13} />
+        </button>
+        <button
+          onClick={() => onDelete(account)}
+          className={`p-1.5 rounded-full bg-white/10 hover:bg-red-500/60 transition-colors ${style.textColor}`}
+          aria-label="Delete account"
+          type="button"
+        >
+          <Trash2 size={13} />
+        </button>
+      </div>
 
       {/* Top row: chip + type label */}
-      <div className="relative z-10 flex items-start justify-between pr-6">
+      <div className="relative z-10 flex items-start justify-between pr-16">
         {/* EMV Chip */}
         <div className={`w-10 h-7 rounded-md bg-gradient-to-br ${style.chipColor} shadow-md flex items-center justify-center`}>
           <div className="w-7 h-5 rounded-[3px] border border-yellow-600/40 grid grid-cols-3 grid-rows-3 gap-[2px] p-[2px]">
@@ -105,15 +124,20 @@ function AccountCard({ account, onEdit }: AccountCardProps) {
 }
 
 export default function Accounts() {
-  const snackbar = useSnackbar();
-  const snackbarRef = useRef(snackbar);
-  snackbarRef.current = snackbar;
+  const { accounts, isLoading, isMutating, refresh, createAccount, updateAccount, deleteAccount } = useAccounts();
 
-  const [ accounts, setAccounts ] = useState<Account[]>([]);
-  const [ isLoading, setIsLoading ] = useState(true);
-  const [ isModalOpen, setIsModalOpen ] = useState(false);
-  const [ isSubmitting, setIsSubmitting ] = useState(false);
+  // Ensure a fresh fetch on mount (the context already holds accounts, but
+  // balances can drift if transactions were mutated on another device).
+  useEffect(() => {
+    refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const [ isFormOpen, setIsFormOpen ] = useState(false);
   const [ editingAccount, setEditingAccount ] = useState<Account | null>(null);
+  const [ deletingAccount, setDeletingAccount ] = useState<Account | null>(null);
+
+  const isEditMode = editingAccount !== null;
 
   const {
     register,
@@ -122,81 +146,68 @@ export default function Accounts() {
     watch,
     reset,
     formState: { errors },
-  } = useForm<CreateAccountDto>({
-    defaultValues: { name: "",
-      type: "checking" },
+  } = useForm<AccountFormValues>({
+    defaultValues: {
+      name:     "",
+      type:     "checking",
+      balance:  0,
+      currency: "MXN",
+    },
   });
 
   const selectedType = watch("type");
-  const isEditMode = editingAccount !== null;
-
-  const fetchAccounts = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const res = await accountService.getAll();
-      setAccounts(res.data ?? []);
-    } catch (error) {
-      snackbarRef.current.error({
-        title: "Failed to load accounts",
-        description: error instanceof Error ? error.message : "An error occurred",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchAccounts();
-  }, [ fetchAccounts ]);
 
   const handleOpenCreate = () => {
     setEditingAccount(null);
     reset({ name: "",
-      type: "checking" });
-    setIsModalOpen(true);
+      type: "checking",
+      balance: 0,
+      currency: "MXN" });
+    setIsFormOpen(true);
   };
 
   const handleOpenEdit = (account: Account) => {
     setEditingAccount(account);
-    reset({ name: account.name,
-      type: account.type });
-    setIsModalOpen(true);
+    reset({
+      name:     account.name,
+      type:     account.type,
+      balance:  account.balance,
+      currency: account.currency,
+    });
+    setIsFormOpen(true);
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
+  const handleCloseForm = () => {
+    setIsFormOpen(false);
     setEditingAccount(null);
-    reset({ name: "",
-      type: "checking" });
   };
 
   const onSubmit = handleSubmit(async (data) => {
-    setIsSubmitting(true);
-    try {
-      if (isEditMode) {
-        await accountService.update(editingAccount.id, data);
-        snackbar.success({
-          title: "Account updated",
-          description: `"${data.name}" has been updated.`,
-        });
-      } else {
-        await accountService.create(data);
-        snackbar.success({
-          title: "Account created",
-          description: `"${data.name}" has been created successfully.`,
-        });
-      }
-      handleCloseModal();
-      fetchAccounts();
-    } catch (error) {
-      snackbar.error({
-        title: isEditMode ? "Failed to update account" : "Failed to create account",
-        description: error instanceof Error ? error.message : "An error occurred",
-      });
-    } finally {
-      setIsSubmitting(false);
+    // Coerce balance to number (react-hook-form returns string for
+    // `type="number"` unless `valueAsNumber` is set on register — we set it)
+    const payload: CreateAccountDto = {
+      name: data.name.trim(),
+      type: data.type,
+    };
+    if (typeof data.balance === "number" && !Number.isNaN(data.balance)) {
+      payload.balance = data.balance;
     }
+    if (data.currency?.trim()) {
+      payload.currency = data.currency.trim().toUpperCase();
+    }
+
+    const ok = isEditMode
+      ? await updateAccount(editingAccount.id, payload)
+      : await createAccount(payload);
+
+    if (ok) { handleCloseForm(); }
   });
+
+  const handleConfirmDelete = async () => {
+    if (!deletingAccount) { return; }
+    const ok = await deleteAccount(deletingAccount.id);
+    if (ok) { setDeletingAccount(null); }
+  };
 
   return (
     <div className="space-y-6">
@@ -213,7 +224,7 @@ export default function Accounts() {
       </div>
 
       {/* Cards grid */}
-      {isLoading ? (
+      {isLoading && accounts.length === 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="w-full max-w-sm h-48 rounded-2xl bg-muted animate-pulse" />
@@ -232,22 +243,27 @@ export default function Accounts() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {accounts.map((account) => (
-            <AccountCard key={account.id} account={account} onEdit={handleOpenEdit} />
+            <AccountCard
+              key={account.id}
+              account={account}
+              onEdit={handleOpenEdit}
+              onDelete={setDeletingAccount}
+            />
           ))}
         </div>
       )}
 
       {/* Create / Edit Modal */}
       <Modal
-        open={isModalOpen}
-        onClose={handleCloseModal}
+        open={isFormOpen}
+        onClose={handleCloseForm}
         title={isEditMode ? "Edit Account" : "New Account"}
       >
         <form onSubmit={onSubmit} className="px-6 pb-6 space-y-4">
           <p className="text-sm text-muted-foreground">
             {isEditMode
-              ? "Update the name or type of your account."
-              : "The account will start with a balance of $0 in MXN."}
+              ? "Update your account details. Balance edits should be rare — prefer transactions."
+              : "Create an account to track balances. The opening balance is optional."}
           </p>
 
           <div className="flex flex-col space-y-1.5">
@@ -255,7 +271,9 @@ export default function Accounts() {
             <Input
               id="name"
               placeholder="e.g. Mi cuenta BBVA"
-              {...register("name", { required: "Name is required" })}
+              {...register("name", { required: "Name is required",
+                minLength: { value: 2,
+                  message: "At least 2 characters" } })}
             />
             {errors.name && (
               <p className="text-sm text-destructive">{errors.name.message}</p>
@@ -281,17 +299,89 @@ export default function Accounts() {
             </Select>
           </div>
 
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col space-y-1.5">
+              <Label htmlFor="balance">{isEditMode ? "Balance" : "Opening balance"}</Label>
+              <Input
+                id="balance"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                {...register("balance", { valueAsNumber: true })}
+              />
+              {isEditMode && (
+                <p className="text-[11px] text-muted-foreground">
+                  Direct balance edits bypass transaction history.
+                </p>
+              )}
+            </div>
+
+            <div className="flex flex-col space-y-1.5">
+              <Label htmlFor="currency">Currency</Label>
+              <Input
+                id="currency"
+                placeholder="MXN"
+                maxLength={3}
+                {...register("currency", {
+                  pattern: { value: /^[A-Za-z]{3}$/,
+                    message: "3-letter ISO code" },
+                })}
+              />
+              {errors.currency && (
+                <p className="text-sm text-destructive">{errors.currency.message}</p>
+              )}
+            </div>
+          </div>
+
           <div className="flex gap-2 pt-2">
-            <Button type="button" variant="outline" onClick={handleCloseModal} className="flex-1">
+            <Button type="button" variant="outline" onClick={handleCloseForm} className="flex-1" disabled={isMutating}>
               Cancel
             </Button>
-            <Button type="submit" className="flex-1" disabled={isSubmitting}>
-              {isSubmitting
+            <Button type="submit" className="flex-1" disabled={isMutating}>
+              {isMutating
                 ? isEditMode ? "Saving..." : "Creating..."
                 : isEditMode ? "Save Changes" : "Create Account"}
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Delete confirmation */}
+      <Modal
+        open={deletingAccount !== null}
+        onClose={() => !isMutating && setDeletingAccount(null)}
+        title="Delete Account"
+      >
+        <div className="px-6 pb-6 space-y-4">
+          <p className="text-sm">
+            Are you sure you want to delete{" "}
+            <span className="font-semibold">{deletingAccount?.name}</span>?
+          </p>
+          <p className="text-xs text-muted-foreground">
+            The server will reject this if the account has any transactions.
+            You&apos;ll need to delete or reassign those first.
+          </p>
+          <div className="flex gap-2 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1"
+              onClick={() => setDeletingAccount(null)}
+              disabled={isMutating}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              className="flex-1"
+              onClick={handleConfirmDelete}
+              disabled={isMutating}
+            >
+              {isMutating ? "Deleting..." : "Delete Account"}
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );
