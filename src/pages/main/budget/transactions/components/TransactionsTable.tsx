@@ -112,8 +112,6 @@ const TransactionsTableComponent = ({
       return "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300";
     case "expense":
       return "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300";
-    case "savings":
-      return "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300";
     default:
       return "bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-300";
     }
@@ -125,8 +123,6 @@ const TransactionsTableComponent = ({
       return "text-green-600 dark:text-green-400";
     case "expense":
       return "text-red-600 dark:text-red-400";
-    case "savings":
-      return "text-blue-600 dark:text-blue-400";
     default:
       return "";
     }
@@ -173,7 +169,7 @@ const TransactionsTableComponent = ({
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => onEdit(transaction.id, transaction.description, transaction.amount, transaction.type, transaction.category, transaction.date)}
+                    onClick={() => onEdit(transaction.id, transaction.description ?? "", transaction.amount, transaction.type, transaction.category, transaction.date)}
                   >
                     <Pencil className="h-4 w-4 text-blue-500" />
                   </Button>

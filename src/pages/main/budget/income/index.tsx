@@ -180,7 +180,7 @@ export default function BudgetIncome() {
       if (isEditMode && editingItemId) {
         // Update existing item by sending the entire array
         const updatedIncomeItems = currentBudget.incomeItems.map((item) => {
-          if (item._id === editingItemId) {
+          if (item.id === editingItemId) {
             return {
               description: incomeItemForm.description,
               amount: Number(incomeItemForm.amount),

@@ -160,7 +160,7 @@ export default function BudgetExpense() {
       if (isEditMode && editingItemId) {
         // Update existing item by sending the entire array
         const updatedExpenseItems = currentBudget.expenseItems.map((item) => {
-          if (item._id === editingItemId) {
+          if (item.id === editingItemId) {
             return {
               description: expenseItemForm.description,
               amount: Number(expenseItemForm.amount),
@@ -281,7 +281,7 @@ export default function BudgetExpense() {
                 </TableHeader>
                 <TableBody>
                   {expenseItems.map((item) => (
-                    <TableRow key={item._id}>
+                    <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.description}</TableCell>
                       <TableCell>
                         <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${item.type === "Fixed"
@@ -299,14 +299,14 @@ export default function BudgetExpense() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => handleOpenEditModal(item._id!, item.description, item.amount, item.type)}
+                            onClick={() => handleOpenEditModal(item.id!, item.description, item.amount, item.type)}
                           >
                             <Pencil className="h-4 w-4 text-blue-500" />
                           </Button>
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => handleRemoveExpenseItem(item._id!)}
+                            onClick={() => handleRemoveExpenseItem(item.id!)}
                           >
                             <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>

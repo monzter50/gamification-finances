@@ -72,11 +72,12 @@ function TypePill({ type }: { type: TransactionType }) {
 
 interface RecentTxRowProps {
   tx: Transaction;
+  accountName?: string;
   // eslint-disable-next-line no-unused-vars
   onClick: (tx: Transaction) => void;
 }
 
-function RecentTxRow({ tx, onClick }: RecentTxRowProps) {
+function RecentTxRow({ tx, accountName, onClick }: RecentTxRowProps) {
   const amountClass = tx.type === "income"
     ? "text-green-600 dark:text-green-400"
     : "text-red-600 dark:text-red-400";
@@ -93,7 +94,7 @@ function RecentTxRow({ tx, onClick }: RecentTxRowProps) {
         <p className="text-xs text-muted-foreground truncate">
           {new Date(tx.date).toLocaleDateString("en-US", { month: "short",
             day: "numeric" })}
-          {tx.account?.name ? ` · ${tx.account.name}` : ""}
+          {accountName ? ` · ${accountName}` : ""}
         </p>
       </div>
       <TypePill type={tx.type} />
@@ -194,6 +195,13 @@ export default function Dashboard() {
     () => [ ...accounts ].sort((a, b) => b.balance - a.balance).slice(0, 4),
     [ accounts ]
   );
+
+  // ---- Account name lookup for recent tx rows ----
+  const accountNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const a of accounts) { map.set(a.id, a.name); }
+    return map;
+  }, [ accounts ]);
 
   const hasAccounts = accounts.length > 0;
   const greeting    = user?.name ? `Hi, ${user.name.split(" ")[0]}` : "Welcome back";
@@ -415,6 +423,7 @@ export default function Dashboard() {
                 <RecentTxRow
                   key={tx.id}
                   tx={tx}
+                  accountName={accountNameById.get(tx.accountId)}
                   onClick={() => navigate("/transactions")}
                 />
               ))}

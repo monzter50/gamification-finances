@@ -111,7 +111,7 @@ const IncomeTableComponent = ({
         </TableHeader>
         <TableBody>
           {incomeItems.map((item) => (
-            <TableRow key={item._id}>
+            <TableRow key={item.id}>
               <TableCell className="font-medium">{item.description}</TableCell>
               <TableCell>
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
@@ -126,14 +126,14 @@ const IncomeTableComponent = ({
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => onEdit(item._id!, item.description, item.amount, item.type)}
+                    onClick={() => onEdit(item.id!, item.description, item.amount, item.type)}
                   >
                     <Pencil className="h-4 w-4 text-blue-500" />
                   </Button>
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => onRemove(item._id!)}
+                    onClick={() => onRemove(item.id!)}
                   >
                     <Trash2 className="h-4 w-4 text-red-500" />
                   </Button>
