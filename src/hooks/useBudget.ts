@@ -1,7 +1,16 @@
 import { useState, useCallback } from "react";
 
 import { budgetService } from "@/services/budget.service";
-import type { Budget, CreateBudgetDTO, AddIncomeItemDTO, AddExpenseItemDTO } from "@/types/budget";
+import type {
+  Budget,
+  CreateBudgetDTO,
+  AddIncomeItemDTO,
+  AddExpenseItemDTO,
+  PaginationParams,
+  PaginatedResponse,
+  IncomeItem,
+  ExpenseItem,
+} from "@/types/budget";
 
 export const useBudget = () => {
   const [ budgets, setBudgets ] = useState<Budget[]>([]);
@@ -62,8 +71,8 @@ export const useBudget = () => {
       setIsLoading(true);
       setError(null);
       const updatedBudget = await budgetService.updateBudget(id, data);
-      setBudgets((prev) => prev.map((b) => (b._id === id ? updatedBudget : b)));
-      if (currentBudget?._id === id) {
+      setBudgets((prev) => prev.map((b) => (b.id === id ? updatedBudget : b)));
+      if (currentBudget?.id === id) {
         setCurrentBudget(updatedBudget);
       }
       return updatedBudget;
@@ -81,8 +90,8 @@ export const useBudget = () => {
       setIsLoading(true);
       setError(null);
       await budgetService.deleteBudget(id);
-      setBudgets((prev) => prev.filter((b) => b._id !== id));
-      if (currentBudget?._id === id) {
+      setBudgets((prev) => prev.filter((b) => b.id !== id));
+      if (currentBudget?.id === id) {
         setCurrentBudget(null);
       }
     } catch (err) {
@@ -99,8 +108,8 @@ export const useBudget = () => {
       setIsLoading(true);
       setError(null);
       const updatedBudget = await budgetService.addIncomeItem(budgetId, data);
-      setBudgets((prev) => prev.map((b) => (b._id === budgetId ? updatedBudget : b)));
-      if (currentBudget?._id === budgetId) {
+      setBudgets((prev) => prev.map((b) => (b.id === budgetId ? updatedBudget : b)));
+      if (currentBudget?.id === budgetId) {
         setCurrentBudget(updatedBudget);
       }
       return updatedBudget;
@@ -118,8 +127,8 @@ export const useBudget = () => {
       setIsLoading(true);
       setError(null);
       const updatedBudget = await budgetService.updateIncomeItems(budgetId, incomeItems);
-      setBudgets((prev) => prev.map((b) => (b._id === budgetId ? updatedBudget : b)));
-      if (currentBudget?._id === budgetId) {
+      setBudgets((prev) => prev.map((b) => (b.id === budgetId ? updatedBudget : b)));
+      if (currentBudget?.id === budgetId) {
         setCurrentBudget(updatedBudget);
       }
       return updatedBudget;
@@ -137,8 +146,8 @@ export const useBudget = () => {
       setIsLoading(true);
       setError(null);
       const updatedBudget = await budgetService.deleteIncomeItem(budgetId, itemId);
-      setBudgets((prev) => prev.map((b) => (b._id === budgetId ? updatedBudget : b)));
-      if (currentBudget?._id === budgetId) {
+      setBudgets((prev) => prev.map((b) => (b.id === budgetId ? updatedBudget : b)));
+      if (currentBudget?.id === budgetId) {
         setCurrentBudget(updatedBudget);
       }
       return updatedBudget;
@@ -156,8 +165,8 @@ export const useBudget = () => {
       setIsLoading(true);
       setError(null);
       const updatedBudget = await budgetService.addExpenseItem(budgetId, data);
-      setBudgets((prev) => prev.map((b) => (b._id === budgetId ? updatedBudget : b)));
-      if (currentBudget?._id === budgetId) {
+      setBudgets((prev) => prev.map((b) => (b.id === budgetId ? updatedBudget : b)));
+      if (currentBudget?.id === budgetId) {
         setCurrentBudget(updatedBudget);
       }
       return updatedBudget;
@@ -170,13 +179,32 @@ export const useBudget = () => {
     }
   }, [ currentBudget ]);
 
+  const updateExpenseItems = useCallback(async (budgetId: string, expenseItems: AddExpenseItemDTO[]) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const updatedBudget = await budgetService.updateExpenseItems(budgetId, expenseItems);
+      setBudgets((prev) => prev.map((b) => (b.id === budgetId ? updatedBudget : b)));
+      if (currentBudget?.id === budgetId) {
+        setCurrentBudget(updatedBudget);
+      }
+      return updatedBudget;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to update expense items";
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [ currentBudget ]);
+
   const deleteExpenseItem = useCallback(async (budgetId: string, itemId: string) => {
     try {
       setIsLoading(true);
       setError(null);
       const updatedBudget = await budgetService.deleteExpenseItem(budgetId, itemId);
-      setBudgets((prev) => prev.map((b) => (b._id === budgetId ? updatedBudget : b)));
-      if (currentBudget?._id === budgetId) {
+      setBudgets((prev) => prev.map((b) => (b.id === budgetId ? updatedBudget : b)));
+      if (currentBudget?.id === budgetId) {
         setCurrentBudget(updatedBudget);
       }
       return updatedBudget;
@@ -188,6 +216,42 @@ export const useBudget = () => {
       setIsLoading(false);
     }
   }, [ currentBudget ]);
+
+  const fetchIncomeItemsPaginated = useCallback(
+    async (budgetId: string, params?: PaginationParams): Promise<PaginatedResponse<IncomeItem>> => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const data = await budgetService.getIncomeItemsPaginated(budgetId, params);
+        return data;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to fetch income items";
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
+
+  const fetchExpenseItemsPaginated = useCallback(
+    async (budgetId: string, params?: PaginationParams): Promise<PaginatedResponse<ExpenseItem>> => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const data = await budgetService.getExpenseItemsPaginated(budgetId, params);
+        return data;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to fetch expense items";
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
 
   return {
     budgets,
@@ -202,7 +266,10 @@ export const useBudget = () => {
     addIncomeItem,
     updateIncomeItems,
     deleteIncomeItem,
+    fetchIncomeItemsPaginated,
     addExpenseItem,
+    updateExpenseItems,
     deleteExpenseItem,
+    fetchExpenseItemsPaginated,
   };
 };

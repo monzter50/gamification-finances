@@ -5,9 +5,10 @@
 
 import { createLogger, LogLevel } from "@aglaya/logger";
 
-// Determine log level based on environment
-// eslint-disable-next-line turbo/no-undeclared-env-vars
-const logLevel = import.meta.env.DEV ? LogLevel.DEBUG : LogLevel.INFO;
+import { env } from "./env";
+
+// Determine log level based on the resolved app environment
+const logLevel = env.enableDebugLogs ? LogLevel.DEBUG : LogLevel.INFO;
 
 // Main application logger
 export const appLogger = createLogger({

@@ -1,12 +1,14 @@
-import {  createBrowserRouter, Navigate, RouterProvider } from "react-router";
+import { createBrowserRouter, Navigate, RouterProvider } from "react-router";
 
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/context/AuthContext.tsx";
 import { ThemeProvider } from "@/context/ThemeContext.tsx";
+import Accounts from "@/pages/main/accounts";
 import Budget from "@/pages/main/budget";
 import BudgetDetail from "@/pages/main/budget/detail";
 import BudgetExpense from "@/pages/main/budget/expense";
 import BudgetIncome from "@/pages/main/budget/income";
+import BudgetTransactions from "@/pages/main/budget/transactions";
 import Dashboard from "@/pages/main/dashboard";
 import Profile from "@/pages/main/profile";
 import Transactions from "@/pages/main/transactions";
@@ -24,24 +26,48 @@ const router = createBrowserRouter([
     element: <ProtectedRoutes />,
     loader: () => null, // We'll handle auth check in the component
     children: [
-      { index: true,
-        element: <Dashboard /> },
-      { path: "transactions",
-        element: <Transactions /> },
-      { path: "profile",
-        element: <Profile /> },
-      { path:"budget",
-        element:<Budget/> },
-      { path:"budget/:id",
-        element:<BudgetDetail/> },
-      { path:"budget/:id/income",
-        element:<BudgetIncome/> },
-      { path:"budget/:id/expense",
-        element:<BudgetExpense/> }
+      {
+        index: true,
+        element: <Dashboard />
+      },
+      {
+        path: "transactions",
+        element: <Transactions />
+      },
+      {
+        path: "profile",
+        element: <Profile />
+      },
+      {
+        path: "budget",
+        element: <Budget />
+      },
+      {
+        path: "budget/:id",
+        element: <BudgetDetail />
+      },
+      {
+        path: "budget/:id/income",
+        element: <BudgetIncome />
+      },
+      {
+        path: "budget/:id/expense",
+        element: <BudgetExpense />
+      },
+      {
+        path: "budget/:id/transactions",
+        element: <BudgetTransactions />
+      },
+      {
+        path: "accounts",
+        element: <Accounts />
+      }
     ],
   },
-  { path: "*",
-    element: <Navigate to="/" replace /> },
+  {
+    path: "*",
+    element: <Navigate to="/" replace />
+  },
 ]);
 
 function App() {

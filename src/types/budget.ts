@@ -9,21 +9,24 @@ export type IncomeType =
   | "Check"
   | "Other";
 
+export type ExpenseType = "Fixed" | "Variable";
+
 export interface IncomeItem {
-  _id?: string;
+  id?: string;
   description: string;
   amount: number;
   type: IncomeType;
 }
 
 export interface ExpenseItem {
-  _id?: string;
+  id?: string;
   description: string;
   amount: number;
+  type: ExpenseType;
 }
 
 export interface Budget {
-  _id: string;
+  id: string;
   userId: string;
   year: number;
   month: number;
@@ -54,6 +57,7 @@ export interface AddIncomeItemDTO {
 export interface AddExpenseItemDTO {
   description: string;
   amount: number;
+  type: ExpenseType;
 }
 
 export interface BudgetStats {
@@ -68,6 +72,21 @@ export interface BudgetStats {
   };
 }
 
+export interface PaginationParams {
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  pagination: {
+    page: number;
+    pages: number;
+    total: number;
+    limit: number;
+  };
+}
+
 export const INCOME_TYPES: IncomeType[] = [
   "Debit Card",
   "Credit Card",
@@ -76,6 +95,11 @@ export const INCOME_TYPES: IncomeType[] = [
   "Transfer",
   "Check",
   "Other",
+];
+
+export const EXPENSE_TYPES: ExpenseType[] = [
+  "Fixed",
+  "Variable",
 ];
 
 export const MONTHS = [

@@ -1,12 +1,16 @@
 import { apiClient, getAuthToken } from "@/config/api-client";
 import { budgetLogger } from "@/config/logger";
-import type { ApiResponse } from "@/types/api";
+import type { ApiResponse, Pagination } from "@/types/api";
 import type {
   AddExpenseItemDTO,
   AddIncomeItemDTO,
   Budget,
   BudgetStats,
   CreateBudgetDTO,
+  IncomeItem,
+  ExpenseItem,
+  PaginationParams,
+  PaginatedResponse,
 } from "@/types/budget";
 
 const BASE_URL = "/budgets";
@@ -18,7 +22,7 @@ class BudgetService {
   async getBudgets(filters?: { year?: number; month?: number }): Promise<Budget[]> {
     budgetLogger.debug("Fetching budgets", filters);
     const token = getAuthToken();
-    
+
     if (!token) {
       throw new Error("No authentication token found");
     }
@@ -27,7 +31,7 @@ class BudgetService {
     if (filters?.month) { queryParams.append("month", filters.month.toString()); }
 
     const url = queryParams.toString() ? `${BASE_URL}?${queryParams}` : BASE_URL;
-    const { response, status, statusCode } = await apiClient.get<ApiResponse<Budget[]>>(url,{
+    const { response, status, statusCode } = await apiClient.get<ApiResponse<Budget[]>>(url, {
       authentication: {
         token,
       },
@@ -35,18 +39,20 @@ class BudgetService {
         requiredAuth: true,
       },
     });
-    
+
     const budgets = response?.data || [];
 
     if (statusCode !== 200) {
-      budgetLogger.error("Failed to fetch budgets", { status,
+      budgetLogger.error("Failed to fetch budgets", {
+        status,
         statusCode,
-        response });
+        response
+      });
       throw new Error("Failed to fetch budgets");
     }
 
     budgetLogger.info("Budgets fetched successfully", { count: response?.data?.length });
-    return  budgets;
+    return budgets;
   }
 
   /**
@@ -70,9 +76,11 @@ class BudgetService {
     });
 
     if (status === "error" || statusCode !== 200) {
-      budgetLogger.error("Failed to fetch budget", { status,
+      budgetLogger.error("Failed to fetch budget", {
+        status,
         statusCode,
-        response });
+        response
+      });
       throw new Error(response?.message || "Failed to fetch budget");
     }
 
@@ -101,9 +109,11 @@ class BudgetService {
     });
 
     if (status === "error" || statusCode !== 200) {
-      budgetLogger.error("Failed to fetch budget stats", { status,
+      budgetLogger.error("Failed to fetch budget stats", {
+        status,
         statusCode,
-        response });
+        response
+      });
       throw new Error(response?.message || "Failed to fetch stats");
     }
 
@@ -133,13 +143,15 @@ class BudgetService {
     });
 
     if (status === "error" || statusCode !== 201) {
-      budgetLogger.error("Failed to create budget", { status,
+      budgetLogger.error("Failed to create budget", {
+        status,
         statusCode,
-        response });
+        response
+      });
       throw new Error(response?.message || "Failed to create budget");
     }
 
-    budgetLogger.info("Budget created successfully", { id: response.data._id });
+    budgetLogger.info("Budget created successfully", { id: response.data.id });
     return response.data;
   }
 
@@ -147,8 +159,10 @@ class BudgetService {
    * Update budget
    */
   async updateBudget(id: string, data: Partial<CreateBudgetDTO>): Promise<Budget> {
-    budgetLogger.debug("Updating budget", { id,
-      data });
+    budgetLogger.debug("Updating budget", {
+      id,
+      data
+    });
     const token = getAuthToken();
 
     if (!token) {
@@ -166,9 +180,11 @@ class BudgetService {
     });
 
     if (status === "error" || statusCode !== 200) {
-      budgetLogger.error("Failed to update budget", { status,
+      budgetLogger.error("Failed to update budget", {
+        status,
         statusCode,
-        response });
+        response
+      });
       throw new Error(response?.message || "Failed to update budget");
     }
 
@@ -197,9 +213,11 @@ class BudgetService {
     });
 
     if (status === "error" || statusCode !== 200) {
-      budgetLogger.error("Failed to delete budget", { status,
+      budgetLogger.error("Failed to delete budget", {
+        status,
         statusCode,
-        response });
+        response
+      });
       throw new Error(response?.message || "Failed to delete budget");
     }
 
@@ -210,8 +228,10 @@ class BudgetService {
    * Add a single income item to a budget
    */
   async addIncomeItem(budgetId: string, data: AddIncomeItemDTO): Promise<Budget> {
-    budgetLogger.debug("Adding income item", { budgetId,
-      data });
+    budgetLogger.debug("Adding income item", {
+      budgetId,
+      data
+    });
     const token = getAuthToken();
 
     if (!token) {
@@ -232,9 +252,11 @@ class BudgetService {
     );
 
     if (status === "error" || statusCode !== 201) {
-      budgetLogger.error("Failed to add income item", { status,
+      budgetLogger.error("Failed to add income item", {
+        status,
         statusCode,
-        response });
+        response
+      });
       throw new Error(response?.message || "Failed to add income item");
     }
 
@@ -246,8 +268,10 @@ class BudgetService {
    * Update all income items
    */
   async updateIncomeItems(budgetId: string, incomeItems: AddIncomeItemDTO[]): Promise<Budget> {
-    budgetLogger.debug("Updating income items", { budgetId,
-      count: incomeItems.length });
+    budgetLogger.debug("Updating income items", {
+      budgetId,
+      count: incomeItems.length
+    });
     const token = getAuthToken();
 
     if (!token) {
@@ -268,9 +292,11 @@ class BudgetService {
     );
 
     if (status === "error" || statusCode !== 200) {
-      budgetLogger.error("Failed to update income items", { status,
+      budgetLogger.error("Failed to update income items", {
+        status,
         statusCode,
-        response });
+        response
+      });
       throw new Error(response?.message || "Failed to update income items");
     }
 
@@ -282,8 +308,10 @@ class BudgetService {
    * Delete an income item
    */
   async deleteIncomeItem(budgetId: string, itemId: string): Promise<Budget> {
-    budgetLogger.debug("Deleting income item", { budgetId,
-      itemId });
+    budgetLogger.debug("Deleting income item", {
+      budgetId,
+      itemId
+    });
     const token = getAuthToken();
 
     if (!token) {
@@ -303,23 +331,88 @@ class BudgetService {
     );
 
     if (status === "error" || statusCode !== 200) {
-      budgetLogger.error("Failed to delete income item", { status,
+      budgetLogger.error("Failed to delete income item", {
+        status,
         statusCode,
-        response });
+        response
+      });
       throw new Error(response?.message || "Failed to delete income item");
     }
 
-    budgetLogger.info("Income item deleted successfully", { budgetId,
-      itemId });
+    budgetLogger.info("Income item deleted successfully", {
+      budgetId,
+      itemId
+    });
     return response.data;
+  }
+
+  /**
+   * Get paginated income items
+   */
+  async getIncomeItemsPaginated(
+    budgetId: string,
+    params?: PaginationParams
+  ): Promise<PaginatedResponse<IncomeItem>> {
+    budgetLogger.debug("Fetching paginated income items", {
+      budgetId,
+      params,
+    });
+    const token = getAuthToken();
+
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
+
+    const queryParams = new URLSearchParams();
+    if (params?.page) {
+      queryParams.append("page", params.page.toString());
+    }
+    if (params?.limit) {
+      queryParams.append("limit", params.limit.toString());
+    }
+
+    const url = queryParams.toString()
+      ? `${BASE_URL}/${budgetId}/income?${queryParams}`
+      : `${BASE_URL}/${budgetId}/income`;
+
+    const { response, status, statusCode } = await apiClient.get<ApiResponse<IncomeItem[]> & { pagination: Pagination }>(url, {
+      authentication: {
+        token,
+      },
+      options: {
+        requiredAuth: true,
+      },
+    });
+
+    if (status === "error" || statusCode !== 200) {
+      budgetLogger.error("Failed to fetch paginated income items", {
+        status,
+        statusCode,
+        response,
+      });
+      throw new Error(response?.message || "Failed to fetch income items");
+    }
+
+    budgetLogger.info("Paginated income items fetched successfully", { budgetId });
+    return {
+      items: response.data ?? [],
+      pagination: {
+        page: response.pagination.page,
+        pages: response.pagination.pages,
+        total: response.pagination.total,
+        limit: response.pagination.limit
+      }
+    };
   }
 
   /**
    * Add a single expense item to a budget
    */
   async addExpenseItem(budgetId: string, data: AddExpenseItemDTO): Promise<Budget> {
-    budgetLogger.debug("Adding expense item", { budgetId,
-      data });
+    budgetLogger.debug("Adding expense item", {
+      budgetId,
+      data
+    });
     const token = getAuthToken();
 
     if (!token) {
@@ -340,9 +433,11 @@ class BudgetService {
     );
 
     if (status === "error" || statusCode !== 201) {
-      budgetLogger.error("Failed to add expense item", { status,
+      budgetLogger.error("Failed to add expense item", {
+        status,
         statusCode,
-        response });
+        response
+      });
       throw new Error(response?.message || "Failed to add expense item");
     }
 
@@ -354,8 +449,10 @@ class BudgetService {
    * Update all expense items
    */
   async updateExpenseItems(budgetId: string, expenseItems: AddExpenseItemDTO[]): Promise<Budget> {
-    budgetLogger.debug("Updating expense items", { budgetId,
-      count: expenseItems.length });
+    budgetLogger.debug("Updating expense items", {
+      budgetId,
+      count: expenseItems.length
+    });
     const token = getAuthToken();
 
     if (!token) {
@@ -376,9 +473,11 @@ class BudgetService {
     );
 
     if (status === "error" || statusCode !== 200) {
-      budgetLogger.error("Failed to update expense items", { status,
+      budgetLogger.error("Failed to update expense items", {
+        status,
         statusCode,
-        response });
+        response
+      });
       throw new Error(response?.message || "Failed to update expense items");
     }
 
@@ -390,8 +489,10 @@ class BudgetService {
    * Delete an expense item
    */
   async deleteExpenseItem(budgetId: string, itemId: string): Promise<Budget> {
-    budgetLogger.debug("Deleting expense item", { budgetId,
-      itemId });
+    budgetLogger.debug("Deleting expense item", {
+      budgetId,
+      itemId
+    });
     const token = getAuthToken();
 
     if (!token) {
@@ -411,15 +512,78 @@ class BudgetService {
     );
 
     if (status === "error" || statusCode !== 200) {
-      budgetLogger.error("Failed to delete expense item", { status,
+      budgetLogger.error("Failed to delete expense item", {
+        status,
         statusCode,
-        response });
+        response
+      });
       throw new Error(response?.message || "Failed to delete expense item");
     }
 
-    budgetLogger.info("Expense item deleted successfully", { budgetId,
-      itemId });
+    budgetLogger.info("Expense item deleted successfully", {
+      budgetId,
+      itemId
+    });
     return response.data;
+  }
+
+  /**
+   * Get paginated expense items
+   */
+  async getExpenseItemsPaginated(
+    budgetId: string,
+    params?: PaginationParams
+  ): Promise<PaginatedResponse<ExpenseItem>> {
+    budgetLogger.debug("Fetching paginated expense items", {
+      budgetId,
+      params,
+    });
+    const token = getAuthToken();
+
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
+
+    const queryParams = new URLSearchParams();
+    if (params?.page) {
+      queryParams.append("page", params.page.toString());
+    }
+    if (params?.limit) {
+      queryParams.append("limit", params.limit.toString());
+    }
+
+    const url = queryParams.toString()
+      ? `${BASE_URL}/${budgetId}/expense?${queryParams}`
+      : `${BASE_URL}/${budgetId}/expense`;
+
+    const { response, status, statusCode } = await apiClient.get<ApiResponse<ExpenseItem[]> & { pagination: Pagination }>(url, {
+      authentication: {
+        token,
+      },
+      options: {
+        requiredAuth: true,
+      },
+    });
+
+    if (status === "error" || statusCode !== 200) {
+      budgetLogger.error("Failed to fetch paginated expense items", {
+        status,
+        statusCode,
+        response,
+      });
+      throw new Error(response?.message || "Failed to fetch expense items");
+    }
+
+    budgetLogger.info("Paginated expense items fetched successfully", { budgetId });
+    return {
+      items: response.data ?? [],
+      pagination: {
+        page: response.pagination.page,
+        pages: response.pagination.pages,
+        total: response.pagination.total,
+        limit: response.pagination.limit
+      }
+    };
   }
 
   /**

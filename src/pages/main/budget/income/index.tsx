@@ -1,24 +1,32 @@
 "use client";
 
-import { ArrowLeft, Plus, Trash2, Pencil } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useSnackbar, useBudget } from "@/hooks";
+import { useSnackbar, useBudget, useMounted } from "@/hooks";
 import { budgetService } from "@/services/budget.service";
 import { MONTHS } from "@/types/budget";
-import type { IncomeType } from "@/types/budget";
+import type { IncomeType, IncomeItem } from "@/types/budget";
 
 import { IncomeModal } from "./components/IncomeModal";
+import { IncomeTable } from "./components/IncomeTable";
 
 export default function BudgetIncome() {
   const { id } = useParams();
   const navigate = useNavigate();
   const snackbar = useSnackbar();
-  const { currentBudget, isLoading, fetchBudgetById, addIncomeItem, updateIncomeItems, deleteIncomeItem } = useBudget();
+  const {
+    currentBudget,
+    isLoading,
+    fetchBudgetById,
+    addIncomeItem,
+    updateIncomeItems,
+    deleteIncomeItem,
+    fetchIncomeItemsPaginated,
+  } = useBudget();
   const hasFetched = useRef(false);
 
   const [ isModalOpen, setIsModalOpen ] = useState(false);
@@ -29,6 +37,13 @@ export default function BudgetIncome() {
     amount: "",
     type: "" as IncomeType | "",
   });
+
+  // Pagination state
+  const [ incomeItems, setIncomeItems ] = useState<IncomeItem[]>([]);
+  const [ currentPage, setCurrentPage ] = useState(1);
+  const [ totalPages, setTotalPages ] = useState(1);
+  const [ totalItems, setTotalItems ] = useState(0);
+  const itemsPerPage = 5;
 
   useEffect(() => {
     if (id && !hasFetched.current) {
@@ -42,6 +57,71 @@ export default function BudgetIncome() {
       });
     }
   }, [ id, fetchBudgetById, snackbar, navigate ]);
+
+  const { isMounted, cleanup } = useMounted();
+
+  // Load paginated income items - optimized to prevent excessive requests
+  useEffect(() => {
+    if (!id || !currentBudget) { return; }
+
+    const loadItems = async () => {
+      try {
+        const data = await fetchIncomeItemsPaginated(id, {
+          page: currentPage,
+          limit: itemsPerPage,
+        });
+
+        if (isMounted()) {
+          setIncomeItems(data.items);
+          setTotalPages(data.pagination.pages);
+          setTotalItems(data.pagination.total);
+        }
+      } catch (error) {
+        if (isMounted()) {
+          snackbar.error({
+            title: "Failed to load income items",
+            description: error instanceof Error ? error.message : "An error occurred",
+          });
+        }
+      }
+    };
+
+    loadItems();
+
+    return cleanup;
+  }, [ id, currentBudget, currentPage, isMounted, cleanup ]);
+
+  // Helper function for manual reload (used after CRUD operations)
+  const loadIncomeItems = async () => {
+    if (!id) { return; }
+
+    try {
+      const data = await fetchIncomeItemsPaginated(id, {
+        page: currentPage,
+        limit: itemsPerPage,
+      });
+      setIncomeItems(data.items);
+      setTotalPages(data.pagination.pages);
+      setTotalItems(data.pagination.total);
+    } catch (error) {
+      snackbar.error({
+        title: "Failed to load income items",
+        description: error instanceof Error ? error.message : "An error occurred",
+      });
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage((prev) => prev + 1);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage((prev) => prev - 1);
+    }
+  };
 
   if (isLoading || !currentBudget) {
     return (
@@ -100,7 +180,7 @@ export default function BudgetIncome() {
       if (isEditMode && editingItemId) {
         // Update existing item by sending the entire array
         const updatedIncomeItems = currentBudget.incomeItems.map((item) => {
-          if (item._id === editingItemId) {
+          if (item.id === editingItemId) {
             return {
               description: incomeItemForm.description,
               amount: Number(incomeItemForm.amount),
@@ -135,6 +215,8 @@ export default function BudgetIncome() {
       }
 
       handleCloseModal();
+      // Reload paginated data
+      await loadIncomeItems();
     } catch (error) {
       snackbar.error({
         title: isEditMode ? "Failed to update income" : "Failed to add income",
@@ -153,6 +235,9 @@ export default function BudgetIncome() {
         title: "Income removed",
         description: "Income item has been removed.",
       });
+
+      // Reload paginated data
+      await loadIncomeItems();
     } catch (error) {
       snackbar.error({
         title: "Failed to remove income",
@@ -191,7 +276,7 @@ export default function BudgetIncome() {
             ${totalIncome.toLocaleString("es-MX")} MXN
           </div>
           <p className="text-sm text-muted-foreground mt-2">
-            {currentBudget.incomeItems.length} income {currentBudget.incomeItems.length === 1 ? "source" : "sources"}
+            {totalItems} income {totalItems === 1 ? "source" : "sources"}
           </p>
         </CardContent>
       </Card>
@@ -203,55 +288,17 @@ export default function BudgetIncome() {
           <CardDescription>Manage your income items for this budget period</CardDescription>
         </CardHeader>
         <CardContent>
-          {currentBudget.incomeItems.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead className="w-24">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {currentBudget.incomeItems.map((item) => (
-                  <TableRow key={item._id}>
-                    <TableCell className="font-medium">{item.description}</TableCell>
-                    <TableCell>
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                        {item.type}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right text-green-600 dark:text-green-400 font-semibold">
-                      ${item.amount.toLocaleString("es-MX")} MXN
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleOpenEditModal(item._id!, item.description, item.amount, item.type)}
-                        >
-                          <Pencil className="h-4 w-4 text-blue-500" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleRemoveIncomeItem(item._id!)}
-                        >
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              No income items yet. Add your first income source above.
-            </div>
-          )}
+          <IncomeTable
+            incomeItems={incomeItems}
+            isLoading={false}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            onEdit={handleOpenEditModal}
+            onRemove={handleRemoveIncomeItem}
+            onNextPage={handleNextPage}
+            onPreviousPage={handlePreviousPage}
+          />
         </CardContent>
       </Card>
 

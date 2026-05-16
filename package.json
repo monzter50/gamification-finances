@@ -5,9 +5,17 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:staging": "vite --mode staging",
+    "dev:production": "vite --mode production",
     "build": "tsc -b && vite build",
+    "build:staging": "tsc -b && vite build --mode staging",
+    "build:production": "tsc -b && vite build --mode production",
     "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "type-check": "tsc --noEmit",
     "preview": "vite preview",
+    "preview:staging": "vite preview --mode staging",
     "prepare": "husky"
   },
   "dependencies": {
@@ -27,6 +35,7 @@
     "lucide-react": "^0.474.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-hook-form": "^7.69.0",
     "react-router": "^7.1.5",
     "recharts": "^2.15.1",
     "tailwind-merge": "^3.0.1",
@@ -63,11 +72,10 @@
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
       "eslint --fix",
-      "git add"
+      "prettier --write"
     ],
-    "*.{json,css,md}": [
-      "prettier --write",
-      "git add"
+    "*.{json,css,md,html,yml,yaml}": [
+      "prettier --write"
     ]
   }
 }

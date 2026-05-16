@@ -1,88 +1,87 @@
 /**
  * User Service
- * Handles user profile and statistics
+ * Handles user profile and statistics.
+ *
+ * Contract: docs/api-routes.md → User Management section.
  */
-
-import type { ApiResponse } from "@aglaya/api-core";
 
 import { apiClient, getAuthToken } from "@/config/api-client";
 import type {
-  UserProfileData,
+  ApiResponse,
   UpdateProfileRequest,
+  UserProfileData,
   UserStats,
 } from "@/types/api";
 
+function requireToken(): string {
+  const token = getAuthToken();
+  if (!token) { throw new Error("No authentication token found"); }
+  return token;
+}
+
 class UserService {
   /**
-   * Get user profile with gamification data
-   * GET /users/profile
+   * GET /users/profile — detailed profile with gamification data.
    */
   async getProfile(): Promise<ApiResponse<UserProfileData>> {
-    const token = getAuthToken();
+    const token = requireToken();
 
-    if (!token) {
-      throw new Error("No authentication token found");
-    }
+    const { status, response } = await apiClient.get<ApiResponse<UserProfileData>>(
+      "/users/profile",
+      {
+        authentication: { token },
+        options: { requiredAuth: true },
+      }
+    );
 
-    const response = await apiClient.get<UserProfileData>("/users/profile", {
-      authentication: {
-        token,
-      },
-      options: {
-        requiredAuth: true,
-      },
-    });
-
-    return response;
+    return {
+      success: status === "ok",
+      data: response?.data as UserProfileData,
+      message: response?.message ?? "",
+    };
   }
 
   /**
-   * Update user profile
-   * PUT /users/profile
+   * PUT /users/profile — update profile (name, savingsGoal).
    */
   async updateProfile(data: UpdateProfileRequest): Promise<ApiResponse<UserProfileData>> {
-    const token = getAuthToken();
+    const token = requireToken();
 
-    if (!token) {
-      throw new Error("No authentication token found");
-    }
+    const { status, response } = await apiClient.put<ApiResponse<UserProfileData>>(
+      "/users/profile",
+      {
+        body: { ...data },
+        authentication: { token },
+        options: { requiredAuth: true },
+      }
+    );
 
-    const response = await apiClient.put<UserProfileData>("/users/profile", {
-      body: {
-        ...data,
-      },
-      authentication: {
-        token,
-      },
-      options: {
-        requiredAuth: true,
-      },
-    });
-
-    return response;
+    return {
+      success: status === "ok",
+      data: response?.data as UserProfileData,
+      message: response?.message ?? "",
+    };
   }
 
   /**
-   * Get user statistics
-   * GET /users/stats
+   * GET /users/stats — comprehensive user statistics.
    */
   async getStats(): Promise<ApiResponse<UserStats>> {
-    const token = getAuthToken();
+    const token = requireToken();
 
-    if (!token) {
-      throw new Error("No authentication token found");
-    }
+    const { status, response } = await apiClient.get<ApiResponse<UserStats>>(
+      "/users/stats",
+      {
+        authentication: { token },
+        options: { requiredAuth: true },
+      }
+    );
 
-    const response = await apiClient.get<UserStats>("/users/stats", {
-      authentication: {
-        token,
-      },
-      options: {
-        requiredAuth: true,
-      },
-    });
-
-    return response;
+    return {
+      success: status === "ok",
+      data: response?.data as UserStats,
+      message: response?.message ?? "",
+    };
   }
 }
 
