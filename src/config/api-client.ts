@@ -5,12 +5,12 @@
 
 import { ApiClient } from "@aglaya/api-core";
 
-// Get API base URL from environment variables
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
+import { env } from "./env";
 
-// Create and export the API client instance
+// Create and export the API client instance.
+// The endpoint is selected by Vite mode at build/dev time — see src/config/env.ts
 export const apiClient = new ApiClient({
-  baseURL: API_BASE_URL,
+  baseURL: env.apiBaseUrl,
   timeout: 10000,
   contentType: "application/json",
 });

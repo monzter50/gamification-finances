@@ -22,6 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# Local-only env overrides (Vite). Mode files like .env.development /
+# .env.staging / .env.production are committed; *.local variants are not.
 .env
+.env.*
+.env.local
+.env.*.local
 
 .claude/*
