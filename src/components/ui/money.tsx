@@ -65,7 +65,7 @@ export const Money = React.forwardRef<HTMLSpanElement, MoneyProps>(
           currency,
           signDisplay: signed ? "exceptZero" : "auto",
         }),
-      [locale, currency, signed],
+      [ locale, currency, signed ],
     );
     /* eslint-enable no-restricted-syntax */
 
