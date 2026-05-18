@@ -25,7 +25,7 @@ export function YearlySummary({ yearlyBudgets }: YearlySummaryProps) {
               <div>
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-muted-foreground">Total Income</span>
-                  <span className="font-medium text-green-600 dark:text-green-400">
+                  <span className="font-medium text-income">
                                         ${data.income.toLocaleString("es-MX")} MXN
                   </span>
                 </div>
@@ -33,7 +33,7 @@ export function YearlySummary({ yearlyBudgets }: YearlySummaryProps) {
               <div>
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-muted-foreground">Total Expenses</span>
-                  <span className="font-medium text-red-600 dark:text-red-400">
+                  <span className="font-medium text-expense">
                                         ${data.expense.toLocaleString("es-MX")} MXN
                   </span>
                 </div>
@@ -43,8 +43,8 @@ export function YearlySummary({ yearlyBudgets }: YearlySummaryProps) {
                   <span className="font-semibold">Net Savings</span>
                   <span
                     className={`font-bold ${data.savings >= 0
-                      ? "text-green-600 dark:text-green-400"
-                      : "text-red-600 dark:text-red-400"
+                      ? "text-income"
+                      : "text-expense"
                     }`}
                   >
                                         ${data.savings.toLocaleString("es-MX")} MXN

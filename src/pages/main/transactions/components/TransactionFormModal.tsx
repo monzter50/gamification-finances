@@ -1,11 +1,18 @@
 import { useEffect, useMemo } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  Button,
+  Input,
+  Label,
+  MoneyInput,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui";
 import { Modal } from "@/components/ui/Modal";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type {
   Account,
   CreateTransactionDto,
@@ -14,20 +21,13 @@ import type {
 } from "@/types/api";
 import type { Budget, ExpenseItem, IncomeItem } from "@/types/budget";
 
-/**
- * Fields the API actually accepts on POST/PUT /api/transactions
- * (see frontend-integration-guide.md §9).
- *
- * Local-only fields (`category`, `owner`, `isInstallment`) are intentionally
- * excluded — the backend doesn't persist them.
- */
 export interface TransactionFormValues {
   budgetId: string;
   accountId: string;
-  date: string; // yyyy-MM-dd
+  date: string;
   type: TransactionType;
   vendor: string;
-  amount: number;
+  amount: number | null;
   description?: string;
   incomeItemId?: string;
   expenseItemId?: string;
@@ -39,15 +39,16 @@ interface TransactionFormModalProps {
   accounts: Account[];
   budgets: Budget[];
   onClose: () => void;
+  // eslint-disable-next-line no-unused-vars
   onSubmit: (values: CreateTransactionDto) => Promise<void>;
   isSubmitting?: boolean;
 }
 
+const DEFAULT_CURRENCY = "MXN";
+
 const TRANSACTION_TYPES: { value: TransactionType; label: string }[] = [
-  { value: "expense",
-    label: "Expense" },
-  { value: "income",
-    label: "Income" },
+  { value: "expense", label: "Expense" },
+  { value: "income",  label: "Income"  },
 ];
 
 const EMPTY_DEFAULTS: TransactionFormValues = {
@@ -56,11 +57,16 @@ const EMPTY_DEFAULTS: TransactionFormValues = {
   date:           new Date().toISOString().split("T")[0],
   type:           "expense",
   vendor:         "",
-  amount:         0,
+  amount:         null,
   description:    "",
   incomeItemId:   "",
   expenseItemId:  "",
 };
+
+// Format option-row amounts. Selects can't host <Money> ergonomically (it's a
+// block-level span) — this is a small string helper for select rows only.
+const formatOptionAmount = (n: number, currency = DEFAULT_CURRENCY) =>
+  `${n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${currency}`;
 
 export function TransactionFormModal({
   open,
@@ -79,6 +85,7 @@ export function TransactionFormModal({
     setValue,
     watch,
     reset,
+    control,
     formState: { errors },
   } = useForm<TransactionFormValues>({
     defaultValues: EMPTY_DEFAULTS,
@@ -88,10 +95,9 @@ export function TransactionFormModal({
   const selectedBudgetId = watch("budgetId");
   const selectedBudget   = useMemo(
     () => budgets.find((b) => b.id === selectedBudgetId) ?? null,
-    [ budgets, selectedBudgetId ]
+    [ budgets, selectedBudgetId ],
   );
 
-  // Reset form when opening / switching modes
   useEffect(() => {
     if (!open) { return; }
 
@@ -112,7 +118,6 @@ export function TransactionFormModal({
     }
   }, [ open, editingTransaction, reset ]);
 
-  // Clear stale item link whenever type or budget changes
   useEffect(() => {
     setValue("incomeItemId", "");
     setValue("expenseItemId", "");
@@ -122,16 +127,13 @@ export function TransactionFormModal({
   const expenseItems: ExpenseItem[] = selectedBudget?.expenseItems ?? [];
 
   const submitHandler = handleSubmit(async (values) => {
-    // Build a payload that only contains fields the API accepts
     const payload: CreateTransactionDto = {
       budgetId:    values.budgetId,
       accountId:   values.accountId,
       date:        values.date,
       type:        values.type,
       vendor:      values.vendor.trim(),
-      amount:      Number(values.amount),
-      // Legacy required fields on CreateTransactionDto that the API ignores —
-      // kept here only because the shared type still lists them.
+      amount:      Number(values.amount ?? 0),
       category:    "",
       owner:       "",
     };
@@ -212,7 +214,7 @@ export function TransactionFormModal({
           </Select>
         </div>
 
-        {/* Linked income/expense item — optional but recommended */}
+        {/* Linked income/expense item */}
         {selectedBudget && selectedType === "income" && incomeItems.length > 0 && (
           <div className="flex flex-col space-y-1.5">
             <Label htmlFor="incomeItemId">Linked income plan (optional)</Label>
@@ -226,7 +228,7 @@ export function TransactionFormModal({
               <SelectContent>
                 {incomeItems.map((item) => (
                   <SelectItem key={item.id} value={item.id ?? ""}>
-                    {item.description} — ${item.amount.toLocaleString("es-MX")}
+                    {item.description} — {formatOptionAmount(item.amount)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -247,7 +249,7 @@ export function TransactionFormModal({
               <SelectContent>
                 {expenseItems.map((item) => (
                   <SelectItem key={item.id} value={item.id ?? ""}>
-                    {item.description} — ${item.amount.toLocaleString("es-MX")}
+                    {item.description} — {formatOptionAmount(item.amount)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -273,7 +275,7 @@ export function TransactionFormModal({
               ) : (
                 accounts.map((a) => (
                   <SelectItem key={a.id} value={a.id}>
-                    {a.name} · ${a.balance.toLocaleString("es-MX")} {a.currency}
+                    {a.name} · {formatOptionAmount(a.balance, a.currency)}
                   </SelectItem>
                 ))
               )}
@@ -309,8 +311,7 @@ export function TransactionFormModal({
             placeholder="e.g., Walmart, Employer"
             {...register("vendor", {
               required: "Vendor is required",
-              minLength: { value: 2,
-                message: "At least 2 characters" },
+              minLength: { value: 2, message: "At least 2 characters" },
             })}
           />
           {errors.vendor && (
@@ -318,20 +319,26 @@ export function TransactionFormModal({
           )}
         </div>
 
-        {/* Amount */}
+        {/* Amount — via design-system MoneyInput */}
         <div className="flex flex-col space-y-1.5">
-          <Label htmlFor="amount">Amount (MXN)</Label>
-          <Input
-            id="amount"
-            type="number"
-            step="0.01"
-            placeholder="0.00"
-            {...register("amount", {
+          <Label htmlFor="amount">Amount</Label>
+          <Controller
+            control={control}
+            name="amount"
+            rules={{
               required: "Amount is required",
-              valueAsNumber: true,
-              min: { value: 0.01,
-                message: "Amount must be greater than 0" },
-            })}
+              validate: (v) => (v !== null && v > 0) || "Amount must be greater than 0",
+            }}
+            render={({ field }) => (
+              <MoneyInput
+                id="amount"
+                value={field.value ?? null}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                currency={DEFAULT_CURRENCY}
+                placeholder="0.00"
+              />
+            )}
           />
           {errors.amount && (
             <p className="text-sm text-destructive">{errors.amount.message}</p>

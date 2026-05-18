@@ -225,6 +225,23 @@ Add to `src/components/ui/` only if:
 
 Otherwise compose existing primitives in the feature folder.
 
+## Escape hatch: decorative brand visuals
+
+Some UI is intentionally branded with raw colors that aren't part of the
+semantic token system — like the credit-card-style tiles on the Accounts
+page, where each account type gets a distinct gradient identity (analogous
+to Visa/Amex/Mastercard).
+
+The pattern:
+1. Put the raw palette classes in a single module like `src/lib/account-styles.ts`.
+2. Wrap that file (or just the offending block) in
+   `/* eslint-disable no-restricted-syntax -- decorative brand palette */`.
+3. Add a header comment explaining what this is and why it's exempt.
+4. Consume from feature code via a typed map, not by typing the raw classes inline.
+
+This keeps the escape hatch visible (one file, one disable, one justification)
+instead of scattering raw palettes across the codebase.
+
 ## When to add a new token
 
 Add a semantic token (not a primitive) when:

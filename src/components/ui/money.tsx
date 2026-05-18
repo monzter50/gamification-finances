@@ -38,6 +38,9 @@ export interface MoneyProps extends React.HTMLAttributes<HTMLSpanElement> {
   size?: MoneySize;
 }
 
+// Tone resolver — only `auto` actually consults the value, but every tone
+// gets the same signature so the lookup table stays uniform.
+// eslint-disable-next-line no-unused-vars
 const toneClass: Record<MoneyTone, (v: number) => string> = {
   neutral: () => "text-foreground",
   income: () => "text-income",
@@ -53,10 +56,10 @@ const sizeClass: Record<MoneySize, string> = {
 
 export const Money = React.forwardRef<HTMLSpanElement, MoneyProps>(
   ({ value, currency = "USD", locale, tone = "neutral", signed = false, size = "md", className, ...rest }, ref) => {
+    // <Money> is the single sanctioned place for Intl.NumberFormat currency.
+    /* eslint-disable no-restricted-syntax */
     const formatter = React.useMemo(
       () =>
-        // <Money> is the single sanctioned place for Intl.NumberFormat currency.
-        // eslint-disable-next-line no-restricted-syntax
         new Intl.NumberFormat(locale, {
           style: "currency",
           currency,
@@ -64,6 +67,7 @@ export const Money = React.forwardRef<HTMLSpanElement, MoneyProps>(
         }),
       [locale, currency, signed],
     );
+    /* eslint-enable no-restricted-syntax */
 
     return (
       <span

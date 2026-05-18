@@ -114,11 +114,11 @@ const IncomeTableComponent = ({
             <TableRow key={item.id}>
               <TableCell className="font-medium">{item.description}</TableCell>
               <TableCell>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-info-subtle text-info">
                   {item.type}
                 </span>
               </TableCell>
-              <TableCell className="text-right text-green-600 dark:text-green-400 font-semibold">
+              <TableCell className="text-right text-income font-semibold">
                 ${item.amount.toLocaleString("es-MX")} MXN
               </TableCell>
               <TableCell>
@@ -128,14 +128,14 @@ const IncomeTableComponent = ({
                     variant="ghost"
                     onClick={() => onEdit(item.id!, item.description, item.amount, item.type)}
                   >
-                    <Pencil className="h-4 w-4 text-blue-500" />
+                    <Pencil className="h-4 w-4 text-muted-foreground" />
                   </Button>
                   <Button
                     size="sm"
                     variant="ghost"
                     onClick={() => onRemove(item.id!)}
                   >
-                    <Trash2 className="h-4 w-4 text-red-500" />
+                    <Trash2 className="h-4 w-4 text-danger" />
                   </Button>
                 </div>
               </TableCell>

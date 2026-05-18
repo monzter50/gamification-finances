@@ -3,8 +3,16 @@
 import { Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  PageHeader,
+  Stat,
+} from "@/components/ui";
 import { useAuth } from "@/context/AuthContext";
 import { useSnackbar, useBudget, useTransactions, useTransactionSummary } from "@/hooks";
 import type { CreateTransactionDto, Transaction, TransactionFilters } from "@/types/api";
@@ -15,6 +23,7 @@ import { DEFAULT_FILTERS, TransactionListFilters, type TransactionListFilterValu
 import { TransactionsTable } from "../budget/transactions/components/TransactionsTable";
 
 const ITEMS_PER_PAGE = 10;
+const DEFAULT_CURRENCY = "MXN";
 
 export default function Transactions() {
   const snackbar = useSnackbar();
@@ -44,14 +53,10 @@ export default function Transactions() {
   const [ filterValues, setFilterValues ] = useState<TransactionListFilterValues>(DEFAULT_FILTERS);
   const [ currentPage, setCurrentPage ] = useState(1);
 
-  // Reset page when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [ filterValues ]);
+  useEffect(() => { setCurrentPage(1); }, [ filterValues ]);
 
   const apiFilters: TransactionFilters = useMemo(() => {
-    const f: TransactionFilters = { page: currentPage,
-      limit: ITEMS_PER_PAGE };
+    const f: TransactionFilters = { page: currentPage, limit: ITEMS_PER_PAGE };
     if (filterValues.type !== "all")  { f.type      = filterValues.type; }
     if (filterValues.startDate)       { f.startDate = filterValues.startDate; }
     if (filterValues.endDate)         { f.endDate   = filterValues.endDate; }
@@ -78,16 +83,11 @@ export default function Transactions() {
   const [ editingTransaction, setEditingTransaction ] = useState<Transaction | null>(null);
   const [ isSubmitting, setIsSubmitting ] = useState(false);
 
-  /**
-   * When the user picks a specific budget in the filter OR opens the modal
-   * we need its income/expense items to populate the linked-item selects.
-   */
   useEffect(() => {
     if (!filterValues.budgetId) {
       setActiveBudget(null);
       return;
     }
-    // Already cached in `budgets`? use that first
     const cached = budgets.find((b) => b.id === filterValues.budgetId);
     if (cached?.incomeItems && cached?.expenseItems) {
       setActiveBudget(cached);
@@ -104,8 +104,6 @@ export default function Transactions() {
     setIsModalOpen(true);
   };
 
-  // TransactionsTable.onEdit signature passes extra legacy args we don't need —
-  // we just look up the full row by id from local state.
   const handleOpenEdit = useCallback((itemId: string) => {
     const tx = transactions.find((t) => t.id === itemId);
     if (!tx) { return; }
@@ -127,9 +125,6 @@ export default function Transactions() {
         await addTransaction(values);
         setCurrentPage(1);
       }
-      // A successful mutation invalidates accounts/budgets/summary implicitly
-      // on the server — refresh the summary card too.
-      // Guide §9: tx mutations invalidate accounts + summaries.
       refetchSummary();
       refreshAccounts();
       handleCloseModal();
@@ -143,10 +138,8 @@ export default function Transactions() {
   const handleDelete = async (itemId: string) => {
     try {
       await deleteTransaction(itemId);
-      // Guide §9: tx mutations invalidate accounts + summaries.
       refetchSummary();
       refreshAccounts();
-      // Step a page back if we just emptied the last one
       const remaining = (pagination?.total ?? transactions.length) - 1;
       const newPages = Math.max(1, Math.ceil(remaining / ITEMS_PER_PAGE));
       if (currentPage > newPages) { setCurrentPage(newPages); }
@@ -158,12 +151,8 @@ export default function Transactions() {
   const totalPages = pagination?.pages ?? 1;
   const totalItems = pagination?.total ?? transactions.length;
 
-  // For the modal: we want the *active* budget if the user filtered to one,
-  // otherwise we still pass the full list for selection + linking.
   const modalBudgets = useMemo<Budget[]>(() => {
     if (activeBudget) {
-      // Ensure activeBudget is first (so it's pre-selected in new transactions
-      // via form default logic upstream if needed)
       return [ activeBudget, ...budgets.filter((b) => b.id !== activeBudget.id) ];
     }
     return budgets;
@@ -171,61 +160,40 @@ export default function Transactions() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold">Transactions</h2>
-          <p className="text-muted-foreground">
-            All income & expenses across your budgets. Every mutation updates your account balance atomically.
-          </p>
-        </div>
-        <Button onClick={handleOpenCreate} disabled={budgets.length === 0 || accounts.length === 0}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Transaction
-        </Button>
-      </div>
+      <PageHeader
+        title="Transactions"
+        description="All income & expenses across your budgets. Every mutation updates your account balance atomically."
+        actions={
+          <Button onClick={handleOpenCreate} disabled={budgets.length === 0 || accounts.length === 0}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Transaction
+          </Button>
+        }
+      />
 
       {/* Summary cards (global) */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Total Income</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-              ${(summary?.totalIncome ?? 0).toLocaleString("es-MX")} MXN
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {summary?.incomeCount ?? 0} transaction{summary?.incomeCount === 1 ? "" : "s"}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-              ${(summary?.totalExpense ?? 0).toLocaleString("es-MX")} MXN
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {summary?.expenseCount ?? 0} transaction{summary?.expenseCount === 1 ? "" : "s"}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Net Balance</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${(summary?.netBalance ?? 0) >= 0 ? "text-blue-600 dark:text-blue-400" : "text-red-600 dark:text-red-400"}`}>
-              ${(summary?.netBalance ?? 0).toLocaleString("es-MX")} MXN
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {isLoadingSummary ? "Refreshing…" : "Income − Expenses"}
-            </p>
-          </CardContent>
-        </Card>
+        <Stat
+          label="Total Income"
+          value={summary?.totalIncome ?? 0}
+          currency={DEFAULT_CURRENCY}
+          tone="income"
+          loading={isLoadingSummary}
+        />
+        <Stat
+          label="Total Expenses"
+          value={summary?.totalExpense ?? 0}
+          currency={DEFAULT_CURRENCY}
+          tone="expense"
+          loading={isLoadingSummary}
+        />
+        <Stat
+          label="Net Balance"
+          value={summary?.netBalance ?? 0}
+          currency={DEFAULT_CURRENCY}
+          tone="auto"
+          loading={isLoadingSummary}
+        />
       </div>
 
       {/* Filters */}
@@ -267,7 +235,6 @@ export default function Transactions() {
         </CardContent>
       </Card>
 
-      {/* Modal */}
       <TransactionFormModal
         open={isModalOpen}
         editingTransaction={editingTransaction}

@@ -250,7 +250,7 @@ export default function BudgetTransactions() {
             <CardTitle className="text-sm font-medium">Total Income</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+            <div className="text-2xl font-bold text-income">
               ${totals.income.toLocaleString("es-MX")} MXN
             </div>
           </CardContent>
@@ -261,7 +261,7 @@ export default function BudgetTransactions() {
             <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+            <div className="text-2xl font-bold text-expense">
               ${totals.expense.toLocaleString("es-MX")} MXN
             </div>
           </CardContent>
@@ -272,7 +272,7 @@ export default function BudgetTransactions() {
             <CardTitle className="text-sm font-medium">Total Savings</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+            <div className="text-2xl font-bold text-info">
               ${totals.savings.toLocaleString("es-MX")} MXN
             </div>
           </CardContent>

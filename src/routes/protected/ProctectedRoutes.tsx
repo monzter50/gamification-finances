@@ -20,10 +20,10 @@ export const ProtectedRoutes = () => {
   // Show loading state while checking authentication
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Verificando autenticación...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-foreground mx-auto" />
+          <p className="mt-4 text-muted-foreground">Verificando autenticación...</p>
         </div>
       </div>
     );

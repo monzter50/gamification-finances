@@ -10,25 +10,30 @@ import {
   Target,
   TrendingDown,
   TrendingUp,
-  Trophy,
 } from "lucide-react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
+  Input,
+  Label,
+  LevelBadge,
+  Money,
+  PageHeader,
+  Progress,
+  Skeleton,
+  XPProgressBar,
+} from "@/components/ui";
 import {
   ThemeSelector,
   ThemeToggle,
@@ -37,37 +42,50 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { useProfile } from "@/hooks";
 import { useTheme } from "@/hooks/useTheme";
+import { cn } from "@/lib/utils";
 
 interface ProfileFormValues {
   name: string;
-  savingsGoal: string; // input type=number returns string
+  savingsGoal: string;
 }
 
-const MXN = (n: number) =>
-  `$${n.toLocaleString("es-MX", {
-    maximumFractionDigits: 0,
-  })} MXN`;
+const DEFAULT_CURRENCY = "MXN";
+
+// Tone palette for the small stat cells. Maps semantically to design tokens
+// so a Flame icon is always "streak", not "orange-500".
+type CellTone = "streak" | "level" | "info" | "success" | "expense" | "savings" | "xp";
+
+const cellToneClass: Record<CellTone, string> = {
+  streak:  "text-streak",
+  level:   "text-level",
+  info:    "text-info",
+  success: "text-success",
+  expense: "text-expense",
+  savings: "text-savings",
+  xp:      "text-xp",
+};
 
 function StatCell({
   icon: Icon,
   label,
   value,
-  accent = "text-foreground",
+  tone,
 }: {
   // eslint-disable-next-line no-unused-vars
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: React.ReactNode;
-  accent?: string;
+  tone?: CellTone;
 }) {
+  const toneClass = tone ? cellToneClass[tone] : "text-foreground";
   return (
     <div className="flex items-center gap-3 rounded-lg border bg-muted/30 p-3">
       <div className="flex h-9 w-9 items-center justify-center rounded-md bg-background">
-        <Icon className={`h-4 w-4 ${accent}`} />
+        <Icon className={cn("h-4 w-4", toneClass)} />
       </div>
       <div className="flex flex-col">
         <span className="text-xs text-muted-foreground">{label}</span>
-        <span className={`text-sm font-semibold ${accent}`}>{value}</span>
+        <span className={cn("text-sm font-semibold", toneClass)}>{value}</span>
       </div>
     </div>
   );
@@ -91,14 +109,9 @@ export default function Profile() {
     reset,
     formState: { isDirty, errors },
   } = useForm<ProfileFormValues>({
-    defaultValues: {
-      name: "",
-      savingsGoal: "",
-    },
+    defaultValues: { name: "", savingsGoal: "" },
   });
 
-  // Reset the form whenever the server payload lands so the inputs reflect
-  // canonical state (and `isDirty` stays meaningful).
   useEffect(() => {
     if (!profile) { return; }
     reset({
@@ -109,9 +122,6 @@ export default function Profile() {
 
   const onSubmit = async (values: ProfileFormValues) => {
     const payload: { name?: string; savingsGoal?: number } = {};
-
-    // Only send what actually changed — respects the PATCH-like semantics
-    // of the backend PUT endpoint (per docs/api-routes.md §User Management).
     if (values.name.trim() && values.name.trim() !== profile?.name) {
       payload.name = values.name.trim();
     }
@@ -119,7 +129,6 @@ export default function Profile() {
     if (!Number.isNaN(parsedGoal) && parsedGoal !== profile?.savingsGoal) {
       payload.savingsGoal = parsedGoal;
     }
-
     if (Object.keys(payload).length === 0) { return; }
     await updateProfile(payload);
   };
@@ -128,30 +137,22 @@ export default function Profile() {
   const email = profile?.email ?? user?.email ?? "";
 
   // --- Gamification derived values ---
-  // Priority: stats (freshest) → profile (/users/profile) → user (/auth/me).
-  // `/users/stats` may 404 until the backend wires it up — everything falls
-  // back gracefully. Fields only exposed by /auth/me (experienceToNextLevel,
-  // levelProgress, achievements[], badges[]) come from AuthContext.
   const level = stats?.level ?? profile?.level ?? user?.level ?? 0;
   const experience = stats?.experience ?? profile?.experience ?? user?.experience ?? 0;
   const xpToNext = stats?.experienceToNextLevel ?? user?.experienceToNextLevel ?? 0;
-  const xpProgress = stats?.levelProgress ?? user?.levelProgress ?? 0;
   const coins = stats?.coins ?? profile?.coins ?? user?.coins ?? 0;
 
   const totalSavings = stats?.totalSavings ?? profile?.totalSavings ?? user?.totalSavings ?? 0;
   const savingsGoal = stats?.savingsGoal ?? profile?.savingsGoal ?? user?.savingsGoal ?? 0;
 
-  // Compute savings progress client-side when stats isn't available.
   const computedSavingsProgress =
     savingsGoal > 0 ? Math.min((totalSavings / savingsGoal) * 100, 100) : 0;
   const savingsProgress = stats?.savingsProgress ?? computedSavingsProgress;
   const goalReached = stats?.savingsGoalReached ?? (savingsGoal > 0 && totalSavings >= savingsGoal);
 
-  // Only from /auth/me or /users/stats — render "—" if neither is available.
   const achievementsCount = stats?.totalAchievements ?? user?.achievements?.length ?? 0;
   const badgesCount = stats?.totalBadges ?? user?.badges?.length ?? 0;
 
-  // Only from /users/stats. Show a placeholder when stats endpoint is missing.
   const hasStats = stats != null;
   const streak = stats?.currentStreak ?? 0;
   const totalTransactions = stats?.totalTransactions ?? 0;
@@ -159,13 +160,10 @@ export default function Profile() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-3xl font-bold">Your Profile</h2>
-        <p className="text-muted-foreground">
-          Level up, track your streak, and manage your savings goal.
-        </p>
-      </div>
+      <PageHeader
+        title="Your Profile"
+        description="Level up, track your streak, and manage your savings goal."
+      />
 
       {/* Gamification summary */}
       <div className="grid gap-4 lg:grid-cols-3">
@@ -173,11 +171,8 @@ export default function Profile() {
         <Card className="lg:col-span-2">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Trophy className="h-5 w-5 text-yellow-500" />
-                  Level {level}
-                </CardTitle>
+              <div className="space-y-2">
+                <LevelBadge level={level} size="lg" />
                 <CardDescription>
                   {isLoadingStats
                     ? "Loading your progress…"
@@ -186,9 +181,9 @@ export default function Profile() {
                       : "Max level reached"}
                 </CardDescription>
               </div>
-              <div className="flex items-center gap-2 rounded-full bg-yellow-500/10 px-3 py-1 text-yellow-600 dark:text-yellow-400">
+              <div className="flex items-center gap-2 rounded-full bg-xp/15 px-3 py-1 text-xp">
                 <Coins className="h-4 w-4" />
-                <span className="text-sm font-semibold">
+                <span className="text-sm font-semibold tabular-nums">
                   {coins.toLocaleString()}
                 </span>
               </div>
@@ -198,13 +193,11 @@ export default function Profile() {
             {isLoadingStats ? (
               <Skeleton className="h-2 w-full" />
             ) : (
-              <>
-                <Progress value={Math.min(xpProgress, 100)} />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>{experience.toLocaleString()} XP</span>
-                  <span>{Math.round(xpProgress)}%</span>
-                </div>
-              </>
+              <XPProgressBar
+                current={experience}
+                max={experience + xpToNext}
+                level={level}
+              />
             )}
 
             <div className="grid grid-cols-2 gap-3 pt-2 sm:grid-cols-4">
@@ -212,25 +205,25 @@ export default function Profile() {
                 icon={Flame}
                 label="Streak"
                 value={hasStats ? `${streak} day${streak === 1 ? "" : "s"}` : "—"}
-                accent="text-orange-500"
+                tone="streak"
               />
               <StatCell
                 icon={Sparkles}
                 label="Achievements"
                 value={achievementsCount}
-                accent="text-purple-500"
+                tone="level"
               />
               <StatCell
                 icon={Award}
                 label="Badges"
                 value={badgesCount}
-                accent="text-blue-500"
+                tone="info"
               />
               <StatCell
                 icon={Calendar}
                 label="Member for"
                 value={hasStats ? `${daysSinceRegistration}d` : "—"}
-                accent="text-emerald-500"
+                tone="success"
               />
             </div>
           </CardContent>
@@ -240,7 +233,7 @@ export default function Profile() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5 text-green-500" />
+              <Target className="h-5 w-5 text-savings" />
               Savings Goal
             </CardTitle>
             <CardDescription>
@@ -254,11 +247,11 @@ export default function Profile() {
               <>
                 <Progress
                   value={Math.min(savingsProgress, 100)}
-                  className={goalReached ? "bg-green-500/20" : undefined}
+                  className={goalReached ? "bg-success/20" : undefined}
                 />
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>{MXN(totalSavings)}</span>
-                  <span>{MXN(savingsGoal)}</span>
+                  <Money value={totalSavings} currency={DEFAULT_CURRENCY} size="sm" />
+                  <Money value={savingsGoal} currency={DEFAULT_CURRENCY} size="sm" />
                 </div>
                 <div className="text-xs text-muted-foreground">
                   {Math.round(savingsProgress)}% complete
@@ -278,7 +271,7 @@ export default function Profile() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
-              <TrendingUp className="h-4 w-4 text-green-500" />
+              <TrendingUp className="h-4 w-4 text-savings" />
               Total Savings
             </CardTitle>
           </CardHeader>
@@ -286,9 +279,7 @@ export default function Profile() {
             {isLoadingStats ? (
               <Skeleton className="h-8 w-32" />
             ) : (
-              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                {MXN(totalSavings)}
-              </div>
+              <Money value={totalSavings} currency={DEFAULT_CURRENCY} tone="income" size="lg" />
             )}
             <p className="mt-1 text-xs text-muted-foreground">
               {hasStats ? `${totalTransactions} transactions recorded` : "Lifetime balance"}
@@ -298,7 +289,7 @@ export default function Profile() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
-              <TrendingDown className="h-4 w-4 text-red-500" />
+              <TrendingDown className="h-4 w-4 text-expense" />
               Total Expenses
             </CardTitle>
           </CardHeader>
@@ -306,9 +297,12 @@ export default function Profile() {
             {isLoadingStats ? (
               <Skeleton className="h-8 w-32" />
             ) : (
-              <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-                {MXN(stats?.totalExpenses ?? profile?.totalExpenses ?? 0)}
-              </div>
+              <Money
+                value={stats?.totalExpenses ?? profile?.totalExpenses ?? 0}
+                currency={DEFAULT_CURRENCY}
+                tone="expense"
+                size="lg"
+              />
             )}
             <p className="mt-1 text-xs text-muted-foreground">Lifetime spending</p>
           </CardContent>
@@ -348,10 +342,7 @@ export default function Profile() {
                   aria-invalid={errors.name ? "true" : "false"}
                   {...register("name", {
                     required: "Name is required",
-                    minLength: {
-                      value: 2,
-                      message: "Name must be at least 2 characters",
-                    },
+                    minLength: { value: 2, message: "Name must be at least 2 characters" },
                   })}
                 />
                 {errors.name && (
@@ -360,7 +351,7 @@ export default function Profile() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="savingsGoal">Savings Goal (MXN)</Label>
+                <Label htmlFor="savingsGoal">Savings Goal ({DEFAULT_CURRENCY})</Label>
                 <Input
                   id="savingsGoal"
                   type="number"
