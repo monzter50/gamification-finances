@@ -69,6 +69,11 @@ export const customInstance = async <T>(
     headers:         init.headers as Record<string, string> | undefined,
     body:            decodeBody(init.body),
     authentication:  token ? { token } : undefined,
+    // ApiClient only attaches `Authorization: Bearer <token>` when BOTH
+    // `authentication.token` AND `options.requiredAuth` are truthy
+    // (see @aglaya/api-core source). Without requiredAuth, the token is
+    // silently dropped and every protected request 401s.
+    options:         token ? { requiredAuth: true } : undefined,
   });
 
   if (envelope.status !== "ok") {

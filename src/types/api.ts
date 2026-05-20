@@ -22,25 +22,9 @@ export interface Pagination {
   limit: number;
 }
 
-export interface RegisterRequest {
-  email: string;
-  password: string;
-  name: string;
-}
-
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface LoginResponse {
-  token: string;
-  expiresIn: number;
-}
-
-export interface RegisterResponse {
-  userId: string;
-}
+// RegisterRequest, LoginRequest, LoginResponse, RegisterResponse — moved to
+// @/api/generated/models. Re-import from there. Removed on the migration to
+// OpenAPI-driven types (see auth.service.ts).
 
 export interface UserProfile {
   id: string;
