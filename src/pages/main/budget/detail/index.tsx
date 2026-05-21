@@ -1,7 +1,7 @@
 "use client";
 
-import { ArrowLeft, DollarSign, Receipt, TrendingDown, TrendingUp } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { ArrowLeft, Copy, DollarSign, Receipt, TrendingDown, TrendingUp } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 
 import { Button } from "@/components/ui/button";
@@ -10,12 +10,15 @@ import { useBudget, useSnackbar } from "@/hooks";
 import { budgetService } from "@/services/budget.service";
 import { MONTHS } from "@/types/budget";
 
+import { DuplicateBudgetModal } from "./components/DuplicateBudgetModal";
+
 export default function BudgetDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const snackbar = useSnackbar();
   const { currentBudget, isLoading, fetchBudgetById } = useBudget();
   const hasFetched = useRef(false);
+  const [showDuplicate, setShowDuplicate] = useState(false);
 
   useEffect(() => {
     if (id && !hasFetched.current) {
@@ -47,13 +50,24 @@ export default function BudgetDetail() {
         <Button variant="outline" size="icon" onClick={() => navigate("/budget")}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <div>
+        <div className="flex-1">
           <h2 className="text-3xl font-bold">
             {MONTHS[currentBudget.month]} {currentBudget.year}
           </h2>
           <p className="text-muted-foreground">Budget Overview</p>
         </div>
+        <Button variant="outline" onClick={() => setShowDuplicate(true)}>
+          <Copy className="mr-2 h-4 w-4" />
+          Duplicate
+        </Button>
       </div>
+
+      <DuplicateBudgetModal
+        open={showDuplicate}
+        sourceBudget={currentBudget}
+        onClose={() => setShowDuplicate(false)}
+        onDuplicated={(created) => navigate(`/budget/${created.id}`)}
+      />
 
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-3">

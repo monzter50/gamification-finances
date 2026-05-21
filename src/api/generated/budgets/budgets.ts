@@ -8,7 +8,10 @@
 import { customInstance } from "../../orval-mutator";
 import type {
   BadRequestErrorResponse,
+  Error,
   NotFoundErrorResponse,
+  PostApiBudgetsIdDuplicate201,
+  PostApiBudgetsIdDuplicateBody,
   PutApiBudgetsId200,
   PutApiBudgetsIdBody,
   UnauthorizedErrorResponse
@@ -71,5 +74,81 @@ export const putApiBudgetsId = async (id: string,
       headers: { "Content-Type": "application/json",
         ...options?.headers },
       body: JSON.stringify(putApiBudgetsIdBody)
+    }
+  ); };
+
+export type postApiBudgetsIdDuplicateResponse201 = {
+  data: PostApiBudgetsIdDuplicate201
+  status: 201
+}
+
+export type postApiBudgetsIdDuplicateResponse400 = {
+  data: BadRequestErrorResponse
+  status: 400
+}
+
+export type postApiBudgetsIdDuplicateResponse401 = {
+  data: UnauthorizedErrorResponse
+  status: 401
+}
+
+export type postApiBudgetsIdDuplicateResponse403 = {
+  data: void
+  status: 403
+}
+
+export type postApiBudgetsIdDuplicateResponse404 = {
+  data: NotFoundErrorResponse
+  status: 404
+}
+
+export type postApiBudgetsIdDuplicateResponse409 = {
+  data: Error
+  status: 409
+}
+
+export type postApiBudgetsIdDuplicateResponseSuccess = (postApiBudgetsIdDuplicateResponse201) & {
+  headers: Headers;
+};
+export type postApiBudgetsIdDuplicateResponseError = (postApiBudgetsIdDuplicateResponse400 | postApiBudgetsIdDuplicateResponse401 | postApiBudgetsIdDuplicateResponse403 | postApiBudgetsIdDuplicateResponse404 | postApiBudgetsIdDuplicateResponse409) & {
+  headers: Headers;
+};
+
+export type postApiBudgetsIdDuplicateResponse = (postApiBudgetsIdDuplicateResponseSuccess | postApiBudgetsIdDuplicateResponseError)
+
+export const getPostApiBudgetsIdDuplicateUrl = (id: string,) => {
+
+  return `/api/budgets/${id}/duplicate`;
+};
+
+/**
+ * Clones the source budget's `incomeItems` and `expenseItems` into a
+brand-new budget at the target `year`/`month`. **Transactions are NOT
+copied** — they are historical records pointing at the SOURCE items,
+and the cloned items are new rows with new IDs. Copying them would
+break transaction history.
+
+Fails with:
+- `400` if the target month is out of range, or if any source income
+  item references an account that no longer belongs to the user
+  (error message lists the offending accountIds).
+- `403` if the source budget does not belong to the caller.
+- `404` if the source budget does not exist.
+- `409` if a budget already exists at the target `(year, month)`.
+
+Items are NOT accepted in the body — pass only the target period.
+
+ * @summary Duplicate a budget into a new (year, month)
+ */
+export const postApiBudgetsIdDuplicate = async (id: string,
+  postApiBudgetsIdDuplicateBody: PostApiBudgetsIdDuplicateBody, options?: RequestInit): Promise<postApiBudgetsIdDuplicateResponse> => {
+
+  return customInstance<postApiBudgetsIdDuplicateResponse>(getPostApiBudgetsIdDuplicateUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json",
+        ...options?.headers },
+      body: JSON.stringify(postApiBudgetsIdDuplicateBody)
     }
   ); };
