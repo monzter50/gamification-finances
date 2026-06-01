@@ -14,6 +14,7 @@ import {
   Label,
 } from "@/components/ui";
 import { authLogger } from "@/config/logger";
+import { isSessionAlreadyActive } from "@/config/session";
 import { useAuth } from "@/context/AuthContext";
 import { useSnackbar } from "@/hooks";
 import { getAuthErrorMessage } from "@/utils/errors";
@@ -65,6 +66,12 @@ export default function Signin() {
       });
       // Navigation happens via the useEffect above when isAuthenticated flips.
     } catch (err) {
+      // Single-active-session: the blocking screen already explains this case,
+      // so don't also surface an inline error / toast on the form.
+      if (isSessionAlreadyActive(err)) {
+        return;
+      }
+
       authLogger.error("Login failed in UI", err);
       const errorMessage = getAuthErrorMessage(err);
 
