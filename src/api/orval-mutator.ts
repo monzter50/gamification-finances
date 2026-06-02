@@ -21,6 +21,8 @@
 import type { JSONTypes } from "@aglaya/api-core";
 
 import { apiClient, getAuthToken } from "@/config/api-client";
+import { isSessionRevoked } from "@/config/session";
+import { notifySessionRevoked } from "@/config/session-revocation";
 import { ApplicationError } from "@/utils/errors";
 
 type Method = "get" | "post" | "put" | "patch" | "delete";
@@ -65,16 +67,42 @@ export const customInstance = async <T>(
 
   const path = stripApiPrefix(url);
 
-  const envelope = await apiClient[method]<unknown>(path, {
-    headers:         init.headers as Record<string, string> | undefined,
-    body:            decodeBody(init.body),
-    authentication:  token ? { token } : undefined,
-    // ApiClient only attaches `Authorization: Bearer <token>` when BOTH
-    // `authentication.token` AND `options.requiredAuth` are truthy
-    // (see @aglaya/api-core source). Without requiredAuth, the token is
-    // silently dropped and every protected request 401s.
-    options:         token ? { requiredAuth: true } : undefined,
-  });
+  let envelope;
+  try {
+    envelope = await apiClient[method]<unknown>(path, {
+      headers:         init.headers as Record<string, string> | undefined,
+      body:            decodeBody(init.body),
+      authentication:  token ? { token } : undefined,
+      // ApiClient only attaches `Authorization: Bearer <token>` when BOTH
+      // `authentication.token` AND `options.requiredAuth` are truthy
+      // (see @aglaya/api-core source). Without requiredAuth, the token is
+      // silently dropped and every protected request 401s.
+      options:         token ? { requiredAuth: true } : undefined,
+    });
+  } catch (err) {
+    // `@aglaya/api-core` THROWS an `ApiError` on any non-2xx response (before
+    // it parses the JSON body), exposing only `.status` — not the backend
+    // `errorCode`. So the HTTP status is our single source of truth here.
+    const status =
+      err && typeof err === "object" && "status" in err
+        ? Number((err as { status: unknown }).status)
+        : undefined;
+
+    const appError = new ApplicationError(
+      err instanceof Error ? err.message : `Request failed: ${method.toUpperCase()} ${path}`,
+      "HTTP_ERROR",
+      status,
+    );
+
+    // Single active session: a 440 means a newer login superseded this device's
+    // session. Only react when a token was actually attached (ignore anonymous
+    // 4xx, e.g. a failed login itself), so we don't trip the screen spuriously.
+    if (token && isSessionRevoked(appError)) {
+      notifySessionRevoked();
+    }
+
+    throw appError;
+  }
 
   if (envelope.status !== "ok") {
     throw new ApplicationError(

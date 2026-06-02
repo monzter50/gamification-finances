@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate, RouterProvider } from "react-router";
 
+import { SessionBlockedGate } from "@/components/session/SessionBlockedGate";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/context/AuthContext.tsx";
 import { ThemeProvider } from "@/context/ThemeContext.tsx";
@@ -75,6 +76,7 @@ function App() {
     <ThemeProvider defaultTheme="light">
       <AuthProvider>
         <RouterProvider router={router} />
+        <SessionBlockedGate />
         <Toaster />
       </AuthProvider>
     </ThemeProvider>
