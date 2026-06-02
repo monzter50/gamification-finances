@@ -1,7 +1,8 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { Plus, Upload } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router";
 
 import {
   Button,
@@ -27,6 +28,7 @@ const DEFAULT_CURRENCY = "MXN";
 
 export default function Transactions() {
   const snackbar = useSnackbar();
+  const navigate = useNavigate();
   const { accounts, refreshAccounts } = useAuth();
   const { fetchBudgetById, fetchBudgets } = useBudget();
 
@@ -164,10 +166,16 @@ export default function Transactions() {
         title="Transactions"
         description="All income & expenses across your budgets. Every mutation updates your account balance atomically."
         actions={
-          <Button onClick={handleOpenCreate} disabled={budgets.length === 0 || accounts.length === 0}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Transaction
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate("/transactions/import")}>
+              <Upload className="mr-2 h-4 w-4" />
+              Import statement
+            </Button>
+            <Button onClick={handleOpenCreate} disabled={budgets.length === 0 || accounts.length === 0}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Transaction
+            </Button>
+          </div>
         }
       />
 
