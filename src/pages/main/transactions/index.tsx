@@ -1,7 +1,8 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { FileSpreadsheet, Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router";
 
 import {
   Button,
@@ -27,6 +28,7 @@ const DEFAULT_CURRENCY = "MXN";
 
 export default function Transactions() {
   const snackbar = useSnackbar();
+  const navigate = useNavigate();
   const { accounts, refreshAccounts } = useAuth();
   const { fetchBudgetById, fetchBudgets } = useBudget();
 
@@ -56,7 +58,8 @@ export default function Transactions() {
   useEffect(() => { setCurrentPage(1); }, [ filterValues ]);
 
   const apiFilters: TransactionFilters = useMemo(() => {
-    const f: TransactionFilters = { page: currentPage, limit: ITEMS_PER_PAGE };
+    const f: TransactionFilters = { page: currentPage,
+      limit: ITEMS_PER_PAGE };
     if (filterValues.type !== "all")  { f.type      = filterValues.type; }
     if (filterValues.startDate)       { f.startDate = filterValues.startDate; }
     if (filterValues.endDate)         { f.endDate   = filterValues.endDate; }
@@ -164,10 +167,16 @@ export default function Transactions() {
         title="Transactions"
         description="All income & expenses across your budgets. Every mutation updates your account balance atomically."
         actions={
-          <Button onClick={handleOpenCreate} disabled={budgets.length === 0 || accounts.length === 0}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Transaction
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate("/transactions/import-xlsx")}>
+              <FileSpreadsheet className="mr-2 h-4 w-4" />
+              Import Excel
+            </Button>
+            <Button onClick={handleOpenCreate} disabled={budgets.length === 0 || accounts.length === 0}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Transaction
+            </Button>
+          </div>
         }
       />
 

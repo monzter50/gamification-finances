@@ -12,6 +12,7 @@ import BudgetTransactions from "@/pages/main/budget/transactions";
 import Dashboard from "@/pages/main/dashboard";
 import Profile from "@/pages/main/profile";
 import Transactions from "@/pages/main/transactions";
+import XlsxImport from "@/pages/main/transactions/xlsx-import";
 import Signin from "@/pages/onboarding/signin";
 import { ProtectedRoutes } from "@/routes/protected/ProctectedRoutes.tsx";
 
@@ -33,6 +34,10 @@ const router = createBrowserRouter([
       {
         path: "transactions",
         element: <Transactions />
+      },
+      {
+        path: "transactions/import-xlsx",
+        element: <XlsxImport />
       },
       {
         path: "profile",
