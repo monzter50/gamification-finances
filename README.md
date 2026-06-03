@@ -23,6 +23,7 @@ All data in the dashboard is dummy/mock data for demonstration purposes:
 ## Features
 
 - [x] Login
+- [x] Import from a statement image
 - [ ] Register
 - [ ] Dashboard
 - [x] Profile
@@ -31,6 +32,23 @@ All data in the dashboard is dummy/mock data for demonstration purposes:
 - [ ] Expenses
 - [ ] Income
 - [ ] Reports
+
+## Import from a statement image
+
+Upload a photo/screenshot of a bank or credit-card statement at `/transactions/import` (or the **Import statement** button on the Transactions page). The backend extracts the transactions; you then review/edit them, pick a budget + account, and save.
+
+- The extracted rows land in an **editable review table** (date, vendor, amount, type, description). Low-confidence rows are flagged.
+- Pick a batch **budget** and **account** (with optional per-row account override), then confirm — the rows are bulk-created atomically.
+
+Extraction is a swappable backend provider (a mock by default, Claude vision when configured), so the UI is identical regardless.
+
+Implementation (under `src/`):
+
+| Piece | File |
+|---|---|
+| Upload + review page | `pages/main/transactions/import/` |
+| State machine | `pages/main/transactions/import/useImportReducer.ts` |
+| API calls (multipart extract + JSON confirm) | `services/import.service.ts` |
 
 ## Technologies
 
