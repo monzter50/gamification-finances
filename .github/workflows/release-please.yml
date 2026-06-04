@@ -1,0 +1,28 @@
+name: release-please
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      # Opens (or updates) a Release PR with the next version + CHANGELOG.
+      # Merging that PR triggers the second run, which creates the git tag
+      # and the GitHub Release page.
+      #
+      # NOTE: with the default GITHUB_TOKEN, CI workflows do NOT trigger on
+      # the Release PR or the release tag (GitHub's anti-recursion rule).
+      # If you want CI to run on those, create a PAT and pass it as `token`
+      # below, stored in `secrets.RELEASE_PLEASE_TOKEN`.
+      - uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+          # token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
