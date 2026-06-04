@@ -23,6 +23,7 @@ All data in the dashboard is dummy/mock data for demonstration purposes:
 ## Features
 
 - [x] Login
+- [x] Import from Excel (.xlsx)
 - [x] Single active session (blocking screen)
 - [ ] Register
 - [ ] Dashboard
@@ -32,6 +33,24 @@ All data in the dashboard is dummy/mock data for demonstration purposes:
 - [ ] Expenses
 - [ ] Income
 - [ ] Reports
+
+## Import from Excel
+
+Bulk-import a budget from an `.xlsx` workbook at `/transactions/import-xlsx` (or the **Import Excel** button on the Transactions page). The backend parses three sheets; you then review and confirm:
+
+- **Income items** — editable description/amount, with a **type** and **account** picked per row.
+- **Expense items** — editable description/amount; **Fixed/Variable** is pre-filled from the workbook's sections.
+- **Transactions** — editable rows; each row's account comes from the **payment-source → account** map.
+
+Pick the target budget, map accounts, then **Import everything** creates it all atomically on the server.
+
+Implementation (under `src/`):
+
+| Piece | File |
+|---|---|
+| Upload + 3-section review page | `pages/main/transactions/xlsx-import/` |
+| State machine | `pages/main/transactions/xlsx-import/useXlsxReducer.ts` |
+| API calls (multipart parse + JSON confirm) | `services/xlsxImport.service.ts` |
 
 ## Single active session
 
