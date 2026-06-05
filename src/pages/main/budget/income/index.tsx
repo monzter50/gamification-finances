@@ -272,7 +272,7 @@ export default function BudgetIncome() {
           <CardDescription>Sum of all income sources</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold text-green-600 dark:text-green-400">
+          <div className="text-3xl font-bold text-income">
             ${totalIncome.toLocaleString("es-MX")} MXN
           </div>
           <p className="text-sm text-muted-foreground mt-2">

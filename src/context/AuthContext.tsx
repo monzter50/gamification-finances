@@ -5,6 +5,8 @@ import { createContext, useContext, useState, useEffect } from "react";
 
 import { clearAuthData, setAuthExpiry, setAuthToken } from "@/config/api-client";
 import { authLogger } from "@/config/logger";
+import { isSessionAlreadyActive, type SessionBlockReason } from "@/config/session";
+import { resetSessionRevoked, subscribeSessionRevoked } from "@/config/session-revocation";
 import { authService } from "@/services";
 import { accountService } from "@/services/account.service";
 import type { UserProfile, Account } from "@/types/api";
@@ -28,6 +30,13 @@ interface AuthContextType {
   // eslint-disable-next-line no-unused-vars
   setAccounts: (accounts: Account[]) => void
   loading: boolean
+  /**
+   * Single-active-session: non-null when a blocking screen must be shown —
+   * "revoked" (token superseded mid-session) or "already_active" (login
+   * rejected because a session is already active elsewhere).
+   */
+  sessionBlock: SessionBlockReason | null
+  dismissSessionBlock: () => void
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -37,6 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [ user, setUser ] = useState<UserProfile | null>(null);
   const [ accounts, setAccounts ] = useState<Account[]>([]);
   const [ loading, setLoading ] = useState<boolean>(true);
+  const [ sessionBlock, setSessionBlock ] = useState<SessionBlockReason | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -57,6 +67,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isMounted = false;
     };
   }, []);
+
+  // React to a mid-session revocation detected in the API mutator. Clears local
+  // auth state ONLY (no network call — that would 401 again and loop) and shows
+  // the blocking screen.
+  useEffect(() => {
+    const unsubscribe = subscribeSessionRevoked(() => {
+      authLogger.warn("Session revoked by a newer login");
+      setIsAuthenticated(false);
+      setUser(null);
+      setAccounts([]);
+      clearAuthData();
+      setSessionBlock("revoked");
+    });
+    return unsubscribe;
+  }, []);
+
+  const dismissSessionBlock = (): void => {
+    resetSessionRevoked();
+    setSessionBlock(null);
+  };
 
   const checkAuth = (): boolean => {
     authLogger.debug("Checking authentication");
@@ -128,6 +158,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await fetchUserProfile();
       await fetchAccounts();
     } catch (error) {
+      // Single-active-session: a 409 means the account already has an active
+      // session elsewhere — show the blocking screen. We still rethrow so the
+      // caller's success path is skipped; the form recognizes this case and
+      // stays silent (the overlay owns the UX).
+      if (isSessionAlreadyActive(error)) {
+        authLogger.warn("Login blocked: session already active");
+        setSessionBlock("already_active");
+      }
       authLogger.error("Login error", error);
       throw error;
     } finally {
@@ -168,7 +206,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchUserProfile,
     refreshAccounts: fetchAccounts,
     setAccounts,
-    loading
+    loading,
+    sessionBlock,
+    dismissSessionBlock
   }}>{children}</AuthContext.Provider>;
 };
 

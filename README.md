@@ -23,6 +23,8 @@ All data in the dashboard is dummy/mock data for demonstration purposes:
 ## Features
 
 - [x] Login
+- [x] Import from Excel (.xlsx)
+- [x] Single active session (blocking screen)
 - [ ] Register
 - [ ] Dashboard
 - [x] Profile
@@ -31,6 +33,41 @@ All data in the dashboard is dummy/mock data for demonstration purposes:
 - [ ] Expenses
 - [ ] Income
 - [ ] Reports
+
+## Import from Excel
+
+Bulk-import a budget from an `.xlsx` workbook at `/transactions/import-xlsx` (or the **Import Excel** button on the Transactions page). The backend parses three sheets; you then review and confirm:
+
+- **Income items** — editable description/amount, with a **type** and **account** picked per row.
+- **Expense items** — editable description/amount; **Fixed/Variable** is pre-filled from the workbook's sections.
+- **Transactions** — editable rows; each row's account comes from the **payment-source → account** map.
+
+Pick the target budget, map accounts, then **Import everything** creates it all atomically on the server.
+
+Implementation (under `src/`):
+
+| Piece | File |
+|---|---|
+| Upload + 3-section review page | `pages/main/transactions/xlsx-import/` |
+| State machine | `pages/main/transactions/xlsx-import/useXlsxReducer.ts` |
+| API calls (multipart parse + JSON confirm) | `services/xlsxImport.service.ts` |
+
+## Single active session
+
+Only one device can be signed in per account at a time (enforced by the API). The app reacts to the backend's session signals and shows a **blocking full-screen overlay** when needed:
+
+- **Login while a session is already active** (`409`) → blocking screen: _"Ya tienes una sesión activa…"_. The login form stays silent (no inline error / toast) — the overlay owns the message.
+- **Session revoked mid-use** (`440`, a newer login elsewhere superseded this one) → blocking screen: _"Tu sesión finalizó…"_. Local auth is cleared and the user is sent back to login.
+
+How it's wired (all under `src/`):
+
+| Piece | File |
+|---|---|
+| Contract — status-based detection (`api-core` only exposes HTTP status, not the body) | `config/session.ts` |
+| Framework-free revocation event bus (mutator → context) | `config/session-revocation.ts` |
+| Global detection point for the `440` signal | `api/orval-mutator.ts` |
+| Session state + handlers (`sessionBlock`, `dismissSessionBlock`) | `context/AuthContext.tsx` |
+| Blocking overlay + gate (mounted above the router) | `components/session/` |
 
 ## Technologies
 

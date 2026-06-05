@@ -1,6 +1,26 @@
 {
   "extends": ["@aglaya/eslint-config/react-internal.js"],
   "rules": {
-    "no-mixed-spaces-and-tabs": 0
+    "no-mixed-spaces-and-tabs": 0,
+
+    "no-restricted-syntax": [
+      "warn",
+      {
+        "selector": "JSXAttribute[name.name='className'] Literal[value=/\\b(text|bg|border|ring|from|to|via|divide|placeholder|fill|stroke)-(red|green|blue|emerald|rose|amber|violet|sky|yellow|orange|purple|pink|indigo|teal|cyan|lime|fuchsia|slate|gray|neutral|stone)-\\d+\\b/]",
+        "message": "Use semantic tokens (text-income, bg-expense-subtle, text-foreground…) not raw Tailwind palettes. See docs/design-system.md."
+      },
+      {
+        "selector": "JSXAttribute[name.name='className'] Literal[value=/#[0-9a-fA-F]{3,8}\\b/]",
+        "message": "No hex codes in className. Use a semantic Tailwind token. If you genuinely need a new color, add a token first (docs/design-system.md → 'When to add a new token')."
+      },
+      {
+        "selector": "JSXAttribute[name.name='className'] TemplateElement[value.raw=/\\b(text|bg|border|ring)-(red|green|blue|emerald|rose|amber|violet|sky|yellow|orange|purple|pink|indigo|teal|cyan|lime|fuchsia|slate|gray|neutral|stone)-\\d+\\b/]",
+        "message": "Use semantic tokens (text-income, bg-expense-subtle…) inside template literals, not raw Tailwind palettes."
+      },
+      {
+        "selector": "NewExpression[callee.object.name='Intl'][callee.property.name='NumberFormat'] > ObjectExpression > Property[key.name='style'][value.value='currency']",
+        "message": "Don't format currency ad-hoc — use <Money> from @/components/ui. Extend Money if it doesn't support your case."
+      }
+    ]
   }
 }

@@ -252,7 +252,7 @@ export default function BudgetExpense() {
           <CardDescription>Sum of all expenses</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold text-red-600 dark:text-red-400">
+          <div className="text-3xl font-bold text-expense">
             ${totalExpense.toLocaleString("es-MX")} MXN
           </div>
           <p className="text-sm text-muted-foreground mt-2">
@@ -285,13 +285,13 @@ export default function BudgetExpense() {
                       <TableCell className="font-medium">{item.description}</TableCell>
                       <TableCell>
                         <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${item.type === "Fixed"
-                          ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
-                          : "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300"
+                          ? "bg-info-subtle text-info"
+                          : "bg-level/15 text-level"
                         }`}>
                           {item.type === "Fixed" ? "📌 Fixed" : "💸 Variable"}
                         </span>
                       </TableCell>
-                      <TableCell className="text-right text-red-600 dark:text-red-400 font-semibold">
+                      <TableCell className="text-right text-expense font-semibold">
                         ${item.amount.toLocaleString("es-MX")} MXN
                       </TableCell>
                       <TableCell>
@@ -301,14 +301,14 @@ export default function BudgetExpense() {
                             variant="ghost"
                             onClick={() => handleOpenEditModal(item.id!, item.description, item.amount, item.type)}
                           >
-                            <Pencil className="h-4 w-4 text-blue-500" />
+                            <Pencil className="h-4 w-4 text-muted-foreground" />
                           </Button>
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={() => handleRemoveExpenseItem(item.id!)}
                           >
-                            <Trash2 className="h-4 w-4 text-red-500" />
+                            <Trash2 className="h-4 w-4 text-danger" />
                           </Button>
                         </div>
                       </TableCell>

@@ -120,9 +120,9 @@ const TransactionsTableComponent = ({
   const getAmountColor = (type: TransactionType) => {
     switch (type) {
     case "income":
-      return "text-green-600 dark:text-green-400";
+      return "text-income";
     case "expense":
-      return "text-red-600 dark:text-red-400";
+      return "text-expense";
     default:
       return "";
     }
@@ -171,14 +171,14 @@ const TransactionsTableComponent = ({
                     variant="ghost"
                     onClick={() => onEdit(transaction.id, transaction.description ?? "", transaction.amount, transaction.type, transaction.category, transaction.date)}
                   >
-                    <Pencil className="h-4 w-4 text-blue-500" />
+                    <Pencil className="h-4 w-4 text-muted-foreground" />
                   </Button>
                   <Button
                     size="sm"
                     variant="ghost"
                     onClick={() => onRemove(transaction.id)}
                   >
-                    <Trash2 className="h-4 w-4 text-red-500" />
+                    <Trash2 className="h-4 w-4 text-danger" />
                   </Button>
                 </div>
               </TableCell>

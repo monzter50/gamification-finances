@@ -50,14 +50,14 @@ export function MonthlyBudgetTable({ budgets, onViewBudget }: MonthlyBudgetTable
                   <TableCell className="font-medium">
                     {MONTHS[budget.month]} {budget.year}
                   </TableCell>
-                  <TableCell className="text-right text-green-600 dark:text-green-400">
+                  <TableCell className="text-right text-income">
                                         ${totalIncome.toLocaleString("es-MX")} MXN
                   </TableCell>
-                  <TableCell className="text-right text-red-600 dark:text-red-400">
+                  <TableCell className="text-right text-expense">
                                         ${totalExpense.toLocaleString("es-MX")} MXN
                   </TableCell>
                   <TableCell
-                    className={`text-right font-medium ${savings >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
+                    className={`text-right font-medium ${savings >= 0 ? "text-income" : "text-expense"
                     }`}
                   >
                                         ${savings.toLocaleString("es-MX")} MXN
