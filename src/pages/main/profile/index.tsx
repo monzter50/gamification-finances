@@ -112,6 +112,20 @@ export default function Profile() {
     defaultValues: { name: "", savingsGoal: "" },
   });
 
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { isDirty, errors },
+  } = useForm<ProfileFormValues>({
+    defaultValues: {
+      name: "",
+      savingsGoal: "",
+    },
+  });
+
+  // Reset the form whenever the server payload lands so the inputs reflect
+  // canonical state (and `isDirty` stays meaningful).
   useEffect(() => {
     if (!profile) { return; }
     reset({
