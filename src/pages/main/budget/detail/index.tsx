@@ -12,6 +12,8 @@ import { calculateBudgetTotals } from "@/utils";
 
 import { DuplicateBudgetModal } from "./components/DuplicateBudgetModal";
 
+import { DuplicateBudgetModal } from "./components/DuplicateBudgetModal";
+
 export default function BudgetDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
