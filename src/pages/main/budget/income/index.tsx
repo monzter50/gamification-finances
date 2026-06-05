@@ -6,13 +6,16 @@ import { useNavigate, useParams } from "react-router";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useSnackbar, useBudget, useMounted } from "@/hooks";
+import { useSnackbar, useBudget, useBudgetItems } from "@/hooks";
 import { budgetService } from "@/services/budget.service";
-import { MONTHS } from "@/types/budget";
+import { MONTHS, INCOME_TYPES } from "@/types/budget";
 import type { IncomeType, IncomeItem } from "@/types/budget";
 
+import { BudgetItemsFilters } from "../components/BudgetItemsFilters";
+import { BudgetItemsTable, type BudgetItemRow } from "../components/BudgetItemsTable";
 import { IncomeModal } from "./components/IncomeModal";
-import { IncomeTable } from "./components/IncomeTable";
+
+const CURRENCY = "MXN";
 
 export default function BudgetIncome() {
   const { id } = useParams();
@@ -20,12 +23,10 @@ export default function BudgetIncome() {
   const snackbar = useSnackbar();
   const {
     currentBudget,
-    isLoading,
     fetchBudgetById,
     addIncomeItem,
     updateIncomeItems,
     deleteIncomeItem,
-    fetchIncomeItemsPaginated,
   } = useBudget();
   const hasFetched = useRef(false);
 
@@ -38,12 +39,9 @@ export default function BudgetIncome() {
     type: "" as IncomeType | "",
   });
 
-  // Pagination state
-  const [ incomeItems, setIncomeItems ] = useState<IncomeItem[]>([]);
-  const [ currentPage, setCurrentPage ] = useState(1);
-  const [ totalPages, setTotalPages ] = useState(1);
-  const [ totalItems, setTotalItems ] = useState(0);
-  const itemsPerPage = 5;
+  // Client-side filtering + pagination over the full (already-loaded) item set.
+  const incomeItems = currentBudget?.incomeItems ?? [];
+  const table = useBudgetItems<IncomeItem>(incomeItems);
 
   useEffect(() => {
     if (id && !hasFetched.current) {
@@ -58,72 +56,8 @@ export default function BudgetIncome() {
     }
   }, [ id, fetchBudgetById, snackbar, navigate ]);
 
-  const { isMounted, cleanup } = useMounted();
-
-  // Load paginated income items - optimized to prevent excessive requests
-  useEffect(() => {
-    if (!id || !currentBudget) { return; }
-
-    const loadItems = async () => {
-      try {
-        const data = await fetchIncomeItemsPaginated(id, {
-          page: currentPage,
-          limit: itemsPerPage,
-        });
-
-        if (isMounted()) {
-          setIncomeItems(data.items);
-          setTotalPages(data.pagination.pages);
-          setTotalItems(data.pagination.total);
-        }
-      } catch (error) {
-        if (isMounted()) {
-          snackbar.error({
-            title: "Failed to load income items",
-            description: error instanceof Error ? error.message : "An error occurred",
-          });
-        }
-      }
-    };
-
-    loadItems();
-
-    return cleanup;
-  }, [ id, currentBudget, currentPage, isMounted, cleanup ]);
-
-  // Helper function for manual reload (used after CRUD operations)
-  const loadIncomeItems = async () => {
-    if (!id) { return; }
-
-    try {
-      const data = await fetchIncomeItemsPaginated(id, {
-        page: currentPage,
-        limit: itemsPerPage,
-      });
-      setIncomeItems(data.items);
-      setTotalPages(data.pagination.pages);
-      setTotalItems(data.pagination.total);
-    } catch (error) {
-      snackbar.error({
-        title: "Failed to load income items",
-        description: error instanceof Error ? error.message : "An error occurred",
-      });
-    }
-  };
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage((prev) => prev + 1);
-    }
-  };
-
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage((prev) => prev - 1);
-    }
-  };
-
-  if (isLoading || !currentBudget) {
+  // Full-screen state only for the INITIAL budget load — never on table ops.
+  if (!currentBudget) {
     return (
       <div className="flex items-center justify-center h-64">
         <p className="text-muted-foreground">Loading budget...</p>
@@ -142,13 +76,13 @@ export default function BudgetIncome() {
     setIsModalOpen(true);
   };
 
-  const handleOpenEditModal = (itemId: string, description: string, amount: number, type: IncomeType) => {
+  const handleOpenEditModal = (item: BudgetItemRow) => {
     setIsEditMode(true);
-    setEditingItemId(itemId);
+    setEditingItemId(item.id ?? null);
     setIncomeItemForm({
-      description,
-      amount: amount.toString(),
-      type,
+      description: item.description,
+      amount: item.amount.toString(),
+      type: item.type as IncomeType,
     });
     setIsModalOpen(true);
   };
@@ -178,45 +112,30 @@ export default function BudgetIncome() {
 
     try {
       if (isEditMode && editingItemId) {
-        // Update existing item by sending the entire array
-        const updatedIncomeItems = currentBudget.incomeItems.map((item) => {
-          if (item.id === editingItemId) {
-            return {
+        const updatedIncomeItems = currentBudget.incomeItems.map((item) =>
+          item.id === editingItemId
+            ? {
               description: incomeItemForm.description,
               amount: Number(incomeItemForm.amount),
               type: incomeItemForm.type as IncomeType,
-            };
-          }
-          return {
-            description: item.description,
-            amount: item.amount,
-            type: item.type,
-          };
-        });
-
+            }
+            : { description: item.description,
+              amount: item.amount,
+              type: item.type },
+        );
         await updateIncomeItems(id, updatedIncomeItems);
-
-        snackbar.success({
-          title: "Income updated!",
-          description: "Income item has been updated successfully.",
-        });
+        snackbar.success({ title: "Income updated!",
+          description: "Income item has been updated successfully." });
       } else {
-        // Add new item
         await addIncomeItem(id, {
           description: incomeItemForm.description,
           amount: Number(incomeItemForm.amount),
           type: incomeItemForm.type as IncomeType,
         });
-
-        snackbar.success({
-          title: "Income added!",
-          description: "Income item has been added successfully.",
-        });
+        snackbar.success({ title: "Income added!",
+          description: "Income item has been added successfully." });
       }
-
       handleCloseModal();
-      // Reload paginated data
-      await loadIncomeItems();
     } catch (error) {
       snackbar.error({
         title: isEditMode ? "Failed to update income" : "Failed to add income",
@@ -227,17 +146,10 @@ export default function BudgetIncome() {
 
   const handleRemoveIncomeItem = async (itemId: string) => {
     if (!id) { return; }
-
     try {
       await deleteIncomeItem(id, itemId);
-
-      snackbar.success({
-        title: "Income removed",
-        description: "Income item has been removed.",
-      });
-
-      // Reload paginated data
-      await loadIncomeItems();
+      snackbar.success({ title: "Income removed",
+        description: "Income item has been removed." });
     } catch (error) {
       snackbar.error({
         title: "Failed to remove income",
@@ -276,7 +188,7 @@ export default function BudgetIncome() {
             ${totalIncome.toLocaleString("es-MX")} MXN
           </div>
           <p className="text-sm text-muted-foreground mt-2">
-            {totalItems} income {totalItems === 1 ? "source" : "sources"}
+            {incomeItems.length} income {incomeItems.length === 1 ? "source" : "sources"}
           </p>
         </CardContent>
       </Card>
@@ -287,17 +199,32 @@ export default function BudgetIncome() {
           <CardTitle>Income Sources</CardTitle>
           <CardDescription>Manage your income items for this budget period</CardDescription>
         </CardHeader>
-        <CardContent>
-          <IncomeTable
-            incomeItems={incomeItems}
-            isLoading={false}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={totalItems}
+        <CardContent className="space-y-4">
+          <BudgetItemsFilters
+            search={table.search}
+            onSearchChange={table.setSearch}
+            typeFilter={table.typeFilter}
+            onTypeChange={table.setTypeFilter}
+            typeOptions={INCOME_TYPES}
+            hasActiveFilters={table.hasActiveFilters}
+            onClear={table.clearFilters}
+          />
+          <BudgetItemsTable
+            items={table.pageItems}
+            tone="income"
+            currency={CURRENCY}
+            currentPage={table.currentPage}
+            totalPages={table.totalPages}
+            totalItems={table.totalItems}
+            itemsPerPage={table.itemsPerPage}
+            hasActiveFilters={table.hasActiveFilters}
+            emptyLabel="No income items yet"
             onEdit={handleOpenEditModal}
             onRemove={handleRemoveIncomeItem}
-            onNextPage={handleNextPage}
-            onPreviousPage={handlePreviousPage}
+            onNextPage={table.nextPage}
+            onPreviousPage={table.prevPage}
+            onItemsPerPageChange={table.setItemsPerPage}
+            onClearFilters={table.clearFilters}
           />
         </CardContent>
       </Card>
