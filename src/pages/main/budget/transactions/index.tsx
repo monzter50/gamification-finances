@@ -65,6 +65,7 @@ export default function BudgetTransactions() {
     transactions: allTransactions,
     isLoading: isLoadingTransactions,
     pagination,
+    totals: serverTotals,
     addTransaction,
     updateTransaction,
     deleteTransaction,
@@ -90,26 +91,13 @@ export default function BudgetTransactions() {
   const paginatedTransactions = allTransactions;
   const totalPages = pagination?.pages || Math.ceil(allTransactions.length / itemsPerPage);
 
-  // Calculate totals
-  const totals = useMemo(() => {
-    return allTransactions.reduce(
-      (acc, transaction) => {
-        if (transaction.type === "income") {
-          acc.income += transaction.amount;
-        } else if (transaction.type === "expense") {
-          acc.expense += transaction.amount;
-        } else if (transaction.type === "savings") {
-          acc.savings += transaction.amount;
-        }
-        return acc;
-      },
-      {
-        income: 0,
-        expense: 0,
-        savings: 0
-      }
-    );
-  }, [ allTransactions ]);
+  // Totals come from the BE (computed over the whole budget set, not just the
+  // current page). Fall back to zeros until the first response lands.
+  const totals = {
+    income: serverTotals?.income ?? 0,
+    expense: serverTotals?.expense ?? 0,
+    savings: serverTotals?.savings ?? 0,
+  };
 
   const handleNextPage = useCallback(() => {
     if (currentPage < totalPages) {

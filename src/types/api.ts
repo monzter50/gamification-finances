@@ -173,6 +173,13 @@ export interface TransactionFilters {
   endDate?: string; // ISO 8601
 }
 
+export interface TransactionTotals {
+  income: number;
+  expense: number;
+  savings: number;
+  count: number;
+}
+
 export interface PaginatedResponse<T> {
   success: boolean;
   data: T[];
@@ -182,6 +189,8 @@ export interface PaginatedResponse<T> {
     total: number;
     pages: number;
   };
+  /** Aggregate totals over the full filtered set (not just the current page). */
+  totals?: TransactionTotals;
   message: string;
 }
 
