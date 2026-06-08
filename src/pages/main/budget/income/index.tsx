@@ -4,6 +4,7 @@ import { ArrowLeft, Plus } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router";
 
+import { PageHeader, Stat } from "@/components/ui";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSnackbar, useBudget, useBudgetItems } from "@/hooks";
@@ -161,37 +162,25 @@ export default function BudgetIncome() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon" onClick={() => navigate(`/budget/${id}`)}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div className="flex-1">
-          <h2 className="text-3xl font-bold">Income Management</h2>
-          <p className="text-muted-foreground">
-            {MONTHS[currentBudget.month]} {currentBudget.year}
-          </p>
-        </div>
-        <Button onClick={handleOpenAddModal}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Income
-        </Button>
-      </div>
-
-      {/* Total Income Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Total Income</CardTitle>
-          <CardDescription>Sum of all income sources</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-3xl font-bold text-income">
-            ${totalIncome.toLocaleString("es-MX")} MXN
+      <PageHeader
+        title="Income Management"
+        description={`${MONTHS[currentBudget.month]} ${currentBudget.year}`}
+        actions={
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate(`/budget/${id}`)}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
+            <Button onClick={handleOpenAddModal}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Income
+            </Button>
           </div>
-          <p className="text-sm text-muted-foreground mt-2">
-            {incomeItems.length} income {incomeItems.length === 1 ? "source" : "sources"}
-          </p>
-        </CardContent>
-      </Card>
+        }
+      />
+
+      {/* Total Income */}
+      <Stat label="Total Income" value={totalIncome} currency={CURRENCY} tone="income" />
 
       {/* Income Items Table */}
       <Card>

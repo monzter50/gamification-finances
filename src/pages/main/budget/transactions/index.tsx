@@ -5,6 +5,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router";
 
+import { PageHeader, Stat } from "@/components/ui";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/context/AuthContext";
@@ -215,56 +216,28 @@ export default function BudgetTransactions() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon" onClick={() => navigate(`/budget/${id}`)}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div className="flex-1">
-          <h2 className="text-3xl font-bold">Transaction Tracking</h2>
-          <p className="text-muted-foreground">
-            {MONTHS[currentBudget.month]} {currentBudget.year}
-          </p>
-        </div>
-        <Button onClick={handleOpenAddModal}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Transaction
-        </Button>
-      </div>
+      <PageHeader
+        title="Transaction Tracking"
+        description={`${MONTHS[currentBudget.month]} ${currentBudget.year}`}
+        actions={
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate(`/budget/${id}`)}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
+            <Button onClick={handleOpenAddModal}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Transaction
+            </Button>
+          </div>
+        }
+      />
 
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Total Income</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-income">
-              ${totals.income.toLocaleString("es-MX")} MXN
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-expense">
-              ${totals.expense.toLocaleString("es-MX")} MXN
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Total Savings</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-info">
-              ${totals.savings.toLocaleString("es-MX")} MXN
-            </div>
-          </CardContent>
-        </Card>
+        <Stat label="Total Income" value={totals.income} currency="MXN" tone="income" loading={isLoadingTransactions} />
+        <Stat label="Total Expenses" value={totals.expense} currency="MXN" tone="expense" loading={isLoadingTransactions} />
+        <Stat label="Total Savings" value={totals.savings} currency="MXN" tone="neutral" loading={isLoadingTransactions} />
       </div>
 
       {/* Transactions Table */}
