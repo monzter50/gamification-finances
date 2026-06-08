@@ -16,6 +16,7 @@ export interface ParsedTransaction {
   type: TransactionType;
   description?: string;
   paymentSource?: string;
+  category?: string;
 }
 
 export interface ParsedIncomeItem {
