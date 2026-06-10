@@ -7,10 +7,10 @@ import { useNavigate, useParams } from "react-router";
 import { PageHeader, Stat } from "@/components/ui";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useSnackbar, useBudget, useBudgetItems } from "@/hooks";
-import { budgetService } from "@/services/budget.service";
+import { useSnackbar, useIncome, useBudgetItems } from "@/hooks";
 import { MONTHS, INCOME_TYPES } from "@/types/budget";
 import type { IncomeType, IncomeItem } from "@/types/budget";
+import { calculateBudgetTotals } from "@/utils";
 
 import { BudgetItemsFilters } from "../components/BudgetItemsFilters";
 import { BudgetItemsTable, type BudgetItemRow } from "../components/BudgetItemsTable";
@@ -28,7 +28,7 @@ export default function BudgetIncome() {
     addIncomeItem,
     updateIncomeItems,
     deleteIncomeItem,
-  } = useBudget();
+  } = useIncome();
   const hasFetched = useRef(false);
 
   const [ isModalOpen, setIsModalOpen ] = useState(false);
@@ -66,7 +66,7 @@ export default function BudgetIncome() {
     );
   }
 
-  const { totalIncome } = budgetService.calculateTotals(currentBudget);
+  const { totalIncome } = calculateBudgetTotals(currentBudget);
 
   const handleOpenAddModal = () => {
     setIsEditMode(false);

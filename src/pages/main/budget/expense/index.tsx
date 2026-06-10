@@ -8,9 +8,9 @@ import { PageHeader, Stat } from "@/components/ui";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSnackbar, useBudget, useBudgetItems } from "@/hooks";
-import { budgetService } from "@/services/budget.service";
 import { MONTHS, EXPENSE_TYPES } from "@/types/budget";
 import type { ExpenseType, ExpenseItem } from "@/types/budget";
+import { calculateBudgetTotals } from "@/utils";
 
 import { BudgetItemsFilters } from "../components/BudgetItemsFilters";
 import { BudgetItemsTable, type BudgetItemRow } from "../components/BudgetItemsTable";
@@ -66,7 +66,7 @@ export default function BudgetExpense() {
     );
   }
 
-  const { totalExpense } = budgetService.calculateTotals(currentBudget);
+  const { totalExpense } = calculateBudgetTotals(currentBudget);
 
   const handleOpenAddModal = () => {
     setIsEditMode(false);
