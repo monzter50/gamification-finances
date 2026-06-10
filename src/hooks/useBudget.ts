@@ -1,15 +1,13 @@
 import { useState, useCallback } from "react";
 
 import { budgetService } from "@/services/budget.service";
+import { expenseService } from "@/services/expense.service";
+import { incomeService } from "@/services/income.service";
 import type {
   Budget,
   CreateBudgetDTO,
   AddIncomeItemDTO,
   AddExpenseItemDTO,
-  PaginationParams,
-  PaginatedResponse,
-  IncomeItem,
-  ExpenseItem,
 } from "@/types/budget";
 
 export const useBudget = () => {
@@ -107,7 +105,7 @@ export const useBudget = () => {
     try {
       setIsLoading(true);
       setError(null);
-      const updatedBudget = await budgetService.addIncomeItem(budgetId, data);
+      const updatedBudget = await incomeService.addIncomeItem(budgetId, data);
       setBudgets((prev) => prev.map((b) => (b.id === budgetId ? updatedBudget : b)));
       if (currentBudget?.id === budgetId) {
         setCurrentBudget(updatedBudget);
@@ -126,7 +124,7 @@ export const useBudget = () => {
     try {
       setIsLoading(true);
       setError(null);
-      const updatedBudget = await budgetService.updateIncomeItems(budgetId, incomeItems);
+      const updatedBudget = await incomeService.updateIncomeItems(budgetId, incomeItems);
       setBudgets((prev) => prev.map((b) => (b.id === budgetId ? updatedBudget : b)));
       if (currentBudget?.id === budgetId) {
         setCurrentBudget(updatedBudget);
@@ -145,7 +143,7 @@ export const useBudget = () => {
     try {
       setIsLoading(true);
       setError(null);
-      const updatedBudget = await budgetService.deleteIncomeItem(budgetId, itemId);
+      const updatedBudget = await incomeService.deleteIncomeItem(budgetId, itemId);
       setBudgets((prev) => prev.map((b) => (b.id === budgetId ? updatedBudget : b)));
       if (currentBudget?.id === budgetId) {
         setCurrentBudget(updatedBudget);
@@ -164,7 +162,7 @@ export const useBudget = () => {
     try {
       setIsLoading(true);
       setError(null);
-      const updatedBudget = await budgetService.addExpenseItem(budgetId, data);
+      const updatedBudget = await expenseService.addExpenseItem(budgetId, data);
       setBudgets((prev) => prev.map((b) => (b.id === budgetId ? updatedBudget : b)));
       if (currentBudget?.id === budgetId) {
         setCurrentBudget(updatedBudget);
@@ -183,7 +181,7 @@ export const useBudget = () => {
     try {
       setIsLoading(true);
       setError(null);
-      const updatedBudget = await budgetService.updateExpenseItems(budgetId, expenseItems);
+      const updatedBudget = await expenseService.updateExpenseItems(budgetId, expenseItems);
       setBudgets((prev) => prev.map((b) => (b.id === budgetId ? updatedBudget : b)));
       if (currentBudget?.id === budgetId) {
         setCurrentBudget(updatedBudget);
@@ -202,7 +200,7 @@ export const useBudget = () => {
     try {
       setIsLoading(true);
       setError(null);
-      const updatedBudget = await budgetService.deleteExpenseItem(budgetId, itemId);
+      const updatedBudget = await expenseService.deleteExpenseItem(budgetId, itemId);
       setBudgets((prev) => prev.map((b) => (b.id === budgetId ? updatedBudget : b)));
       if (currentBudget?.id === budgetId) {
         setCurrentBudget(updatedBudget);
@@ -217,42 +215,6 @@ export const useBudget = () => {
     }
   }, [ currentBudget ]);
 
-  const fetchIncomeItemsPaginated = useCallback(
-    async (budgetId: string, params?: PaginationParams): Promise<PaginatedResponse<IncomeItem>> => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const data = await budgetService.getIncomeItemsPaginated(budgetId, params);
-        return data;
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : "Failed to fetch income items";
-        setError(errorMessage);
-        throw err;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    []
-  );
-
-  const fetchExpenseItemsPaginated = useCallback(
-    async (budgetId: string, params?: PaginationParams): Promise<PaginatedResponse<ExpenseItem>> => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const data = await budgetService.getExpenseItemsPaginated(budgetId, params);
-        return data;
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : "Failed to fetch expense items";
-        setError(errorMessage);
-        throw err;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    []
-  );
-
   return {
     budgets,
     currentBudget,
@@ -266,10 +228,8 @@ export const useBudget = () => {
     addIncomeItem,
     updateIncomeItems,
     deleteIncomeItem,
-    fetchIncomeItemsPaginated,
     addExpenseItem,
     updateExpenseItems,
     deleteExpenseItem,
-    fetchExpenseItemsPaginated,
   };
 };

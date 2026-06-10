@@ -45,7 +45,7 @@ export default function Layout({ children }: LayoutProps): ReactNode {
       {/* Sidebar */}
       <aside
         className={`relative bg-card border-r min-h-screen flex flex-col justify-between py-6 transition-all duration-300 ease-in-out ${
-          collapsed ? "w-20" : "w-56"
+          collapsed ? "w-sidebar-collapsed" : "w-sidebar"
         } px-4`}
       >
         {/* Collapse/Expand Button */}

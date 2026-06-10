@@ -7,8 +7,8 @@ import { useNavigate, useParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useBudget, useSnackbar } from "@/hooks";
-import { budgetService } from "@/services/budget.service";
 import { MONTHS } from "@/types/budget";
+import { calculateBudgetTotals } from "@/utils";
 
 import { DuplicateBudgetModal } from "./components/DuplicateBudgetModal";
 
@@ -41,7 +41,7 @@ export default function BudgetDetail() {
     );
   }
 
-  const { totalIncome, totalExpense, savings, savingsRate } = budgetService.calculateTotals(currentBudget);
+  const { totalIncome, totalExpense, savings, savingsRate } = calculateBudgetTotals(currentBudget);
 
   return (
     <div className="space-y-6">

@@ -1,32 +1,33 @@
 "use client";
 
-import { ArrowLeft, Plus, Trash2, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router";
 
+import { PageHeader, Stat } from "@/components/ui";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useSnackbar, useBudget, useMounted } from "@/hooks";
-import { budgetService } from "@/services/budget.service";
-import { MONTHS } from "@/types/budget";
+import { useSnackbar, useBudget, useBudgetItems } from "@/hooks";
+import { MONTHS, EXPENSE_TYPES } from "@/types/budget";
 import type { ExpenseType, ExpenseItem } from "@/types/budget";
+import { calculateBudgetTotals } from "@/utils";
 
+import { BudgetItemsFilters } from "../components/BudgetItemsFilters";
+import { BudgetItemsTable, type BudgetItemRow } from "../components/BudgetItemsTable";
 import { ExpenseModal } from "./components/ExpenseModal";
+
+const CURRENCY = "MXN";
 
 export default function BudgetExpense() {
   const { id } = useParams();
   const navigate = useNavigate();
   const snackbar = useSnackbar();
-  const isMounted = useMounted();
   const {
     currentBudget,
-    isLoading,
     fetchBudgetById,
     addExpenseItem,
     updateExpenseItems,
     deleteExpenseItem,
-    fetchExpenseItemsPaginated,
   } = useBudget();
   const hasFetched = useRef(false);
 
@@ -39,15 +40,12 @@ export default function BudgetExpense() {
     type: "" as ExpenseType | "",
   });
 
-  // Pagination state
-  const [ expenseItems, setExpenseItems ] = useState<ExpenseItem[]>([]);
-  const [ currentPage, setCurrentPage ] = useState(1);
-  const [ totalPages, setTotalPages ] = useState(1);
-  const [ totalItems, setTotalItems ] = useState(0);
-  const itemsPerPage = 5;
+  // Client-side filtering + pagination over the full (already-loaded) item set.
+  const expenseItems = currentBudget?.expenseItems ?? [];
+  const table = useBudgetItems<ExpenseItem>(expenseItems);
 
   useEffect(() => {
-    if (id && !hasFetched.current && isMounted) {
+    if (id && !hasFetched.current) {
       hasFetched.current = true;
       fetchBudgetById(id).catch((error) => {
         snackbar.error({
@@ -59,45 +57,8 @@ export default function BudgetExpense() {
     }
   }, [ id, fetchBudgetById, snackbar, navigate ]);
 
-  // Load paginated expense items
-  useEffect(() => {
-    if (id && currentBudget) {
-      loadExpenseItems();
-    }
-  }, [ id, currentBudget, currentPage ]);
-
-  const loadExpenseItems = async () => {
-    if (!id) { return; }
-
-    try {
-      const data = await fetchExpenseItemsPaginated(id, {
-        page: currentPage,
-        limit: itemsPerPage,
-      });
-      setExpenseItems(data.items);
-      setTotalPages(data.pagination.pages);
-      setTotalItems(data.pagination.total);
-    } catch (error) {
-      snackbar.error({
-        title: "Failed to load expense items",
-        description: error instanceof Error ? error.message : "An error occurred",
-      });
-    }
-  };
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage((prev) => prev + 1);
-    }
-  };
-
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage((prev) => prev - 1);
-    }
-  };
-
-  if (isLoading || !currentBudget) {
+  // Full-screen state only for the INITIAL budget load — never on table ops.
+  if (!currentBudget) {
     return (
       <div className="flex items-center justify-center h-64">
         <p className="text-muted-foreground">Loading budget...</p>
@@ -105,46 +66,40 @@ export default function BudgetExpense() {
     );
   }
 
-  const { totalExpense } = budgetService.calculateTotals(currentBudget);
+  const { totalExpense } = calculateBudgetTotals(currentBudget);
 
   const handleOpenAddModal = () => {
     setIsEditMode(false);
     setEditingItemId(null);
-    setExpenseItemForm({
-      description: "",
+    setExpenseItemForm({ description: "",
       amount: "",
-      type: ""
-    });
+      type: "" });
     setIsModalOpen(true);
   };
 
-  const handleOpenEditModal = (itemId: string, description: string, amount: number, type: ExpenseType) => {
+  const handleOpenEditModal = (item: BudgetItemRow) => {
     setIsEditMode(true);
-    setEditingItemId(itemId);
+    setEditingItemId(item.id ?? null);
     setExpenseItemForm({
-      description,
-      amount: amount.toString(),
-      type,
+      description: item.description,
+      amount: item.amount.toString(),
+      type: item.type as ExpenseType,
     });
     setIsModalOpen(true);
   };
 
   const handleFormChange = (field: "description" | "amount" | "type", value: string) => {
-    setExpenseItemForm((prev) => ({
-      ...prev,
-      [field]: value
-    }));
+    setExpenseItemForm((prev) => ({ ...prev,
+      [field]: value }));
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setIsEditMode(false);
     setEditingItemId(null);
-    setExpenseItemForm({
-      description: "",
+    setExpenseItemForm({ description: "",
       amount: "",
-      type: ""
-    });
+      type: "" });
   };
 
   const handleSaveExpenseItem = async () => {
@@ -158,45 +113,30 @@ export default function BudgetExpense() {
 
     try {
       if (isEditMode && editingItemId) {
-        // Update existing item by sending the entire array
-        const updatedExpenseItems = currentBudget.expenseItems.map((item) => {
-          if (item.id === editingItemId) {
-            return {
+        const updatedExpenseItems = currentBudget.expenseItems.map((item) =>
+          item.id === editingItemId
+            ? {
               description: expenseItemForm.description,
               amount: Number(expenseItemForm.amount),
               type: expenseItemForm.type as ExpenseType,
-            };
-          }
-          return {
-            description: item.description,
-            amount: item.amount,
-            type: item.type,
-          };
-        });
-
+            }
+            : { description: item.description,
+              amount: item.amount,
+              type: item.type },
+        );
         await updateExpenseItems(id, updatedExpenseItems);
-
-        snackbar.success({
-          title: "Expense updated!",
-          description: "Expense item has been updated successfully.",
-        });
+        snackbar.success({ title: "Expense updated!",
+          description: "Expense item has been updated successfully." });
       } else {
-        // Add new item
         await addExpenseItem(id, {
           description: expenseItemForm.description,
           amount: Number(expenseItemForm.amount),
           type: expenseItemForm.type as ExpenseType,
         });
-
-        snackbar.success({
-          title: "Expense added!",
-          description: "Expense item has been added successfully.",
-        });
+        snackbar.success({ title: "Expense added!",
+          description: "Expense item has been added successfully." });
       }
-
       handleCloseModal();
-      // Reload paginated data
-      await loadExpenseItems();
     } catch (error) {
       snackbar.error({
         title: isEditMode ? "Failed to update expense" : "Failed to add expense",
@@ -207,17 +147,10 @@ export default function BudgetExpense() {
 
   const handleRemoveExpenseItem = async (itemId: string) => {
     if (!id) { return; }
-
     try {
       await deleteExpenseItem(id, itemId);
-
-      snackbar.success({
-        title: "Expense removed",
-        description: "Expense item has been removed.",
-      });
-
-      // Reload paginated data
-      await loadExpenseItems();
+      snackbar.success({ title: "Expense removed",
+        description: "Expense item has been removed." });
     } catch (error) {
       snackbar.error({
         title: "Failed to remove expense",
@@ -229,37 +162,25 @@ export default function BudgetExpense() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon" onClick={() => navigate(`/budget/${id}`)}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div className="flex-1">
-          <h2 className="text-3xl font-bold">Expense Management</h2>
-          <p className="text-muted-foreground">
-            {MONTHS[currentBudget.month]} {currentBudget.year}
-          </p>
-        </div>
-        <Button onClick={handleOpenAddModal}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Expense
-        </Button>
-      </div>
-
-      {/* Total Expense Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Total Expenses</CardTitle>
-          <CardDescription>Sum of all expenses</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-3xl font-bold text-expense">
-            ${totalExpense.toLocaleString("es-MX")} MXN
+      <PageHeader
+        title="Expense Management"
+        description={`${MONTHS[currentBudget.month]} ${currentBudget.year}`}
+        actions={
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate(`/budget/${id}`)}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
+            <Button onClick={handleOpenAddModal}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Expense
+            </Button>
           </div>
-          <p className="text-sm text-muted-foreground mt-2">
-            {totalItems} expense {totalItems === 1 ? "item" : "items"}
-          </p>
-        </CardContent>
-      </Card>
+        }
+      />
+
+      {/* Total Expense */}
+      <Stat label="Total Expenses" value={totalExpense} currency={CURRENCY} tone="expense" />
 
       {/* Expense Items Table */}
       <Card>
@@ -267,88 +188,33 @@ export default function BudgetExpense() {
           <CardTitle>Expense Items</CardTitle>
           <CardDescription>Manage your expenses for this budget period</CardDescription>
         </CardHeader>
-        <CardContent>
-          {expenseItems && expenseItems.length > 0 ? (
-            <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead className="w-24"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {expenseItems.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-medium">{item.description}</TableCell>
-                      <TableCell>
-                        <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${item.type === "Fixed"
-                          ? "bg-info-subtle text-info"
-                          : "bg-level/15 text-level"
-                        }`}>
-                          {item.type === "Fixed" ? "📌 Fixed" : "💸 Variable"}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right text-expense font-semibold">
-                        ${item.amount.toLocaleString("es-MX")} MXN
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleOpenEditModal(item.id!, item.description, item.amount, item.type)}
-                          >
-                            <Pencil className="h-4 w-4 text-muted-foreground" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleRemoveExpenseItem(item.id!)}
-                          >
-                            <Trash2 className="h-4 w-4 text-danger" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-
-              {/* Pagination Controls */}
-              <div className="flex items-center justify-between mt-4 pt-4 border-t">
-                <p className="text-sm text-muted-foreground">
-                  Page {currentPage} of {totalPages} ({totalItems} total items)
-                </p>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handlePreviousPage}
-                    disabled={currentPage === 1}
-                  >
-                    <ChevronLeft className="h-4 w-4 mr-1" />
-                    Previous
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleNextPage}
-                    disabled={currentPage === totalPages}
-                  >
-                    Next
-                    <ChevronRight className="h-4 w-4 ml-1" />
-                  </Button>
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              No expense items yet. Add your first expense above.
-            </div>
-          )}
+        <CardContent className="space-y-4">
+          <BudgetItemsFilters
+            search={table.search}
+            onSearchChange={table.setSearch}
+            typeFilter={table.typeFilter}
+            onTypeChange={table.setTypeFilter}
+            typeOptions={EXPENSE_TYPES}
+            hasActiveFilters={table.hasActiveFilters}
+            onClear={table.clearFilters}
+          />
+          <BudgetItemsTable
+            items={table.pageItems}
+            tone="expense"
+            currency={CURRENCY}
+            currentPage={table.currentPage}
+            totalPages={table.totalPages}
+            totalItems={table.totalItems}
+            itemsPerPage={table.itemsPerPage}
+            hasActiveFilters={table.hasActiveFilters}
+            emptyLabel="No expense items yet"
+            onEdit={handleOpenEditModal}
+            onRemove={handleRemoveExpenseItem}
+            onNextPage={table.nextPage}
+            onPreviousPage={table.prevPage}
+            onItemsPerPageChange={table.setItemsPerPage}
+            onClearFilters={table.clearFilters}
+          />
         </CardContent>
       </Card>
 

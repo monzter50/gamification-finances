@@ -9,9 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Modal } from "@/components/ui/Modal";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSnackbar, useBudget } from "@/hooks";
-import { budgetService } from "@/services/budget.service";
-import type { Budget } from "@/types/budget";
 import { MONTHS } from "@/types/budget";
+import { calculateBudgetTotals } from "@/utils";
 
 import { MonthlyBudgetTable } from "./components/MonthlyBudgetTable";
 import { YearlySummary } from "./components/YearlySummary";
@@ -86,10 +85,6 @@ export default function BudgetList() {
     navigate(`/budget/${budgetId}`);
   };
 
-  // Calculate totals for a budget
-  const calculateBudgetTotals = (budget: Budget) => {
-    return budgetService.calculateTotals(budget);
-  };
   // Calculate yearly totals
   const yearlyBudgets = budgets.reduce(
     (acc, budget) => {
