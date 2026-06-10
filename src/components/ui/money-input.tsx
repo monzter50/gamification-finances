@@ -110,7 +110,7 @@ export const MoneyInput = React.forwardRef<HTMLInputElement, MoneyInputProps>(
     return (
       <div className="relative">
         <span
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground tabular-nums pointer-events-none"
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-mono tabular-nums pointer-events-none"
           aria-hidden
         >
           {symbol}
@@ -122,7 +122,7 @@ export const MoneyInput = React.forwardRef<HTMLInputElement, MoneyInputProps>(
           value={display}
           onChange={handleChange}
           onBlur={handleBlur}
-          className={cn("pl-9 tabular-nums text-right", className)}
+          className={cn("pl-9 font-mono tabular-nums text-right", className)}
           {...rest}
         />
       </div>

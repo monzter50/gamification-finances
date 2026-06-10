@@ -14,6 +14,21 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+
+      // ── Bento layout tokens (Stitch brief) ──
+      // Consumed as w-sidebar, gap-gutter, p-card, grid-cols-bento, etc.
+      spacing: {
+        sidebar: "260px",            // expanded nav rail
+        "sidebar-collapsed": "80px", // collapsed nav rail
+        gutter: "1.5rem",            // 24px — standard gap between bento cards
+        card: "1.5rem",              // 24px — card interior padding
+        stack: "1.5rem",             // vertical rhythm between stacked blocks
+        inline: "1rem",              // horizontal rhythm between inline items
+        "container-pad": "2rem",     // page container side padding
+      },
+      gridTemplateColumns: {
+        bento: "repeat(12, minmax(0, 1fr))",
+      },
       colors: {
         // Surfaces (shadcn)
         background: v("background"),
@@ -56,6 +71,14 @@ export default {
           expense: v("chart-expense"),
           savings: v("chart-savings"),
         },
+      },
+
+      fontFamily: {
+        // Brand typography (loaded via Google Fonts in index.html).
+        // `font-sans` is the global default (set on <body> in index.css);
+        // `font-mono` is for numeric/technical data — used by <Money>.
+        sans: ["Hanken Grotesk", "ui-sans-serif", "system-ui", "sans-serif"],
+        mono: ["JetBrains Mono", "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
       },
 
       fontSize: {

@@ -30,7 +30,7 @@ export const XPProgressBar = React.forwardRef<HTMLDivElement, XPProgressBarProps
             <span className="text-muted-foreground">
               {level !== undefined ? `Lv. ${level} → ${level + 1}` : "XP"}
             </span>
-            <span className="tabular-nums text-foreground font-medium">
+            <span className="font-mono tabular-nums text-foreground font-medium">
               {current} / {max} XP
             </span>
           </div>

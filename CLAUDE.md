@@ -64,7 +64,10 @@ src/
 - No hardcoded strings for UI copy — use i18n keys
 
 ## Design System
-When working on UI components, first read @docs/design-system.md
+When working on UI components, first read @docs/design-system.md — it is the
+implementation contract (tokens, components, ESLint rules).
+For the brand/visual intent behind those tokens (palette, typography, mood),
+see @docs/brand-brief.md. If the two conflict, design-system.md wins.
 
 ## API Contracts
 When writing API hooks, refer to @docs/api-schema.md

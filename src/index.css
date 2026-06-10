@@ -31,6 +31,12 @@
     --p-emerald-600: 153 74% 32%;
     --p-emerald-700: 155 79% 24%;
 
+    /* Neon mint — brand "deep space" accent (Stitch). Used by the dark theme. */
+    --p-mint-400: 154 90% 71%;   /* #6ffbbe — bright mint (glows, gradient start) */
+    --p-mint-500: 155 69% 59%;   /* #4edea3 — neon mint (brand primary / income) */
+    --p-mint-600: 160 84% 39%;   /* #10b981 — emerald, XP-bar gradient end */
+    --p-mint-950: 158 100% 11%;  /* #003824 — on-mint (dark green text on mint) */
+
     --p-rose-50: 356 100% 97%;
     --p-rose-500: 350 89% 60%;
     --p-rose-600: 347 77% 50%;
@@ -145,28 +151,34 @@
   }
 
   .dark {
-    --background: 224 71% 4%;
-    --foreground: 213 31% 91%;
-    --muted: 223 47% 11%;
-    --muted-foreground: 215.4 16.3% 56.9%;
-    --accent: 216 34% 17%;
-    --accent-foreground: 210 40% 98%;
-    --popover: 224 71% 4%;
-    --popover-foreground: 215 20.2% 65.1%;
-    --border: 216 34% 17%;
-    --input: 216 34% 17%;
-    --card: 224 71% 4%;
-    --card-foreground: 213 31% 91%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 1.2%;
-    --secondary: 222.2 47.4% 11.2%;
-    --secondary-foreground: 210 40% 98%;
+    /* ── Deep-space brand palette (Stitch) ──
+       Obsidian canvas, lighter tonal card surface, neon-mint primary.
+       Tonal layering replaces drop shadows: bg < card/popover < accent. */
+    --background: 222 55% 10%;        /* #0b1326 — obsidian canvas */
+    --foreground: 228 90% 93%;        /* #dbe2fd — on-surface text */
+    --muted: 223 29% 19%;             /* #222a3e — row hover / muted bg */
+    --muted-foreground: 150 10% 72%;  /* #bbcac0 — greenish secondary text */
+    --accent: 223 29% 19%;            /* #222a3e — hovered surface */
+    --accent-foreground: 228 90% 93%;
+    --popover: 222 47% 11%;           /* #0F172A — elevated surface */
+    --popover-foreground: 228 90% 93%;
+    --border: 217 33% 17%;            /* #1E293B — 1px card edge */
+    --input: 217 33% 17%;
+    --card: 222 47% 11%;              /* #0F172A — tonal layer above canvas */
+    --card-foreground: 228 90% 93%;
+    --primary: var(--p-mint-500);     /* #4edea3 — neon mint */
+    --primary-foreground: var(--p-mint-950); /* #003824 — dark green on mint */
+    --secondary: 223 29% 19%;
+    --secondary-foreground: 228 90% 93%;
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
-    --ring: 216 34% 17%;
+    --ring: var(--p-mint-500);        /* brand focus ring / hover border */
 
-    --success: var(--p-emerald-500);
-    --success-subtle: 152 50% 12%;
+    /* Mint = growth/positive. Foreground is dark green so `bg-success`/
+       `bg-income` pills keep contrast (text-* usage stays mint on dark). */
+    --success: var(--p-mint-500);
+    --success-foreground: var(--p-mint-950);
+    --success-subtle: 155 50% 13%;
 
     --warning: var(--p-amber-400);
     --warning-subtle: 38 60% 12%;
@@ -176,10 +188,12 @@
 
     --danger-subtle: 350 60% 14%;
 
-    --income: var(--p-emerald-500);
-    --income-subtle: 152 50% 12%;
-    --expense: var(--p-rose-500);
-    --expense-subtle: 350 60% 14%;
+    --income: var(--p-mint-500);            /* #4edea3 neon mint */
+    --income-foreground: var(--p-mint-950); /* #003824 on mint pills */
+    --income-subtle: 155 50% 13%;
+    --expense: 356 100% 85%;                /* #ffb2b7 soft rose */
+    --expense-foreground: 355 43% 23%;      /* #522126 on rose pills */
+    --expense-subtle: 350 45% 16%;
     --savings: var(--p-sky-500);
     --savings-subtle: 200 60% 12%;
 

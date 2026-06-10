@@ -74,7 +74,7 @@ export const Money = React.forwardRef<HTMLSpanElement, MoneyProps>(
         ref={ref}
         // a11y: screen readers read "negative twelve dollars" not "minus sign 12"
         aria-label={formatter.format(value)}
-        className={cn("tabular-nums font-medium", sizeClass[size], toneClass[tone](value), className)}
+        className={cn("font-mono tabular-nums font-medium", sizeClass[size], toneClass[tone](value), className)}
         {...rest}
       >
         {formatter.format(value)}
