@@ -5,6 +5,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 
 import {
+  BentoGrid,
+  BentoItem,
   Button,
   Card,
   CardContent,
@@ -132,7 +134,7 @@ export default function Dashboard() {
       />
 
       {/* KPI row */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-gutter sm:grid-cols-2 lg:grid-cols-4">
         <Stat
           label="Total Balance"
           value={totalBalance}
@@ -165,9 +167,10 @@ export default function Dashboard() {
       </div>
 
       {/* Two-column section */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      <BentoGrid>
         {/* Current budget */}
-        <Card className="lg:col-span-2">
+        <BentoItem span={8}>
+        <Card className="h-full">
           <CardHeader>
             <div className="flex items-start justify-between gap-2">
               <div>
@@ -261,8 +264,11 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
+        </BentoItem>
+
         {/* Accounts snapshot */}
-        <Card>
+        <BentoItem span={4}>
+        <Card className="h-full">
           <CardHeader>
             <div className="flex items-start justify-between gap-2">
               <div>
@@ -298,7 +304,8 @@ export default function Dashboard() {
             )}
           </CardContent>
         </Card>
-      </div>
+        </BentoItem>
+      </BentoGrid>
 
       {/* Recent activity */}
       <Card>
