@@ -24,10 +24,14 @@ import { cn } from "@/lib/utils";
 import type { Account, AccountType, CreateAccountDto } from "@/types/api";
 
 const ACCOUNT_TYPES: { value: AccountType; label: string }[] = [
-  { value: "checking",    label: "Checking" },
-  { value: "savings",     label: "Savings" },
-  { value: "credit_card", label: "Credit Card" },
-  { value: "vales",       label: "Vales" },
+  { value: "checking",
+    label: "Checking" },
+  { value: "savings",
+    label: "Savings" },
+  { value: "credit_card",
+    label: "Credit Card" },
+  { value: "vales",
+    label: "Vales" },
 ];
 
 interface AccountFormValues extends CreateAccountDto {
@@ -138,14 +142,20 @@ export default function Accounts() {
     reset,
     formState: { errors },
   } = useForm<AccountFormValues>({
-    defaultValues: { name: "", type: "checking", balance: 0, currency: "MXN" },
+    defaultValues: { name: "",
+      type: "checking",
+      balance: 0,
+      currency: "MXN" },
   });
 
   const selectedType = watch("type");
 
   const handleOpenCreate = () => {
     setEditingAccount(null);
-    reset({ name: "", type: "checking", balance: 0, currency: "MXN" });
+    reset({ name: "",
+      type: "checking",
+      balance: 0,
+      currency: "MXN" });
     setIsFormOpen(true);
   };
 
@@ -166,7 +176,8 @@ export default function Accounts() {
   };
 
   const onSubmit = handleSubmit(async (data) => {
-    const payload: CreateAccountDto = { name: data.name.trim(), type: data.type };
+    const payload: CreateAccountDto = { name: data.name.trim(),
+      type: data.type };
     if (typeof data.balance === "number" && !Number.isNaN(data.balance)) {
       payload.balance = data.balance;
     }
@@ -250,7 +261,8 @@ export default function Accounts() {
               placeholder="e.g. Mi cuenta BBVA"
               {...register("name", {
                 required: "Name is required",
-                minLength: { value: 2, message: "At least 2 characters" },
+                minLength: { value: 2,
+                  message: "At least 2 characters" },
               })}
             />
             {errors.name && (
@@ -301,7 +313,8 @@ export default function Accounts() {
                 placeholder="MXN"
                 maxLength={3}
                 {...register("currency", {
-                  pattern: { value: /^[A-Za-z]{3}$/, message: "3-letter ISO code" },
+                  pattern: { value: /^[A-Za-z]{3}$/,
+                    message: "3-letter ISO code" },
                 })}
               />
               {errors.currency && (

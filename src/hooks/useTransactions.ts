@@ -6,7 +6,8 @@ import type {
   Transaction,
   CreateTransactionDto,
   UpdateTransactionDto,
-  TransactionFilters
+  TransactionFilters,
+  TransactionTotals
 } from "@/types/api";
 
 import { useSnackbar } from "./useSnackbar";
@@ -29,6 +30,8 @@ interface UseTransactionsReturn {
     total: number;
     pages: number;
   } | null;
+  /** Aggregate totals over the full filtered set (server-computed, not the page). */
+  totals: TransactionTotals | null;
 
   // Actions
   loadTransactions: () => Promise<void>;
@@ -75,6 +78,7 @@ export function useTransactions({
     total: number;
     pages: number;
   } | null>(null);
+  const [ totals, setTotals ] = useState<TransactionTotals | null>(null);
   const [ isLoading, setIsLoading ] = useState(false);
   const snackbar = useSnackbar();
 
@@ -97,6 +101,7 @@ export function useTransactions({
 
       setTransactions(response.data);
       setPagination(response.pagination);
+      setTotals(response.totals ?? null);
       onLoadSuccess?.(response.data);
 
     } catch (error) {
@@ -234,6 +239,7 @@ export function useTransactions({
     transactions,
     isLoading,
     pagination,
+    totals,
     loadTransactions,
     addTransaction,
     updateTransaction,

@@ -8,6 +8,7 @@
 // Re-export every primitive's full surface (named exports + types).
 export * from "./avatar";
 export * from "./badge";
+export * from "./bento";
 export * from "./button";
 export * from "./card";
 export * from "./empty-state";

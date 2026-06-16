@@ -163,18 +163,61 @@ amber/violet shades.
 <XPProgressBar current={420} max={1000} level={5} />
 ```
 
+## Layout — Bento grid
+
+The page canvas is a **12-column bento grid** with a fixed nav rail. Compose
+layouts with `<BentoGrid>` / `<BentoItem>` — don't hand-roll `grid-cols-12`
+or arbitrary `col-span-[…]`.
+
+```tsx
+import { BentoGrid, BentoItem } from "@/components/ui";
+
+<BentoGrid>
+  <BentoItem span={8}><Card>Cash flow</Card></BentoItem>
+  <BentoItem span={4}><Card>XP / streak</Card></BentoItem>
+  <BentoItem span={6}><Card>Recent transactions</Card></BentoItem>
+  <BentoItem span={6}><Card>Budget</Card></BentoItem>
+  <BentoItem span={12}><Card>History</Card></BentoItem>
+</BentoGrid>
+```
+
+- Gutter is fixed at **24px** (`gap-gutter`). Don't override per-grid.
+- Spans are constrained to **4 / 6 / 7 / 8 / 12**. `rows={2}` for tall tiles.
+- Collapses to a **single column below `md`** automatically.
+
+### Layout tokens
+
+| Token            | Class examples                  | Value  |
+| ---------------- | ------------------------------- | ------ |
+| Sidebar width    | `w-sidebar` / `w-sidebar-collapsed` | 260px / 80px |
+| Bento gutter     | `gap-gutter`                    | 24px   |
+| Card padding     | `p-card`                        | 24px   |
+| Stack rhythm     | `space-y-stack` / `gap-stack`   | 24px   |
+| Inline rhythm    | `gap-inline`                    | 16px   |
+| Container padding| `px-container-pad`              | 32px   |
+| Bento columns    | `grid-cols-bento`               | 12 col |
+
+Don't hardcode `w-[260px]` / `gap-6` for these — use the tokens so the rhythm
+stays consistent and is changeable in one place (`tailwind.config.js`).
+
 ## Patterns
 
 ### Dashboard page
 
 ```tsx
 <PageHeader title="Dashboard" />
-<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-  <Stat label="Balance" value={balance} />
-  <Stat label="Income"  value={income}  tone="income"  delta={incomeDelta} />
-  <Stat label="Expense" value={expense} tone="expense" delta={expenseDelta} goodWhen="down" />
-  <Stat label="Savings" value={savings} delta={savingsDelta} />
-</div>
+<BentoGrid>
+  <BentoItem span={12}>
+    <div className="grid gap-gutter sm:grid-cols-2 lg:grid-cols-4">
+      <Stat label="Balance" value={balance} />
+      <Stat label="Income"  value={income}  tone="income"  delta={incomeDelta} />
+      <Stat label="Expense" value={expense} tone="expense" delta={expenseDelta} goodWhen="down" />
+      <Stat label="Savings" value={savings} delta={savingsDelta} />
+    </div>
+  </BentoItem>
+  <BentoItem span={8}><Card>Cash flow chart</Card></BentoItem>
+  <BentoItem span={4}><Card>Goals / XP</Card></BentoItem>
+</BentoGrid>
 ```
 
 ### Money in tables

@@ -15,6 +15,7 @@ import type {
   BudgetBalance,
   ApiResponse,
   Pagination,
+  TransactionTotals,
 } from "@/types/api";
 
 class TransactionService {
@@ -41,7 +42,9 @@ class TransactionService {
     const queryString = params.toString();
     const url = `/transactions${queryString ? `?${queryString}` : ""}`;
 
-    const { response, status } = await apiClient.get<ApiResponse<Transaction[]> & { pagination: Pagination }>(url, {
+    const { response, status } = await apiClient.get<
+      ApiResponse<Transaction[]> & { pagination: Pagination; totals?: TransactionTotals }
+    >(url, {
       authentication: {
         token,
       },
@@ -61,6 +64,7 @@ class TransactionService {
         total: response.pagination.total,
         limit: response.pagination.limit
       },
+      ...(response.totals ? { totals: response.totals } : {}),
       message: response.message ?? "Transactions retrieved successfully"
     };
   }

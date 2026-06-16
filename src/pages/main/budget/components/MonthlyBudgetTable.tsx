@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { budgetService } from "@/services/budget.service";
 import type { Budget } from "@/types/budget";
 import { MONTHS } from "@/types/budget";
+import { calculateBudgetTotals } from "@/utils";
 
 interface MonthlyBudgetTableProps {
     budgets: Budget[];
@@ -18,10 +18,6 @@ export function MonthlyBudgetTable({ budgets, onViewBudget }: MonthlyBudgetTable
     if (a.year !== b.year) { return b.year - a.year; }
     return b.month - a.month;
   });
-
-  const calculateBudgetTotals = (budget: Budget) => {
-    return budgetService.calculateTotals(budget);
-  };
 
   return (
     <Card>

@@ -5,6 +5,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 
 import {
+  BentoGrid,
+  BentoItem,
   Button,
   Card,
   CardContent,
@@ -74,14 +76,16 @@ export default function Dashboard() {
     hasFetchedBudget.current = true;
 
     setIsLoadingBudget(true);
-    fetchBudgets({ year: currentYear, month: currentMonth })
+    fetchBudgets({ year: currentYear,
+      month: currentMonth })
       .then((list) => setCurrentBudget(list?.[0] ?? null))
       .catch(() => setCurrentBudget(null))
       .finally(() => setIsLoadingBudget(false));
   }, [ fetchBudgets, currentYear, currentMonth ]);
 
   // ---- Recent transactions ----
-  const recentFilters = useMemo(() => ({ page: 1, limit: 5 }), []);
+  const recentFilters = useMemo(() => ({ page: 1,
+    limit: 5 }), []);
   const { transactions: recentTx, isLoading: isLoadingRecent } = useTransactions({
     filters: recentFilters,
   });
@@ -99,7 +103,10 @@ export default function Dashboard() {
     const totalSpent   = monthly?.totalExpense ?? 0;
     const pct          = totalPlanned > 0 ? Math.min(100, (totalSpent / totalPlanned) * 100) : 0;
     const remaining    = totalPlanned - totalSpent;
-    return { totalPlanned, totalSpent, pct, remaining };
+    return { totalPlanned,
+      totalSpent,
+      pct,
+      remaining };
   }, [ currentBudget, monthly ]);
 
   // ---- Top 4 accounts for the snapshot ----
@@ -132,7 +139,7 @@ export default function Dashboard() {
       />
 
       {/* KPI row */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-gutter sm:grid-cols-2 lg:grid-cols-4">
         <Stat
           label="Total Balance"
           value={totalBalance}
@@ -165,9 +172,10 @@ export default function Dashboard() {
       </div>
 
       {/* Two-column section */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      <BentoGrid>
         {/* Current budget */}
-        <Card className="lg:col-span-2">
+        <BentoItem span={8}>
+        <Card className="h-full">
           <CardHeader>
             <div className="flex items-start justify-between gap-2">
               <div>
@@ -261,8 +269,11 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
+        </BentoItem>
+
         {/* Accounts snapshot */}
-        <Card>
+        <BentoItem span={4}>
+        <Card className="h-full">
           <CardHeader>
             <div className="flex items-start justify-between gap-2">
               <div>
@@ -298,7 +309,8 @@ export default function Dashboard() {
             )}
           </CardContent>
         </Card>
-      </div>
+        </BentoItem>
+      </BentoGrid>
 
       {/* Recent activity */}
       <Card>

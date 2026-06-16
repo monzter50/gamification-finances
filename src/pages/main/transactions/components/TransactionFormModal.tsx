@@ -47,8 +47,10 @@ interface TransactionFormModalProps {
 const DEFAULT_CURRENCY = "MXN";
 
 const TRANSACTION_TYPES: { value: TransactionType; label: string }[] = [
-  { value: "expense", label: "Expense" },
-  { value: "income",  label: "Income"  },
+  { value: "expense",
+    label: "Expense" },
+  { value: "income",
+    label: "Income"  },
 ];
 
 const EMPTY_DEFAULTS: TransactionFormValues = {
@@ -66,7 +68,8 @@ const EMPTY_DEFAULTS: TransactionFormValues = {
 // Format option-row amounts. Selects can't host <Money> ergonomically (it's a
 // block-level span) — this is a small string helper for select rows only.
 const formatOptionAmount = (n: number, currency = DEFAULT_CURRENCY) =>
-  `${n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${currency}`;
+  `${n.toLocaleString(undefined, { minimumFractionDigits: 0,
+    maximumFractionDigits: 2 })} ${currency}`;
 
 export function TransactionFormModal({
   open,
@@ -311,7 +314,8 @@ export function TransactionFormModal({
             placeholder="e.g., Walmart, Employer"
             {...register("vendor", {
               required: "Vendor is required",
-              minLength: { value: 2, message: "At least 2 characters" },
+              minLength: { value: 2,
+                message: "At least 2 characters" },
             })}
           />
           {errors.vendor && (

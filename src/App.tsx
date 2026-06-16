@@ -78,7 +78,7 @@ const router = createBrowserRouter([
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="light">
+    <ThemeProvider defaultTheme="dark">
       <AuthProvider>
         <RouterProvider router={router} />
         <SessionBlockedGate />

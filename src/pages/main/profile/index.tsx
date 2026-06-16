@@ -18,6 +18,8 @@ import {
   Avatar,
   AvatarFallback,
   AvatarImage,
+  BentoGrid,
+  BentoItem,
   Button,
   Card,
   CardContent,
@@ -109,11 +111,10 @@ export default function Profile() {
     reset,
     formState: { isDirty, errors },
   } = useForm<ProfileFormValues>({
-    defaultValues: { name: "", savingsGoal: "" },
+    defaultValues: { name: "",
+      savingsGoal: "" },
   });
 
-  // Reset the form whenever the server payload lands so the inputs reflect
-  // canonical state (and `isDirty` stays meaningful).
   useEffect(() => {
     if (!profile) { return; }
     reset({
@@ -168,9 +169,10 @@ export default function Profile() {
       />
 
       {/* Gamification summary */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      <BentoGrid>
         {/* Level & XP */}
-        <Card className="lg:col-span-2">
+        <BentoItem span={8}>
+        <Card className="h-full">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div className="space-y-2">
@@ -231,8 +233,11 @@ export default function Profile() {
           </CardContent>
         </Card>
 
+        </BentoItem>
+
         {/* Savings goal */}
-        <Card>
+        <BentoItem span={4}>
+        <Card className="h-full">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2">
               <Target className="h-5 w-5 text-savings" />
@@ -266,11 +271,13 @@ export default function Profile() {
             )}
           </CardContent>
         </Card>
-      </div>
+        </BentoItem>
+      </BentoGrid>
 
       {/* Financial snapshot */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
+      <BentoGrid>
+        <BentoItem span={6}>
+        <Card className="h-full">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
               <TrendingUp className="h-4 w-4 text-savings" />
@@ -288,7 +295,9 @@ export default function Profile() {
             </p>
           </CardContent>
         </Card>
-        <Card>
+        </BentoItem>
+        <BentoItem span={6}>
+        <Card className="h-full">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
               <TrendingDown className="h-4 w-4 text-expense" />
@@ -309,7 +318,8 @@ export default function Profile() {
             <p className="mt-1 text-xs text-muted-foreground">Lifetime spending</p>
           </CardContent>
         </Card>
-      </div>
+        </BentoItem>
+      </BentoGrid>
 
       {/* Profile form */}
       <Card>
@@ -344,7 +354,8 @@ export default function Profile() {
                   aria-invalid={errors.name ? "true" : "false"}
                   {...register("name", {
                     required: "Name is required",
-                    minLength: { value: 2, message: "Name must be at least 2 characters" },
+                    minLength: { value: 2,
+                      message: "Name must be at least 2 characters" },
                   })}
                 />
                 {errors.name && (

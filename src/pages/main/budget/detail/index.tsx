@@ -7,8 +7,8 @@ import { useNavigate, useParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useBudget, useSnackbar } from "@/hooks";
-import { budgetService } from "@/services/budget.service";
 import { MONTHS } from "@/types/budget";
+import { calculateBudgetTotals } from "@/utils";
 
 import { DuplicateBudgetModal } from "./components/DuplicateBudgetModal";
 
@@ -31,7 +31,7 @@ export default function BudgetDetail() {
         navigate("/budget");
       });
     }
-  }, [ id, fetchBudgetById, snackbar, navigate ]);
+  }, [id, fetchBudgetById, snackbar, navigate]);
 
   if (isLoading || !currentBudget) {
     return (
@@ -41,7 +41,7 @@ export default function BudgetDetail() {
     );
   }
 
-  const { totalIncome, totalExpense, savings, savingsRate } = budgetService.calculateTotals(currentBudget);
+  const { totalIncome, totalExpense, savings, savingsRate } = calculateBudgetTotals(currentBudget);
 
   return (
     <div className="space-y-6">
@@ -113,14 +113,12 @@ export default function BudgetDetail() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div
-              className={`text-2xl font-bold ${
-                savings >= 0 ? "text-income" : "text-expense"
-              }`}
-            >
+            <div className={`text-2xl font-bold ${savings >= 0 ? "text-income" : "text-expense"}`}>
               ${savings.toLocaleString("es-MX")} MXN
             </div>
-            <p className="text-xs text-muted-foreground mt-1">{savingsRate.toFixed(1)}% savings rate</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {savingsRate.toFixed(1)}% savings rate
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -136,9 +134,7 @@ export default function BudgetDetail() {
               <TrendingUp className="h-5 w-5 text-income" />
               Income Management
             </CardTitle>
-            <CardDescription>
-              Manage your income sources and track your earnings
-            </CardDescription>
+            <CardDescription>Manage your income sources and track your earnings</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex justify-between items-center">
@@ -162,9 +158,7 @@ export default function BudgetDetail() {
               <TrendingDown className="h-5 w-5 text-expense" />
               Expense Management
             </CardTitle>
-            <CardDescription>
-              Track and manage your monthly expenses
-            </CardDescription>
+            <CardDescription>Track and manage your monthly expenses</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex justify-between items-center">
@@ -188,17 +182,13 @@ export default function BudgetDetail() {
               <Receipt className="h-5 w-5 text-info" />
               Transaction Tracking
             </CardTitle>
-            <CardDescription>
-              Track all your financial transactions
-            </CardDescription>
+            <CardDescription>Track all your financial transactions</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex justify-between items-center">
               <div>
                 <p className="text-sm text-muted-foreground">Track & Manage</p>
-                <p className="text-lg font-semibold text-info">
-                  All Transactions
-                </p>
+                <p className="text-lg font-semibold text-info">All Transactions</p>
               </div>
               <Button variant="ghost">View Details →</Button>
             </div>

@@ -68,6 +68,7 @@ export default function XlsxImport() {
         type: r.type,
         ...(r.description?.trim() ? { description: r.description.trim() } : {}),
         ...(r.paymentSource ? { paymentSource: r.paymentSource } : {}),
+        ...(r.category ? { category: r.category } : {}),
       })),
       incomeItems: state.incomeItems.map((i) => ({
         description: i.description.trim(),
