@@ -3,18 +3,13 @@ import { useState, useCallback } from "react";
 import { budgetService } from "@/services/budget.service";
 import { expenseService } from "@/services/expense.service";
 import { incomeService } from "@/services/income.service";
-import type {
-  Budget,
-  CreateBudgetDTO,
-  AddIncomeItemDTO,
-  AddExpenseItemDTO,
-} from "@/types/budget";
+import type { Budget, CreateBudgetDTO, AddIncomeItemDTO, AddExpenseItemDTO } from "@/types/budget";
 
 export const useBudget = () => {
-  const [ budgets, setBudgets ] = useState<Budget[]>([]);
-  const [ currentBudget, setCurrentBudget ] = useState<Budget | null>(null);
-  const [ isLoading, setIsLoading ] = useState(false);
-  const [ error, setError ] = useState<string | null>(null);
+  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [currentBudget, setCurrentBudget] = useState<Budget | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchBudgets = useCallback(async (filters?: { year?: number; month?: number }) => {
     try {
@@ -48,12 +43,27 @@ export const useBudget = () => {
     }
   }, []);
 
+  /**
+   * Refetch the full budget and sync both the list and currentBudget.
+   *
+   * Item-level endpoints (POST/DELETE income|expense) return only the touched
+   * item + totals — NOT the parent budget — so we can't set their response as
+   * the budget. Refetch from the single source of truth instead. Uses a
+   * functional `setCurrentBudget` so this helper needs no `currentBudget` dep.
+   */
+  const refreshBudget = useCallback(async (budgetId: string) => {
+    const refreshed = await budgetService.getBudgetById(budgetId);
+    setBudgets((prev) => prev.map((b) => (b.id === budgetId ? refreshed : b)));
+    setCurrentBudget((prev) => (prev?.id === budgetId ? refreshed : prev));
+    return refreshed;
+  }, []);
+
   const createBudget = useCallback(async (data: CreateBudgetDTO) => {
     try {
       setIsLoading(true);
       setError(null);
       const newBudget = await budgetService.createBudget(data);
-      setBudgets((prev) => [ ...prev, newBudget ]);
+      setBudgets((prev) => [...prev, newBudget]);
       return newBudget;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to create budget";
@@ -64,156 +74,168 @@ export const useBudget = () => {
     }
   }, []);
 
-  const updateBudget = useCallback(async (id: string, data: Partial<CreateBudgetDTO>) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const updatedBudget = await budgetService.updateBudget(id, data);
-      setBudgets((prev) => prev.map((b) => (b.id === id ? updatedBudget : b)));
-      if (currentBudget?.id === id) {
-        setCurrentBudget(updatedBudget);
+  const updateBudget = useCallback(
+    async (id: string, data: Partial<CreateBudgetDTO>) => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const updatedBudget = await budgetService.updateBudget(id, data);
+        setBudgets((prev) => prev.map((b) => (b.id === id ? updatedBudget : b)));
+        if (currentBudget?.id === id) {
+          setCurrentBudget(updatedBudget);
+        }
+        return updatedBudget;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to update budget";
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
       }
-      return updatedBudget;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to update budget";
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [ currentBudget ]);
+    },
+    [currentBudget],
+  );
 
-  const deleteBudget = useCallback(async (id: string) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      await budgetService.deleteBudget(id);
-      setBudgets((prev) => prev.filter((b) => b.id !== id));
-      if (currentBudget?.id === id) {
-        setCurrentBudget(null);
+  const deleteBudget = useCallback(
+    async (id: string) => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        await budgetService.deleteBudget(id);
+        setBudgets((prev) => prev.filter((b) => b.id !== id));
+        if (currentBudget?.id === id) {
+          setCurrentBudget(null);
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to delete budget";
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to delete budget";
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [ currentBudget ]);
+    },
+    [currentBudget],
+  );
 
-  const addIncomeItem = useCallback(async (budgetId: string, data: AddIncomeItemDTO) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const updatedBudget = await incomeService.addIncomeItem(budgetId, data);
-      setBudgets((prev) => prev.map((b) => (b.id === budgetId ? updatedBudget : b)));
-      if (currentBudget?.id === budgetId) {
-        setCurrentBudget(updatedBudget);
+  const addIncomeItem = useCallback(
+    async (budgetId: string, data: AddIncomeItemDTO) => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        // POST returns only { item, totals } — refetch the full budget.
+        await incomeService.addIncomeItem(budgetId, data);
+        return await refreshBudget(budgetId);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to add income item";
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
       }
-      return updatedBudget;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to add income item";
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [ currentBudget ]);
+    },
+    [refreshBudget],
+  );
 
-  const updateIncomeItems = useCallback(async (budgetId: string, incomeItems: AddIncomeItemDTO[]) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const updatedBudget = await incomeService.updateIncomeItems(budgetId, incomeItems);
-      setBudgets((prev) => prev.map((b) => (b.id === budgetId ? updatedBudget : b)));
-      if (currentBudget?.id === budgetId) {
-        setCurrentBudget(updatedBudget);
+  const updateIncomeItems = useCallback(
+    async (budgetId: string, incomeItems: AddIncomeItemDTO[]) => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const updatedBudget = await incomeService.updateIncomeItems(budgetId, incomeItems);
+        setBudgets((prev) => prev.map((b) => (b.id === budgetId ? updatedBudget : b)));
+        if (currentBudget?.id === budgetId) {
+          setCurrentBudget(updatedBudget);
+        }
+        return updatedBudget;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to update income items";
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
       }
-      return updatedBudget;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to update income items";
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [ currentBudget ]);
+    },
+    [currentBudget],
+  );
 
-  const deleteIncomeItem = useCallback(async (budgetId: string, itemId: string) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const updatedBudget = await incomeService.deleteIncomeItem(budgetId, itemId);
-      setBudgets((prev) => prev.map((b) => (b.id === budgetId ? updatedBudget : b)));
-      if (currentBudget?.id === budgetId) {
-        setCurrentBudget(updatedBudget);
+  const deleteIncomeItem = useCallback(
+    async (budgetId: string, itemId: string) => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        // DELETE returns only a removal ack + totals — refetch the full budget.
+        await incomeService.deleteIncomeItem(budgetId, itemId);
+        return await refreshBudget(budgetId);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to delete income item";
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
       }
-      return updatedBudget;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to delete income item";
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [ currentBudget ]);
+    },
+    [currentBudget],
+  );
 
-  const addExpenseItem = useCallback(async (budgetId: string, data: AddExpenseItemDTO) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const updatedBudget = await expenseService.addExpenseItem(budgetId, data);
-      setBudgets((prev) => prev.map((b) => (b.id === budgetId ? updatedBudget : b)));
-      if (currentBudget?.id === budgetId) {
-        setCurrentBudget(updatedBudget);
+  const addExpenseItem = useCallback(
+    async (budgetId: string, data: AddExpenseItemDTO) => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        // POST returns only { item, totals } — refetch the full budget.
+        await expenseService.addExpenseItem(budgetId, data);
+        return await refreshBudget(budgetId);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to add expense item";
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
       }
-      return updatedBudget;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to add expense item";
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [ currentBudget ]);
+    },
+    [currentBudget],
+  );
 
-  const updateExpenseItems = useCallback(async (budgetId: string, expenseItems: AddExpenseItemDTO[]) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const updatedBudget = await expenseService.updateExpenseItems(budgetId, expenseItems);
-      setBudgets((prev) => prev.map((b) => (b.id === budgetId ? updatedBudget : b)));
-      if (currentBudget?.id === budgetId) {
-        setCurrentBudget(updatedBudget);
+  const updateExpenseItems = useCallback(
+    async (budgetId: string, expenseItems: AddExpenseItemDTO[]) => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const updatedBudget = await expenseService.updateExpenseItems(budgetId, expenseItems);
+        setBudgets((prev) => prev.map((b) => (b.id === budgetId ? updatedBudget : b)));
+        if (currentBudget?.id === budgetId) {
+          setCurrentBudget(updatedBudget);
+        }
+        return updatedBudget;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to update expense items";
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
       }
-      return updatedBudget;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to update expense items";
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [ currentBudget ]);
+    },
+    [currentBudget],
+  );
 
-  const deleteExpenseItem = useCallback(async (budgetId: string, itemId: string) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const updatedBudget = await expenseService.deleteExpenseItem(budgetId, itemId);
-      setBudgets((prev) => prev.map((b) => (b.id === budgetId ? updatedBudget : b)));
-      if (currentBudget?.id === budgetId) {
-        setCurrentBudget(updatedBudget);
+  const deleteExpenseItem = useCallback(
+    async (budgetId: string, itemId: string) => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        // DELETE returns only a removal ack + totals — refetch the full budget.
+        await expenseService.deleteExpenseItem(budgetId, itemId);
+        return await refreshBudget(budgetId);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to delete expense item";
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
       }
-      return updatedBudget;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to delete expense item";
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [ currentBudget ]);
+    },
+    [refreshBudget],
+  );
 
   return {
     budgets,

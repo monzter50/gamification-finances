@@ -3,11 +3,8 @@ import type { PostApiBudgetsIdDuplicateBody } from "@/api/generated/models";
 import { apiClient, getAuthToken } from "@/config/api-client";
 import { budgetLogger } from "@/config/logger";
 import type { ApiResponse } from "@/types/api";
-import type {
-  Budget,
-  BudgetStats,
-  CreateBudgetDTO,
-} from "@/types/budget";
+import type { Budget, BudgetStats, CreateBudgetDTO } from "@/types/budget";
+import { normalizeBudget } from "@/utils/budget-totals";
 import { ApplicationError } from "@/utils/errors";
 
 const BASE_URL = "/budgets";
@@ -30,8 +27,12 @@ class BudgetService {
       throw new Error("No authentication token found");
     }
     const queryParams = new URLSearchParams();
-    if (filters?.year) { queryParams.append("year", filters.year.toString()); }
-    if (filters?.month) { queryParams.append("month", filters.month.toString()); }
+    if (filters?.year) {
+      queryParams.append("year", filters.year.toString());
+    }
+    if (filters?.month) {
+      queryParams.append("month", filters.month.toString());
+    }
 
     const url = queryParams.toString() ? `${BASE_URL}?${queryParams}` : BASE_URL;
     const { response, status, statusCode } = await apiClient.get<ApiResponse<Budget[]>>(url, {
@@ -49,13 +50,13 @@ class BudgetService {
       budgetLogger.error("Failed to fetch budgets", {
         status,
         statusCode,
-        response
+        response,
       });
       throw new Error("Failed to fetch budgets");
     }
 
     budgetLogger.info("Budgets fetched successfully", { count: response?.data?.length });
-    return budgets;
+    return budgets.map(normalizeBudget);
   }
 
   /**
@@ -69,26 +70,29 @@ class BudgetService {
       throw new Error("No authentication token found");
     }
 
-    const { response, status, statusCode } = await apiClient.get<ApiResponse<Budget>>(`${BASE_URL}/${id}`, {
-      authentication: {
-        token,
+    const { response, status, statusCode } = await apiClient.get<ApiResponse<Budget>>(
+      `${BASE_URL}/${id}`,
+      {
+        authentication: {
+          token,
+        },
+        options: {
+          requiredAuth: true,
+        },
       },
-      options: {
-        requiredAuth: true,
-      },
-    });
+    );
 
     if (status === "error" || statusCode !== 200) {
       budgetLogger.error("Failed to fetch budget", {
         status,
         statusCode,
-        response
+        response,
       });
       throw new Error(response?.message || "Failed to fetch budget");
     }
 
     budgetLogger.info("Budget fetched successfully", { id });
-    return response.data;
+    return normalizeBudget(response.data);
   }
 
   /**
@@ -102,20 +106,23 @@ class BudgetService {
       throw new Error("No authentication token found");
     }
 
-    const { response, status, statusCode } = await apiClient.get<ApiResponse<BudgetStats>>(`${BASE_URL}/stats`, {
-      authentication: {
-        token,
+    const { response, status, statusCode } = await apiClient.get<ApiResponse<BudgetStats>>(
+      `${BASE_URL}/stats`,
+      {
+        authentication: {
+          token,
+        },
+        options: {
+          requiredAuth: true,
+        },
       },
-      options: {
-        requiredAuth: true,
-      },
-    });
+    );
 
     if (status === "error" || statusCode !== 200) {
       budgetLogger.error("Failed to fetch budget stats", {
         status,
         statusCode,
-        response
+        response,
       });
       throw new Error(response?.message || "Failed to fetch stats");
     }
@@ -149,13 +156,13 @@ class BudgetService {
       budgetLogger.error("Failed to create budget", {
         status,
         statusCode,
-        response
+        response,
       });
       throw new Error(response?.message || "Failed to create budget");
     }
 
     budgetLogger.info("Budget created successfully", { id: response.data.id });
-    return response.data;
+    return normalizeBudget(response.data);
   }
 
   /**
@@ -164,7 +171,7 @@ class BudgetService {
   async updateBudget(id: string, data: Partial<CreateBudgetDTO>): Promise<Budget> {
     budgetLogger.debug("Updating budget", {
       id,
-      data
+      data,
     });
     const token = getAuthToken();
 
@@ -172,27 +179,30 @@ class BudgetService {
       throw new Error("No authentication token found");
     }
 
-    const { response, status, statusCode } = await apiClient.put<ApiResponse<Budget>>(`${BASE_URL}/${id}`, {
-      body: JSON.parse(JSON.stringify(data)),
-      authentication: {
-        token,
+    const { response, status, statusCode } = await apiClient.put<ApiResponse<Budget>>(
+      `${BASE_URL}/${id}`,
+      {
+        body: JSON.parse(JSON.stringify(data)),
+        authentication: {
+          token,
+        },
+        options: {
+          requiredAuth: true,
+        },
       },
-      options: {
-        requiredAuth: true,
-      },
-    });
+    );
 
     if (status === "error" || statusCode !== 200) {
       budgetLogger.error("Failed to update budget", {
         status,
         statusCode,
-        response
+        response,
       });
       throw new Error(response?.message || "Failed to update budget");
     }
 
     budgetLogger.info("Budget updated successfully", { id });
-    return response.data;
+    return normalizeBudget(response.data);
   }
 
   /**
@@ -206,20 +216,23 @@ class BudgetService {
       throw new Error("No authentication token found");
     }
 
-    const { response, status, statusCode } = await apiClient.delete<ApiResponse<void>>(`${BASE_URL}/${id}`, {
-      authentication: {
-        token,
+    const { response, status, statusCode } = await apiClient.delete<ApiResponse<void>>(
+      `${BASE_URL}/${id}`,
+      {
+        authentication: {
+          token,
+        },
+        options: {
+          requiredAuth: true,
+        },
       },
-      options: {
-        requiredAuth: true,
-      },
-    });
+    );
 
     if (status === "error" || statusCode !== 200) {
       budgetLogger.error("Failed to delete budget", {
         status,
         statusCode,
-        response
+        response,
       });
       throw new Error(response?.message || "Failed to delete budget");
     }
@@ -264,9 +277,10 @@ class BudgetService {
     }
 
     // Error branches — pull the server-provided message when present.
-    const message = (res.data as { error?: string; message?: string } | undefined)?.error
-                 ?? (res.data as { message?: string } | undefined)?.message
-                 ?? "";
+    const message =
+      (res.data as { error?: string; message?: string } | undefined)?.error ??
+      (res.data as { message?: string } | undefined)?.message ??
+      "";
 
     budgetLogger.warn("Duplicate failed", { status: res.status, message });
 
@@ -283,11 +297,7 @@ class BudgetService {
       throw new ApplicationError(message, "STALE_ACCOUNT", 400);
     }
     if (res.status === 400) {
-      throw new ApplicationError(
-        message || "Invalid year or month.",
-        "VALIDATION",
-        400,
-      );
+      throw new ApplicationError(message || "Invalid year or month.", "VALIDATION", 400);
     }
     if (res.status === 403) {
       throw new ApplicationError("You don't own this budget.", "FORBIDDEN", 403);

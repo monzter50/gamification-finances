@@ -13,12 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui";
 import { Modal } from "@/components/ui/Modal";
-import type {
-  Account,
-  CreateTransactionDto,
-  Transaction,
-  TransactionType,
-} from "@/types/api";
+import type { Account, CreateTransactionDto, Transaction, TransactionType } from "@/types/api";
 import type { Budget, ExpenseItem, IncomeItem } from "@/types/budget";
 
 export interface TransactionFormValues {
@@ -48,19 +43,19 @@ const DEFAULT_CURRENCY = "MXN";
 
 const TRANSACTION_TYPES: { value: TransactionType; label: string }[] = [
   { value: "expense", label: "Expense" },
-  { value: "income",  label: "Income"  },
+  { value: "income", label: "Income" },
 ];
 
 const EMPTY_DEFAULTS: TransactionFormValues = {
-  budgetId:       "",
-  accountId:      "",
-  date:           new Date().toISOString().split("T")[0],
-  type:           "expense",
-  vendor:         "",
-  amount:         null,
-  description:    "",
-  incomeItemId:   "",
-  expenseItemId:  "",
+  budgetId: "",
+  accountId: "",
+  date: new Date().toISOString().split("T")[0],
+  type: "expense",
+  vendor: "",
+  amount: null,
+  description: "",
+  incomeItemId: "",
+  expenseItemId: "",
 };
 
 // Format option-row amounts. Selects can't host <Money> ergonomically (it's a
@@ -91,51 +86,60 @@ export function TransactionFormModal({
     defaultValues: EMPTY_DEFAULTS,
   });
 
-  const selectedType     = watch("type");
+  const selectedType = watch("type");
   const selectedBudgetId = watch("budgetId");
-  const selectedBudget   = useMemo(
+  const selectedBudget = useMemo(
     () => budgets.find((b) => b.id === selectedBudgetId) ?? null,
-    [ budgets, selectedBudgetId ],
+    [budgets, selectedBudgetId],
   );
 
   useEffect(() => {
-    if (!open) { return; }
+    if (!open) {
+      return;
+    }
 
     if (editingTransaction) {
       reset({
-        budgetId:      editingTransaction.budgetId ?? "",
-        accountId:     editingTransaction.accountId,
-        date:          new Date(editingTransaction.date).toISOString().split("T")[0],
-        type:          editingTransaction.type,
-        vendor:        editingTransaction.vendor,
-        amount:        editingTransaction.amount,
-        description:   editingTransaction.description ?? "",
-        incomeItemId:  editingTransaction.incomeItemId ?? "",
+        budgetId: editingTransaction.budgetId ?? "",
+        accountId: editingTransaction.accountId,
+        date: new Date(editingTransaction.date).toISOString().split("T")[0],
+        type: editingTransaction.type,
+        vendor: editingTransaction.vendor,
+        amount: editingTransaction.amount,
+        description: editingTransaction.description ?? "",
+        incomeItemId: editingTransaction.incomeItemId ?? "",
         expenseItemId: editingTransaction.expenseItemId ?? "",
       });
     } else {
       reset(EMPTY_DEFAULTS);
     }
-  }, [ open, editingTransaction, reset ]);
+  }, [open, editingTransaction, reset]);
 
-  useEffect(() => {
+  // Clearing the linked item is a USER action (changing type/budget), not a
+  // programmatic one. Doing it here — instead of in an effect on
+  // selectedType/selectedBudgetId — keeps the edit-mode prefill intact, since
+  // the prefill `reset()` also changes those values and would otherwise wipe
+  // the linked item right after restoring it.
+  const clearLinkedItems = () => {
     setValue("incomeItemId", "");
     setValue("expenseItemId", "");
-  }, [ selectedType, selectedBudgetId, setValue ]);
+  };
 
-  const incomeItems: IncomeItem[]   = selectedBudget?.incomeItems  ?? [];
+  const incomeItems: IncomeItem[] = selectedBudget?.incomeItems ?? [];
   const expenseItems: ExpenseItem[] = selectedBudget?.expenseItems ?? [];
 
   const submitHandler = handleSubmit(async (values) => {
     const payload: CreateTransactionDto = {
-      budgetId:    values.budgetId,
-      accountId:   values.accountId,
-      date:        values.date,
-      type:        values.type,
-      vendor:      values.vendor.trim(),
-      amount:      Number(values.amount ?? 0),
-      category:    "",
-      owner:       "",
+      budgetId: values.budgetId,
+      accountId: values.accountId,
+      date: values.date,
+      type: values.type,
+      vendor: values.vendor.trim(),
+      amount: Number(values.amount ?? 0),
+      // Preserve server-managed fields on edit; the form doesn't expose them,
+      // so sending "" here would wipe the stored values on update.
+      category: editingTransaction?.category ?? "",
+      owner: editingTransaction?.owner ?? "",
     };
 
     if (values.description?.trim()) {
@@ -167,7 +171,10 @@ export function TransactionFormModal({
           <Label htmlFor="budgetId">Budget</Label>
           <Select
             value={selectedBudgetId}
-            onValueChange={(v) => setValue("budgetId", v, { shouldValidate: true })}
+            onValueChange={(v) => {
+              setValue("budgetId", v, { shouldValidate: true });
+              clearLinkedItems();
+            }}
             disabled={isEditMode}
           >
             <SelectTrigger id="budgetId">
@@ -187,13 +194,8 @@ export function TransactionFormModal({
               )}
             </SelectContent>
           </Select>
-          <input
-            type="hidden"
-            {...register("budgetId", { required: "Budget is required" })}
-          />
-          {errors.budgetId && (
-            <p className="text-sm text-destructive">{errors.budgetId.message}</p>
-          )}
+          <input type="hidden" {...register("budgetId", { required: "Budget is required" })} />
+          {errors.budgetId && <p className="text-sm text-destructive">{errors.budgetId.message}</p>}
         </div>
 
         {/* Type */}
@@ -201,14 +203,19 @@ export function TransactionFormModal({
           <Label htmlFor="type">Type</Label>
           <Select
             value={selectedType}
-            onValueChange={(v) => setValue("type", v as TransactionType, { shouldValidate: true })}
+            onValueChange={(v) => {
+              setValue("type", v as TransactionType, { shouldValidate: true });
+              clearLinkedItems();
+            }}
           >
             <SelectTrigger id="type">
               <SelectValue placeholder="Select transaction type" />
             </SelectTrigger>
             <SelectContent>
               {TRANSACTION_TYPES.map((t) => (
-                <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                <SelectItem key={t.value} value={t.value}>
+                  {t.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -281,10 +288,7 @@ export function TransactionFormModal({
               )}
             </SelectContent>
           </Select>
-          <input
-            type="hidden"
-            {...register("accountId", { required: "Account is required" })}
-          />
+          <input type="hidden" {...register("accountId", { required: "Account is required" })} />
           {errors.accountId && (
             <p className="text-sm text-destructive">{errors.accountId.message}</p>
           )}
@@ -293,14 +297,8 @@ export function TransactionFormModal({
         {/* Date */}
         <div className="flex flex-col space-y-1.5">
           <Label htmlFor="date">Date</Label>
-          <Input
-            id="date"
-            type="date"
-            {...register("date", { required: "Date is required" })}
-          />
-          {errors.date && (
-            <p className="text-sm text-destructive">{errors.date.message}</p>
-          )}
+          <Input id="date" type="date" {...register("date", { required: "Date is required" })} />
+          {errors.date && <p className="text-sm text-destructive">{errors.date.message}</p>}
         </div>
 
         {/* Vendor */}
@@ -314,9 +312,7 @@ export function TransactionFormModal({
               minLength: { value: 2, message: "At least 2 characters" },
             })}
           />
-          {errors.vendor && (
-            <p className="text-sm text-destructive">{errors.vendor.message}</p>
-          )}
+          {errors.vendor && <p className="text-sm text-destructive">{errors.vendor.message}</p>}
         </div>
 
         {/* Amount — via design-system MoneyInput */}
@@ -340,29 +336,33 @@ export function TransactionFormModal({
               />
             )}
           />
-          {errors.amount && (
-            <p className="text-sm text-destructive">{errors.amount.message}</p>
-          )}
+          {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
         </div>
 
         {/* Description */}
         <div className="flex flex-col space-y-1.5">
           <Label htmlFor="description">Description (optional)</Label>
-          <Input
-            id="description"
-            placeholder="Free-form notes"
-            {...register("description")}
-          />
+          <Input id="description" placeholder="Free-form notes" {...register("description")} />
         </div>
 
         <div className="flex gap-2 pt-2">
-          <Button type="button" variant="outline" onClick={onClose} className="flex-1" disabled={isSubmitting}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            className="flex-1"
+            disabled={isSubmitting}
+          >
             Cancel
           </Button>
           <Button type="submit" className="flex-1" disabled={isSubmitting}>
             {isSubmitting
-              ? isEditMode ? "Saving..." : "Adding..."
-              : isEditMode ? "Save Changes" : "Add Transaction"}
+              ? isEditMode
+                ? "Saving..."
+                : "Adding..."
+              : isEditMode
+                ? "Save Changes"
+                : "Add Transaction"}
           </Button>
         </div>
       </form>

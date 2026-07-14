@@ -2,7 +2,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Modal } from "@/components/ui/Modal";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { Account } from "@/types/api";
 import { INCOME_TYPES } from "@/types/budget";
 import type { IncomeType } from "@/types/budget";
 
@@ -13,9 +20,12 @@ interface IncomeModalProps {
     description: string;
     amount: string;
     type: IncomeType | "";
+    accountId: string;
   };
+  accounts: Account[];
   onClose: () => void;
-  onChange: (field: "description" | "amount" | "type", value: string) => void;
+  // eslint-disable-next-line no-unused-vars
+  onChange: (field: "description" | "amount" | "type" | "accountId", value: string) => void;
   onSave: () => void;
 }
 
@@ -23,6 +33,7 @@ export function IncomeModal({
   isOpen,
   isEditMode,
   formData,
+  accounts,
   onClose,
   onChange,
   onSave,
@@ -35,7 +46,9 @@ export function IncomeModal({
     >
       <div className="px-6 pb-6 space-y-4">
         <p className="text-sm text-muted-foreground">
-          {isEditMode ? "Update your income source details." : "Add a new income source to your budget."}
+          {isEditMode
+            ? "Update your income source details."
+            : "Add a new income source to your budget."}
         </p>
 
         <div className="space-y-4">
@@ -51,10 +64,7 @@ export function IncomeModal({
 
           <div className="flex flex-col space-y-1.5">
             <Label htmlFor="type">Type</Label>
-            <Select
-              value={formData.type}
-              onValueChange={(value) => onChange("type", value)}
-            >
+            <Select value={formData.type} onValueChange={(value) => onChange("type", value)}>
               <SelectTrigger id="type">
                 <SelectValue placeholder="Select income type" />
               </SelectTrigger>
@@ -62,6 +72,25 @@ export function IncomeModal({
                 {INCOME_TYPES.map((type) => (
                   <SelectItem key={type} value={type}>
                     {type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col space-y-1.5">
+            <Label htmlFor="accountId">Account</Label>
+            <Select
+              value={formData.accountId}
+              onValueChange={(value) => onChange("accountId", value)}
+            >
+              <SelectTrigger id="accountId">
+                <SelectValue placeholder="Select account" />
+              </SelectTrigger>
+              <SelectContent>
+                {accounts.map((account) => (
+                  <SelectItem key={account.id} value={account.id}>
+                    {account.name} ({account.type})
                   </SelectItem>
                 ))}
               </SelectContent>

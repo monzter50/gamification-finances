@@ -3,7 +3,14 @@ import { memo } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import type { Transaction, TransactionType } from "@/types/api";
 
 interface TransactionsTableProps {
@@ -12,7 +19,18 @@ interface TransactionsTableProps {
   currentPage: number;
   totalPages: number;
   totalItems: number;
-  onEdit: (itemId: string, description: string, amount: number, type: TransactionType, category: string, date: string) => void;
+  // eslint-disable-next-line no-unused-vars
+  onEdit: (
+    itemId: string,
+    description: string,
+    amount: number,
+    type: TransactionType,
+    category: string,
+    date: string,
+    vendor: string,
+    owner: string,
+    accountId: string,
+  ) => void;
   onRemove: (itemId: string) => void;
   onNextPage: () => void;
   onPreviousPage: () => void;
@@ -44,7 +62,7 @@ function TransactionsTableSkeleton() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {[ ...Array(5) ].map((_, index) => (
+          {[...Array(5)].map((_, index) => (
             <TableRow key={index}>
               <TableCell>
                 <Skeleton className="h-5 w-[100px]" />
@@ -108,31 +126,29 @@ const TransactionsTableComponent = ({
 
   const getTypeColor = (type: TransactionType) => {
     switch (type) {
-    case "income":
-      return "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300";
-    case "expense":
-      return "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300";
-    default:
-      return "bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-300";
+      case "income":
+        return "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300";
+      case "expense":
+        return "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300";
+      default:
+        return "bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-300";
     }
   };
 
   const getAmountColor = (type: TransactionType) => {
     switch (type) {
-    case "income":
-      return "text-income";
-    case "expense":
-      return "text-expense";
-    default:
-      return "";
+      case "income":
+        return "text-income";
+      case "expense":
+        return "text-expense";
+      default:
+        return "";
     }
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", { month: "short",
-      day: "numeric",
-      year: "numeric" });
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   };
 
   return (
@@ -157,7 +173,9 @@ const TransactionsTableComponent = ({
                 <span className="text-sm text-muted-foreground">{transaction.category}</span>
               </TableCell>
               <TableCell>
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getTypeColor(transaction.type)}`}>
+                <span
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getTypeColor(transaction.type)}`}
+                >
                   {transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
                 </span>
               </TableCell>
@@ -169,15 +187,23 @@ const TransactionsTableComponent = ({
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => onEdit(transaction.id, transaction.description ?? "", transaction.amount, transaction.type, transaction.category, transaction.date)}
+                    onClick={() =>
+                      onEdit(
+                        transaction.id,
+                        transaction.description ?? "",
+                        transaction.amount,
+                        transaction.type,
+                        transaction.category,
+                        transaction.date,
+                        transaction.vendor ?? "",
+                        transaction.owner ?? "",
+                        transaction.accountId ?? "",
+                      )
+                    }
                   >
                     <Pencil className="h-4 w-4 text-muted-foreground" />
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => onRemove(transaction.id)}
-                  >
+                  <Button size="sm" variant="ghost" onClick={() => onRemove(transaction.id)}>
                     <Trash2 className="h-4 w-4 text-danger" />
                   </Button>
                 </div>
@@ -193,12 +219,7 @@ const TransactionsTableComponent = ({
           Page {currentPage} of {totalPages} ({totalItems} total transactions)
         </p>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onPreviousPage}
-            disabled={currentPage === 1}
-          >
+          <Button variant="outline" size="sm" onClick={onPreviousPage} disabled={currentPage === 1}>
             <ChevronLeft className="h-4 w-4 mr-1" />
             Previous
           </Button>

@@ -16,6 +16,7 @@ export interface IncomeItem {
   description: string;
   amount: number;
   type: IncomeType;
+  accountId: string;
 }
 
 export interface ExpenseItem {
@@ -52,6 +53,7 @@ export interface AddIncomeItemDTO {
   description: string;
   amount: number;
   type: IncomeType;
+  accountId: string;
 }
 
 export interface AddExpenseItemDTO {
@@ -97,10 +99,7 @@ export const INCOME_TYPES: IncomeType[] = [
   "Other",
 ];
 
-export const EXPENSE_TYPES: ExpenseType[] = [
-  "Fixed",
-  "Variable",
-];
+export const EXPENSE_TYPES: ExpenseType[] = ["Fixed", "Variable"];
 
 export const MONTHS = [
   "January",

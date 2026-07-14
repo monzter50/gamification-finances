@@ -20,7 +20,11 @@ import type { CreateTransactionDto, Transaction, TransactionFilters } from "@/ty
 import type { Budget } from "@/types/budget";
 
 import { TransactionFormModal } from "./components/TransactionFormModal";
-import { DEFAULT_FILTERS, TransactionListFilters, type TransactionListFilterValues } from "./components/TransactionListFilters";
+import {
+  DEFAULT_FILTERS,
+  TransactionListFilters,
+  type TransactionListFilterValues,
+} from "./components/TransactionListFilters";
 import { TransactionsTable } from "../budget/transactions/components/TransactionsTable";
 
 const ITEMS_PER_PAGE = 10;
@@ -33,12 +37,14 @@ export default function Transactions() {
   const { fetchBudgetById, fetchBudgets } = useBudget();
 
   // -------- Budgets (for filter dropdown + modal item linking) --------
-  const [ budgets, setBudgets ] = useState<Budget[]>([]);
-  const [ activeBudget, setActiveBudget ] = useState<Budget | null>(null);
+  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [activeBudget, setActiveBudget] = useState<Budget | null>(null);
   const hasLoadedBudgets = useRef(false);
 
   useEffect(() => {
-    if (hasLoadedBudgets.current) { return; }
+    if (hasLoadedBudgets.current) {
+      return;
+    }
     hasLoadedBudgets.current = true;
 
     fetchBudgets()
@@ -49,22 +55,29 @@ export default function Transactions() {
           description: err instanceof Error ? err.message : "An error occurred",
         });
       });
-  }, [ fetchBudgets, snackbar ]);
+  }, [fetchBudgets, snackbar]);
 
   // -------- Filters + pagination --------
-  const [ filterValues, setFilterValues ] = useState<TransactionListFilterValues>(DEFAULT_FILTERS);
-  const [ currentPage, setCurrentPage ] = useState(1);
+  const [filterValues, setFilterValues] = useState<TransactionListFilterValues>(DEFAULT_FILTERS);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => { setCurrentPage(1); }, [ filterValues ]);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterValues]);
 
   const apiFilters: TransactionFilters = useMemo(() => {
-    const f: TransactionFilters = { page: currentPage,
-      limit: ITEMS_PER_PAGE };
-    if (filterValues.type !== "all")  { f.type      = filterValues.type; }
-    if (filterValues.startDate)       { f.startDate = filterValues.startDate; }
-    if (filterValues.endDate)         { f.endDate   = filterValues.endDate; }
+    const f: TransactionFilters = { page: currentPage, limit: ITEMS_PER_PAGE };
+    if (filterValues.type !== "all") {
+      f.type = filterValues.type;
+    }
+    if (filterValues.startDate) {
+      f.startDate = filterValues.startDate;
+    }
+    if (filterValues.endDate) {
+      f.endDate = filterValues.endDate;
+    }
     return f;
-  }, [ currentPage, filterValues ]);
+  }, [currentPage, filterValues]);
 
   const {
     transactions,
@@ -75,16 +88,24 @@ export default function Transactions() {
     deleteTransaction,
   } = useTransactions({
     budgetId: filterValues.budgetId || undefined,
-    filters:  apiFilters,
+    filters: apiFilters,
   });
 
   // -------- Global financial summary --------
-  const { summary, loading: isLoadingSummary, refetch: refetchSummary } = useTransactionSummary({ autoFetch: true });
+  const {
+    summary,
+    loading: isLoadingSummary,
+    refetch: refetchSummary,
+  } = useTransactionSummary({ autoFetch: true });
 
   // -------- Modal state --------
-  const [ isModalOpen, setIsModalOpen ] = useState(false);
-  const [ editingTransaction, setEditingTransaction ] = useState<Transaction | null>(null);
-  const [ isSubmitting, setIsSubmitting ] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  // Full budget (with income/expense items) of the transaction being edited, so
+  // the modal can render and preselect the linked plan. The list `budgets` only
+  // carry summaries, so we fetch the detail on demand.
+  const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!filterValues.budgetId) {
@@ -99,7 +120,7 @@ export default function Transactions() {
     fetchBudgetById(filterValues.budgetId)
       .then(setActiveBudget)
       .catch(() => setActiveBudget(null));
-  }, [ filterValues.budgetId, budgets, fetchBudgetById ]);
+  }, [filterValues.budgetId, budgets, fetchBudgetById]);
 
   // -------- Handlers --------
   const handleOpenCreate = () => {
@@ -107,16 +128,36 @@ export default function Transactions() {
     setIsModalOpen(true);
   };
 
-  const handleOpenEdit = useCallback((itemId: string) => {
-    const tx = transactions.find((t) => t.id === itemId);
-    if (!tx) { return; }
-    setEditingTransaction(tx);
-    setIsModalOpen(true);
-  }, [ transactions ]);
+  const handleOpenEdit = useCallback(
+    (itemId: string) => {
+      const tx = transactions.find((t) => t.id === itemId);
+      if (!tx) {
+        return;
+      }
+      setEditingTransaction(tx);
+      setIsModalOpen(true);
+
+      // Ensure the modal has the budget detail (with items) to prefill the linked plan.
+      if (!tx.budgetId) {
+        setEditingBudget(null);
+        return;
+      }
+      const cached = budgets.find((b) => b.id === tx.budgetId);
+      if (cached?.incomeItems && cached?.expenseItems) {
+        setEditingBudget(cached);
+        return;
+      }
+      fetchBudgetById(tx.budgetId)
+        .then(setEditingBudget)
+        .catch(() => setEditingBudget(null));
+    },
+    [transactions, budgets, fetchBudgetById],
+  );
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingTransaction(null);
+    setEditingBudget(null);
   };
 
   const handleSubmitTransaction = async (values: CreateTransactionDto) => {
@@ -145,7 +186,9 @@ export default function Transactions() {
       refreshAccounts();
       const remaining = (pagination?.total ?? transactions.length) - 1;
       const newPages = Math.max(1, Math.ceil(remaining / ITEMS_PER_PAGE));
-      if (currentPage > newPages) { setCurrentPage(newPages); }
+      if (currentPage > newPages) {
+        setCurrentPage(newPages);
+      }
     } catch {
       // error toast already surfaced by the hook
     }
@@ -155,11 +198,18 @@ export default function Transactions() {
   const totalItems = pagination?.total ?? transactions.length;
 
   const modalBudgets = useMemo<Budget[]>(() => {
-    if (activeBudget) {
-      return [ activeBudget, ...budgets.filter((b) => b.id !== activeBudget.id) ];
+    // Surface the budgets that carry item detail (editing + active filter) first,
+    // deduped, then the remaining summary budgets.
+    const seen = new Set<string>();
+    const withItems: Budget[] = [];
+    for (const b of [editingBudget, activeBudget]) {
+      if (b && !seen.has(b.id)) {
+        seen.add(b.id);
+        withItems.push(b);
+      }
     }
-    return budgets;
-  }, [ activeBudget, budgets ]);
+    return [...withItems, ...budgets.filter((b) => !seen.has(b.id))];
+  }, [editingBudget, activeBudget, budgets]);
 
   return (
     <div className="space-y-6">
@@ -172,7 +222,10 @@ export default function Transactions() {
               <FileSpreadsheet className="mr-2 h-4 w-4" />
               Import Excel
             </Button>
-            <Button onClick={handleOpenCreate} disabled={budgets.length === 0 || accounts.length === 0}>
+            <Button
+              onClick={handleOpenCreate}
+              disabled={budgets.length === 0 || accounts.length === 0}
+            >
               <Plus className="mr-2 h-4 w-4" />
               Add Transaction
             </Button>

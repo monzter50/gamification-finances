@@ -2,6 +2,7 @@ import { apiClient, getAuthToken } from "@/config/api-client";
 import { budgetLogger } from "@/config/logger";
 import type { ApiResponse } from "@/types/api";
 import type { AddExpenseItemDTO, Budget } from "@/types/budget";
+import { normalizeBudget } from "@/utils/budget-totals";
 
 const BASE_URL = "/budgets";
 
@@ -20,7 +21,7 @@ class ExpenseService {
   async addExpenseItem(budgetId: string, data: AddExpenseItemDTO): Promise<Budget> {
     budgetLogger.debug("Adding expense item", {
       budgetId,
-      data
+      data,
     });
     const token = getAuthToken();
 
@@ -38,20 +39,20 @@ class ExpenseService {
         options: {
           requiredAuth: true,
         },
-      }
+      },
     );
 
     if (status === "error" || statusCode !== 201) {
       budgetLogger.error("Failed to add expense item", {
         status,
         statusCode,
-        response
+        response,
       });
       throw new Error(response?.message || "Failed to add expense item");
     }
 
     budgetLogger.info("Expense item added successfully", { budgetId });
-    return response.data;
+    return normalizeBudget(response.data);
   }
 
   /**
@@ -60,7 +61,7 @@ class ExpenseService {
   async updateExpenseItems(budgetId: string, expenseItems: AddExpenseItemDTO[]): Promise<Budget> {
     budgetLogger.debug("Updating expense items", {
       budgetId,
-      count: expenseItems.length
+      count: expenseItems.length,
     });
     const token = getAuthToken();
 
@@ -78,20 +79,20 @@ class ExpenseService {
         options: {
           requiredAuth: true,
         },
-      }
+      },
     );
 
     if (status === "error" || statusCode !== 200) {
       budgetLogger.error("Failed to update expense items", {
         status,
         statusCode,
-        response
+        response,
       });
       throw new Error(response?.message || "Failed to update expense items");
     }
 
     budgetLogger.info("Expense items updated successfully", { budgetId });
-    return response.data;
+    return normalizeBudget(response.data);
   }
 
   /**
@@ -100,7 +101,7 @@ class ExpenseService {
   async deleteExpenseItem(budgetId: string, itemId: string): Promise<Budget> {
     budgetLogger.debug("Deleting expense item", {
       budgetId,
-      itemId
+      itemId,
     });
     const token = getAuthToken();
 
@@ -117,23 +118,23 @@ class ExpenseService {
         options: {
           requiredAuth: true,
         },
-      }
+      },
     );
 
     if (status === "error" || statusCode !== 200) {
       budgetLogger.error("Failed to delete expense item", {
         status,
         statusCode,
-        response
+        response,
       });
       throw new Error(response?.message || "Failed to delete expense item");
     }
 
     budgetLogger.info("Expense item deleted successfully", {
       budgetId,
-      itemId
+      itemId,
     });
-    return response.data;
+    return normalizeBudget(response.data);
   }
 }
 

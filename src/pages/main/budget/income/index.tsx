@@ -7,7 +7,7 @@ import { useNavigate, useParams } from "react-router";
 import { PageHeader, Stat } from "@/components/ui";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useSnackbar, useIncome, useBudgetItems } from "@/hooks";
+import { useSnackbar, useIncome, useBudgetItems, useAccounts } from "@/hooks";
 import { MONTHS, INCOME_TYPES } from "@/types/budget";
 import type { IncomeType, IncomeItem } from "@/types/budget";
 import { calculateBudgetTotals } from "@/utils";
@@ -22,22 +22,19 @@ export default function BudgetIncome() {
   const { id } = useParams();
   const navigate = useNavigate();
   const snackbar = useSnackbar();
-  const {
-    currentBudget,
-    fetchBudgetById,
-    addIncomeItem,
-    updateIncomeItems,
-    deleteIncomeItem,
-  } = useIncome();
+  const { currentBudget, fetchBudgetById, addIncomeItem, updateIncomeItems, deleteIncomeItem } =
+    useIncome();
+  const { accounts } = useAccounts();
   const hasFetched = useRef(false);
 
-  const [ isModalOpen, setIsModalOpen ] = useState(false);
-  const [ isEditMode, setIsEditMode ] = useState(false);
-  const [ editingItemId, setEditingItemId ] = useState<string | null>(null);
-  const [ incomeItemForm, setIncomeItemForm ] = useState({
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [incomeItemForm, setIncomeItemForm] = useState({
     description: "",
     amount: "",
     type: "" as IncomeType | "",
+    accountId: "",
   });
 
   // Client-side filtering + pagination over the full (already-loaded) item set.
@@ -55,7 +52,7 @@ export default function BudgetIncome() {
         navigate("/budget");
       });
     }
-  }, [ id, fetchBudgetById, snackbar, navigate ]);
+  }, [id, fetchBudgetById, snackbar, navigate]);
 
   // Full-screen state only for the INITIAL budget load — never on table ops.
   if (!currentBudget) {
@@ -71,39 +68,45 @@ export default function BudgetIncome() {
   const handleOpenAddModal = () => {
     setIsEditMode(false);
     setEditingItemId(null);
-    setIncomeItemForm({ description: "",
-      amount: "",
-      type: "" });
+    setIncomeItemForm({ description: "", amount: "", type: "", accountId: accounts[0]?.id ?? "" });
     setIsModalOpen(true);
   };
 
   const handleOpenEditModal = (item: BudgetItemRow) => {
+    const existingItem = currentBudget.incomeItems.find((i) => i.id === item.id);
     setIsEditMode(true);
     setEditingItemId(item.id ?? null);
     setIncomeItemForm({
       description: item.description,
       amount: item.amount.toString(),
       type: item.type as IncomeType,
+      accountId: existingItem?.accountId ?? accounts[0]?.id ?? "",
     });
     setIsModalOpen(true);
   };
 
-  const handleFormChange = (field: "description" | "amount" | "type", value: string) => {
-    setIncomeItemForm((prev) => ({ ...prev,
-      [field]: value }));
+  const handleFormChange = (
+    field: "description" | "amount" | "type" | "accountId",
+    value: string,
+  ) => {
+    setIncomeItemForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setIsEditMode(false);
     setEditingItemId(null);
-    setIncomeItemForm({ description: "",
-      amount: "",
-      type: "" });
+    setIncomeItemForm({ description: "", amount: "", type: "", accountId: "" });
   };
 
   const handleSaveIncomeItem = async () => {
-    if (!incomeItemForm.description || !incomeItemForm.amount || !incomeItemForm.type || !id) {
+    if (
+      !incomeItemForm.description ||
+      !incomeItemForm.amount ||
+      !incomeItemForm.type ||
+      !incomeItemForm.accountId ||
+      !id
+    ) {
       snackbar.warning({
         title: "Missing fields",
         description: "Please fill in all required fields.",
@@ -116,25 +119,34 @@ export default function BudgetIncome() {
         const updatedIncomeItems = currentBudget.incomeItems.map((item) =>
           item.id === editingItemId
             ? {
-              description: incomeItemForm.description,
-              amount: Number(incomeItemForm.amount),
-              type: incomeItemForm.type as IncomeType,
-            }
-            : { description: item.description,
-              amount: item.amount,
-              type: item.type },
+                description: incomeItemForm.description,
+                amount: Number(incomeItemForm.amount),
+                type: incomeItemForm.type as IncomeType,
+                accountId: incomeItemForm.accountId,
+              }
+            : {
+                description: item.description,
+                amount: item.amount,
+                type: item.type,
+                accountId: item.accountId,
+              },
         );
         await updateIncomeItems(id, updatedIncomeItems);
-        snackbar.success({ title: "Income updated!",
-          description: "Income item has been updated successfully." });
+        snackbar.success({
+          title: "Income updated!",
+          description: "Income item has been updated successfully.",
+        });
       } else {
         await addIncomeItem(id, {
           description: incomeItemForm.description,
           amount: Number(incomeItemForm.amount),
           type: incomeItemForm.type as IncomeType,
+          accountId: incomeItemForm.accountId,
         });
-        snackbar.success({ title: "Income added!",
-          description: "Income item has been added successfully." });
+        snackbar.success({
+          title: "Income added!",
+          description: "Income item has been added successfully.",
+        });
       }
       handleCloseModal();
     } catch (error) {
@@ -146,11 +158,12 @@ export default function BudgetIncome() {
   };
 
   const handleRemoveIncomeItem = async (itemId: string) => {
-    if (!id) { return; }
+    if (!id) {
+      return;
+    }
     try {
       await deleteIncomeItem(id, itemId);
-      snackbar.success({ title: "Income removed",
-        description: "Income item has been removed." });
+      snackbar.success({ title: "Income removed", description: "Income item has been removed." });
     } catch (error) {
       snackbar.error({
         title: "Failed to remove income",
@@ -223,6 +236,7 @@ export default function BudgetIncome() {
         isOpen={isModalOpen}
         isEditMode={isEditMode}
         formData={incomeItemForm}
+        accounts={accounts}
         onClose={handleCloseModal}
         onChange={handleFormChange}
         onSave={handleSaveIncomeItem}
