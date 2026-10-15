@@ -10,7 +10,7 @@
    never raw shadcn primitives like `text-emerald-600`.
 2. **Never `Intl.NumberFormat` in feature code.** Use `<Money>`.
 3. **Never write a `<div>` styled like a KPI card.** Use `<Stat>`.
-4. **Never leave a list/table empty.** Render `<EmptyState>`.
+4. **Never leave a list/table empty.** Render `<EmptyState>` (or `<ErrorState>` when it failed to load).
 5. **Never style a page title with raw `<h1>`.** Use `<PageHeader>`.
 6. **Import from `@/components/ui` only.** Don't deep-import individual files.
 7. **Tabular numerals** on every money/percent value. `<Money>` does this for
@@ -112,6 +112,24 @@ Every list/table renders this when there's nothing. Title + action required.
   description="Add your first one to start tracking."
   action={<Button onClick={open}>New transaction</Button>}
 />
+```
+
+#### `<ErrorState>`
+
+The failed-to-load counterpart of `<EmptyState>`. Render it where the content
+would have been — never a blank area or a raw error string. Uses the `danger`
+tokens and `role="alert"`. Presentational: pass user-facing text.
+In feature code prefer `<ErrorPanel error={err} onRetry={refetch} />` from
+`@/shared/errors`, which picks the copy/icon and only offers retry when it helps.
+
+```tsx
+<ErrorState
+  icon={<WifiOff />}
+  title="You're offline"
+  description="Can't reach the server. Check your connection and try again."
+  action={<Button variant="outline" size="sm" onClick={retry}>Try again</Button>}
+/>
+<ErrorState size="compact" title="Couldn't load" />   {/* table rows, small tiles */}
 ```
 
 #### `<PageHeader>`

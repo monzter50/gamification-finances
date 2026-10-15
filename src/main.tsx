@@ -13,11 +13,15 @@ import "@fontsource/jetbrains-mono/700.css";
 
 import "./index.css";
 
+import { installGlobalErrorHandlers } from "@/shared/errors";
+
 import App from "./App.tsx";
+
+// Report uncaught errors / unhandled rejections that escape React and try/catch.
+installGlobalErrorHandlers();
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
- 
     <App />
-   
   </StrictMode>,
 );

@@ -16,63 +16,74 @@ import Transactions from "@/pages/main/transactions";
 import XlsxImport from "@/pages/main/transactions/xlsx-import";
 import Signin from "@/pages/onboarding/signin";
 import { ProtectedRoutes } from "@/routes/protected/ProctectedRoutes.tsx";
+import { RouteErrorPage } from "@/shared/errors";
 
 const router = createBrowserRouter([
   {
     path: "/login",
     element: <Signin />,
+    errorElement: <RouteErrorPage />,
   },
   {
     path: "/",
     // eslint-disable-next-line react/jsx-no-undef
     element: <ProtectedRoutes />,
     loader: () => null, // We'll handle auth check in the component
+    errorElement: <RouteErrorPage />,
     children: [
       {
-        index: true,
-        element: <Dashboard />
+        // Pathless boundary: a crashing page renders RouteErrorPage inside the
+        // layout, so the sidebar stays usable. The parent errorElement covers
+        // crashes in the layout itself.
+        errorElement: <RouteErrorPage />,
+        children: [
+          {
+            index: true,
+            element: <Dashboard />,
+          },
+          {
+            path: "transactions",
+            element: <Transactions />,
+          },
+          {
+            path: "transactions/import-xlsx",
+            element: <XlsxImport />,
+          },
+          {
+            path: "profile",
+            element: <Profile />,
+          },
+          {
+            path: "budget",
+            element: <Budget />,
+          },
+          {
+            path: "budget/:id",
+            element: <BudgetDetail />,
+          },
+          {
+            path: "budget/:id/income",
+            element: <BudgetIncome />,
+          },
+          {
+            path: "budget/:id/expense",
+            element: <BudgetExpense />,
+          },
+          {
+            path: "budget/:id/transactions",
+            element: <BudgetTransactions />,
+          },
+          {
+            path: "accounts",
+            element: <Accounts />,
+          },
+        ],
       },
-      {
-        path: "transactions",
-        element: <Transactions />
-      },
-      {
-        path: "transactions/import-xlsx",
-        element: <XlsxImport />
-      },
-      {
-        path: "profile",
-        element: <Profile />
-      },
-      {
-        path: "budget",
-        element: <Budget />
-      },
-      {
-        path: "budget/:id",
-        element: <BudgetDetail />
-      },
-      {
-        path: "budget/:id/income",
-        element: <BudgetIncome />
-      },
-      {
-        path: "budget/:id/expense",
-        element: <BudgetExpense />
-      },
-      {
-        path: "budget/:id/transactions",
-        element: <BudgetTransactions />
-      },
-      {
-        path: "accounts",
-        element: <Accounts />
-      }
     ],
   },
   {
     path: "*",
-    element: <Navigate to="/" replace />
+    element: <Navigate to="/" replace />,
   },
 ]);
 

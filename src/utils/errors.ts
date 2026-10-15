@@ -1,6 +1,9 @@
 /**
- * Error utilities for handling API and application errors
+ * LEGACY error utilities. New code uses `@/shared/errors` (normalizeError,
+ * toUserMessage, notifyError). Delete each helper here when its last import
+ * goes away; delete the file when empty.
  */
+import { AppError as SharedAppError } from "@/shared/errors";
 
 export interface AppError {
   message: string;
@@ -9,17 +12,15 @@ export interface AppError {
 }
 
 /**
- * Custom error class for application errors
+ * Legacy constructor signature over the shared AppError, so every existing
+ * `throw new ApplicationError(msg, code, status)` is already an AppError
+ * (correct kind, `instanceof AppError`, works with notifyError/ErrorPanel).
+ * @deprecated new code: `new AppError({ message, code, status })` from `@/shared/errors`.
  */
-export class ApplicationError extends Error {
-  code?: string;
-  statusCode?: number;
-
+export class ApplicationError extends SharedAppError {
   constructor(message: string, code?: string, statusCode?: number) {
-    super(message);
+    super({ message, code, status: statusCode });
     this.name = "ApplicationError";
-    this.code = code;
-    this.statusCode = statusCode;
   }
 }
 
