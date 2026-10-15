@@ -1,0 +1,56 @@
+name: api-contract
+
+# Keeps the frontend's API client honest against the backend OpenAPI contract.
+#
+#   check  (blocking)      — regenerate src/api from the committed openapi/openapi.json
+#                            and fail if it differs: no hand-edits, no forgotten api:gen.
+#   drift  (non-blocking)  — compare the committed contract with the backend's spec on
+#                            the branch matching this PR's base (development → development,
+#                            main → main). A warning means the backend moved: run
+#                            `npm run api:sync` and adapt.
+
+on:
+  pull_request:
+    paths:
+      - "openapi/**"
+      - "src/api/**"
+      - "orval.config.ts"
+      - "scripts/api-*.mjs"
+      - "package.json"
+      - ".github/workflows/api-contract.yml"
+  schedule:
+    - cron: "0 13 * * 1-5" # weekday mornings: catch backend drift even without FE PRs
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run api:check
+
+  drift:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Compare with backend spec
+        env:
+          API_SPEC_REF: ${{ github.base_ref || 'development' }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # backend repo is public; token only lifts rate limits
+        run: |
+          if ! node scripts/api-pull.mjs --check; then
+            echo "::warning title=API contract drift::Backend spec on '$API_SPEC_REF' differs from openapi/openapi.json. Run 'npm run api:sync' and adapt the frontend."
+            exit 1
+          fi
