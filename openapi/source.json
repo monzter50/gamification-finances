@@ -1,5 +1,3 @@
 {
-  "source": "monzter50/api-gamification-finances/openapi-schema.json",
-  "ref": "development",
-  "commit": "1d06d10"
+  "source": "https://raw.githubusercontent.com/monzter50/api-gamification-finances/development/openapi-schema.json"
 }

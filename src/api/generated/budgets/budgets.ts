@@ -95,11 +95,6 @@ export type postApiBudgetsIdDuplicateResponse401 = {
   status: 401;
 };
 
-export type postApiBudgetsIdDuplicateResponse403 = {
-  data: void;
-  status: 403;
-};
-
 export type postApiBudgetsIdDuplicateResponse404 = {
   data: NotFoundErrorResponse;
   status: 404;
@@ -116,7 +111,6 @@ export type postApiBudgetsIdDuplicateResponseSuccess = postApiBudgetsIdDuplicate
 export type postApiBudgetsIdDuplicateResponseError = (
   | postApiBudgetsIdDuplicateResponse400
   | postApiBudgetsIdDuplicateResponse401
-  | postApiBudgetsIdDuplicateResponse403
   | postApiBudgetsIdDuplicateResponse404
   | postApiBudgetsIdDuplicateResponse409
 ) & {
@@ -142,8 +136,7 @@ Fails with:
 - `400` if the target month is out of range, or if any source income
   item references an account that no longer belongs to the user
   (error message lists the offending accountIds).
-- `403` if the source budget does not belong to the caller.
-- `404` if the source budget does not exist.
+- `404` if the source budget does not exist or belongs to another user.
 - `409` if a budget already exists at the target `(year, month)`.
 
 Items are NOT accepted in the body — pass only the target period.

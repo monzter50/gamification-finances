@@ -94,11 +94,6 @@ export type postApiBudgetsIdIncomeResponse401 = {
   status: 401;
 };
 
-export type postApiBudgetsIdIncomeResponse403 = {
-  data: void;
-  status: 403;
-};
-
 export type postApiBudgetsIdIncomeResponse404 = {
   data: NotFoundErrorResponse;
   status: 404;
@@ -110,7 +105,6 @@ export type postApiBudgetsIdIncomeResponseSuccess = postApiBudgetsIdIncomeRespon
 export type postApiBudgetsIdIncomeResponseError = (
   | postApiBudgetsIdIncomeResponse400
   | postApiBudgetsIdIncomeResponse401
-  | postApiBudgetsIdIncomeResponse403
   | postApiBudgetsIdIncomeResponse404
 ) & {
   headers: Headers;
@@ -155,11 +149,6 @@ export type patchApiBudgetsIdIncomeResponse401 = {
   status: 401;
 };
 
-export type patchApiBudgetsIdIncomeResponse403 = {
-  data: void;
-  status: 403;
-};
-
 export type patchApiBudgetsIdIncomeResponse404 = {
   data: NotFoundErrorResponse;
   status: 404;
@@ -171,7 +160,6 @@ export type patchApiBudgetsIdIncomeResponseSuccess = patchApiBudgetsIdIncomeResp
 export type patchApiBudgetsIdIncomeResponseError = (
   | patchApiBudgetsIdIncomeResponse400
   | patchApiBudgetsIdIncomeResponse401
-  | patchApiBudgetsIdIncomeResponse403
   | patchApiBudgetsIdIncomeResponse404
 ) & {
   headers: Headers;
@@ -217,11 +205,6 @@ export type putApiBudgetsIdIncomeIncomeIdResponse401 = {
   status: 401;
 };
 
-export type putApiBudgetsIdIncomeIncomeIdResponse403 = {
-  data: void;
-  status: 403;
-};
-
 export type putApiBudgetsIdIncomeIncomeIdResponse404 = {
   data: NotFoundErrorResponse;
   status: 404;
@@ -234,7 +217,6 @@ export type putApiBudgetsIdIncomeIncomeIdResponseSuccess =
 export type putApiBudgetsIdIncomeIncomeIdResponseError = (
   | putApiBudgetsIdIncomeIncomeIdResponse400
   | putApiBudgetsIdIncomeIncomeIdResponse401
-  | putApiBudgetsIdIncomeIncomeIdResponse403
   | putApiBudgetsIdIncomeIncomeIdResponse404
 ) & {
   headers: Headers;
@@ -278,11 +260,6 @@ export type deleteApiBudgetsIdIncomeIncomeIdResponse401 = {
   status: 401;
 };
 
-export type deleteApiBudgetsIdIncomeIncomeIdResponse403 = {
-  data: void;
-  status: 403;
-};
-
 export type deleteApiBudgetsIdIncomeIncomeIdResponse404 = {
   data: NotFoundErrorResponse;
   status: 404;
@@ -294,7 +271,6 @@ export type deleteApiBudgetsIdIncomeIncomeIdResponseSuccess =
   };
 export type deleteApiBudgetsIdIncomeIncomeIdResponseError = (
   | deleteApiBudgetsIdIncomeIncomeIdResponse401
-  | deleteApiBudgetsIdIncomeIncomeIdResponse403
   | deleteApiBudgetsIdIncomeIncomeIdResponse404
 ) & {
   headers: Headers;

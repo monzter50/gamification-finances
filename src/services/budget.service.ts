@@ -246,13 +246,13 @@ class BudgetService {
    *
    * POST /api/budgets/:id/duplicate
    *
-   * Maps server errors to ApplicationError with discriminating `code`s so
-   * UI can branch:
-   *   - BUDGET_CONFLICT (409) → target period already has a budget
-   *   - STALE_ACCOUNT   (400) → source references a deleted account
-   *   - VALIDATION      (400) → year/month out of range or extra fields
-   *   - NOT_FOUND       (404) → source budget gone
-   *   - FORBIDDEN       (403) → source belongs to another user
+   * Errors: the Orval mutator throws an `AppError` built from the backend
+   * envelope on any non-2xx, so callers branch on `error.code`:
+   *   - BUDGET_ALREADY_EXISTS     (409) → target period already has a budget
+   *   - STALE_ACCOUNT_REFERENCES  (400) → source references a deleted account (message lists ids)
+   *   - VALIDATION_ERROR / INVALID_MONTH (400) → year/month out of range
+   *   - BUDGET_NOT_FOUND          (404) → source gone, or owned by another user
+   *     (the backend answers 404, not 403, so budget ids can't be probed)
    *
    * TODO(spec): the spec's response.data is typed `Record<string, unknown>`;
    * once the backend declares the Budget schema for this route, drop the cast.
@@ -261,56 +261,17 @@ class BudgetService {
     budgetLogger.debug("Duplicating budget", { sourceId, ...body });
 
     const res = await postApiBudgetsIdDuplicate(sourceId, body);
-
-    if (res.status === 201) {
-      const created = res.data?.data as Budget | undefined;
-      if (!created) {
-        budgetLogger.error("Duplicate succeeded but response.data was empty");
-        throw new ApplicationError(
-          "Server returned an empty response. Please refresh and try again.",
-          "INVALID_RESPONSE",
-          500,
-        );
-      }
-      budgetLogger.info("Budget duplicated successfully", { sourceId, newId: created.id });
-      return created;
-    }
-
-    // Error branches — pull the server-provided message when present.
-    const message =
-      (res.data as { error?: string; message?: string } | undefined)?.error ??
-      (res.data as { message?: string } | undefined)?.message ??
-      "";
-
-    budgetLogger.warn("Duplicate failed", { status: res.status, message });
-
-    if (res.status === 409) {
+    const created = res.data?.data as Budget | undefined;
+    if (!created) {
+      budgetLogger.error("Duplicate succeeded but response.data was empty");
       throw new ApplicationError(
-        message || "A budget already exists for that period.",
-        "BUDGET_CONFLICT",
-        409,
+        "Server returned an empty response. Please refresh and try again.",
+        "INVALID_RESPONSE",
+        500,
       );
     }
-    if (res.status === 400 && message.startsWith("Cannot duplicate:")) {
-      // Business-rule 400: source references an account the user no longer owns.
-      // Message lists the offending account ids; surface it verbatim.
-      throw new ApplicationError(message, "STALE_ACCOUNT", 400);
-    }
-    if (res.status === 400) {
-      throw new ApplicationError(message || "Invalid year or month.", "VALIDATION", 400);
-    }
-    if (res.status === 403) {
-      throw new ApplicationError("You don't own this budget.", "FORBIDDEN", 403);
-    }
-    if (res.status === 404) {
-      throw new ApplicationError("Source budget no longer exists.", "NOT_FOUND", 404);
-    }
-
-    throw new ApplicationError(
-      message || "Failed to duplicate budget.",
-      "DUPLICATE_FAILED",
-      res.status,
-    );
+    budgetLogger.info("Budget duplicated successfully", { sourceId, newId: created.id });
+    return created;
   }
 }
 

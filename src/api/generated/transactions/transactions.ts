@@ -7,7 +7,6 @@
  */
 import { customInstance } from "../../orval-mutator";
 import type {
-  BadRequestErrorResponse,
   Error,
   PostApiTransactionsImportXlsxConfirm201,
   PostApiTransactionsImportXlsxConfirmBody,
@@ -99,18 +98,13 @@ export type postApiTransactionsImportXlsxConfirmResponse201 = {
 };
 
 export type postApiTransactionsImportXlsxConfirmResponse400 = {
-  data: BadRequestErrorResponse;
+  data: Error;
   status: 400;
 };
 
 export type postApiTransactionsImportXlsxConfirmResponse401 = {
   data: UnauthorizedErrorResponse;
   status: 401;
-};
-
-export type postApiTransactionsImportXlsxConfirmResponse403 = {
-  data: Error;
-  status: 403;
 };
 
 export type postApiTransactionsImportXlsxConfirmResponse404 = {
@@ -125,7 +119,6 @@ export type postApiTransactionsImportXlsxConfirmResponseSuccess =
 export type postApiTransactionsImportXlsxConfirmResponseError = (
   | postApiTransactionsImportXlsxConfirmResponse400
   | postApiTransactionsImportXlsxConfirmResponse401
-  | postApiTransactionsImportXlsxConfirmResponse403
   | postApiTransactionsImportXlsxConfirmResponse404
 ) & {
   headers: Headers;
