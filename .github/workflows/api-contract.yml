@@ -7,7 +7,7 @@ name: api-contract
 #   drift  (non-blocking)  — compare the committed contract with the backend's spec on
 #                            the branch matching this PR's base (development → development,
 #                            main → main). A warning means the backend moved: run
-#                            `npm run api:sync` and adapt.
+#                            `yarn api:sync` and adapt.
 
 on:
   pull_request:
@@ -33,9 +33,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm run api:check
+          cache: yarn
+      - run: yarn install --frozen-lockfile
+      - run: yarn api:check
 
   drift:
     runs-on: ubuntu-latest
@@ -51,6 +51,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # backend repo is public; token only lifts rate limits
         run: |
           if ! node scripts/api-pull.mjs --check; then
-            echo "::warning title=API contract drift::Backend spec on '$API_SPEC_REF' differs from openapi/openapi.json. Run 'npm run api:sync' and adapt the frontend."
+            echo "::warning title=API contract drift::Backend spec on '$API_SPEC_REF' differs from openapi/openapi.json. Run 'yarn api:sync' and adapt the frontend."
             exit 1
           fi

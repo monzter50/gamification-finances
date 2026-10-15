@@ -6,7 +6,7 @@
  * (src/api/generated/authentication). The generated names are auto-derived
  * (`postApiAuthLogin`, …) — they're ugly because the backend OpenAPI spec
  * is missing `operationId` on each route. Once the backend adds
- * `operationId: loginUser` etc., re-run `npm run api:gen` and rename the
+ * `operationId: loginUser` etc., re-run `yarn api:gen` and rename the
  * call sites here. TODO(naming): drop ugly names.
  */
 
@@ -53,9 +53,9 @@ class AuthService {
     if (res.status !== 201) {
       authLogger.warn("Registration failed", { status: res.status });
       throw mapAuthError(res.status, {
-        intent:    "Registration failed",
+        intent: "Registration failed",
         overrides: {
-          409: { message: "Email already registered.",     code: "EMAIL_TAKEN" },
+          409: { message: "Email already registered.", code: "EMAIL_TAKEN" },
           400: { message: "Invalid registration details.", code: "INVALID_INPUT" },
         },
       });
@@ -76,10 +76,13 @@ class AuthService {
       if (res.status !== 200) {
         authLogger.warn("Login failed", { status: res.status });
         throw mapAuthError(res.status, {
-          intent:    "Login failed",
+          intent: "Login failed",
           overrides: {
-            401: { message: "Invalid email or password. Please try again.", code: "INVALID_CREDENTIALS" },
-            403: { message: "Account access is restricted.",                code: "FORBIDDEN" },
+            401: {
+              message: "Invalid email or password. Please try again.",
+              code: "INVALID_CREDENTIALS",
+            },
+            403: { message: "Account access is restricted.", code: "FORBIDDEN" },
             400: { message: "Login failed. Please check your credentials.", code: "LOGIN_FAILED" },
           },
         });
@@ -107,7 +110,11 @@ class AuthService {
       // Network-layer errors (offline, CORS, DNS) reach us as raw Error.
       if (error && typeof error === "object" && "message" in error) {
         const message = String((error as { message: unknown }).message);
-        if (message.includes("network") || message.includes("fetch") || message.includes("Failed to fetch")) {
+        if (
+          message.includes("network") ||
+          message.includes("fetch") ||
+          message.includes("Failed to fetch")
+        ) {
           throw new ApplicationError(
             "Network error. Please check your internet connection.",
             "NETWORK_ERROR",
@@ -185,10 +192,14 @@ class AuthService {
    */
   isAuthenticated(): boolean {
     const token = getAuthToken();
-    if (!token) { return false; }
+    if (!token) {
+      return false;
+    }
 
     const expiry = getAuthExpiry();
-    if (!expiry) { return false; }
+    if (!expiry) {
+      return false;
+    }
 
     // expiry is stored as an absolute ms timestamp. Backend returns
     // `expiresIn` as seconds-from-issue; AuthContext.login converts to
@@ -202,8 +213,12 @@ class AuthService {
     return true;
   }
 
-  getToken(): string | null { return getAuthToken(); }
-  getExpiry(): number | null { return getAuthExpiry(); }
+  getToken(): string | null {
+    return getAuthToken();
+  }
+  getExpiry(): number | null {
+    return getAuthExpiry();
+  }
 
   setExpiry(expiresIn: number): void {
     setAuthExpiry(expiresIn);

@@ -6,7 +6,7 @@ Gamification Finances API — OpenAPI 1.0.0 · 18 operations.
 
 Import functions from `@/api/generated/<tag>/<tag>` **only inside**
 `src/features/*/api/`. Not listed here = not in the contract: add it to the
-backend spec, then `npm run api:sync`.
+backend spec, then `yarn api:sync`.
 
 ## Authentication
 

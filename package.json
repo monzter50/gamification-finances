@@ -1,6 +1,7 @@
 {
   "name": "finances-gamification",
   "private": true,
+  "packageManager": "yarn@1.22.22",
   "version": "0.1.1",
   "type": "module",
   "scripts": {
@@ -18,7 +19,7 @@
     "test:watch": "vitest",
     "api:pull": "node scripts/api-pull.mjs",
     "api:gen": "orval && prettier --log-level warn --write src/api/generated && node scripts/api-endpoints.mjs",
-    "api:sync": "npm run api:pull && npm run api:gen",
+    "api:sync": "yarn api:pull && yarn api:gen",
     "api:check": "node scripts/api-check.mjs",
     "api:drift": "node scripts/api-pull.mjs --check",
     "preview": "vite preview",
