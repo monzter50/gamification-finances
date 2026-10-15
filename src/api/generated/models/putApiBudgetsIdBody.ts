@@ -8,13 +8,13 @@
 
 export type PutApiBudgetsIdBody = {
   /**
-     * @minimum 2000
-     * @maximum 2100
-     */
+   * @minimum 2000
+   * @maximum 2100
+   */
   year?: number;
   /**
-     * @minimum 0
-     * @maximum 11
-     */
+   * @minimum 0
+   * @maximum 11
+   */
   month?: number;
 };

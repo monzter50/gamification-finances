@@ -8,14 +8,14 @@
 
 export type PostApiBudgetsIdDuplicateBody = {
   /**
-     * @minimum 2000
-     * @maximum 2100
-     */
+   * @minimum 2000
+   * @maximum 2100
+   */
   year: number;
   /**
-     * 0-indexed (0 = January, 11 = December)
-     * @minimum 0
-     * @maximum 11
-     */
+   * 0-indexed (0 = January, 11 = December)
+   * @minimum 0
+   * @maximum 11
+   */
   month: number;
 };

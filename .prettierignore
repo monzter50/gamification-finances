@@ -6,3 +6,8 @@ pnpm-lock.yaml
 package-lock.json
 yarn.lock
 .husky/_
+
+# Copied contract + generated index: formatting is owned by scripts/api-*.mjs
+# (prettier rewriting them would make `npm run api:check` fail)
+openapi/
+src/api/ENDPOINTS.md
