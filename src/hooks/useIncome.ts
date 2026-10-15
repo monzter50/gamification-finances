@@ -77,6 +77,27 @@ export const useIncome = () => {
     [],
   );
 
+  const updateIncomeItem = useCallback(
+    async (budgetId: string, itemId: string, data: AddIncomeItemDTO) => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        // PUT returns only { item, totals } — refetch the full budget.
+        await incomeService.updateIncomeItem(budgetId, itemId, data);
+        const refreshed = await budgetService.getBudgetById(budgetId);
+        setCurrentBudget(refreshed);
+        return refreshed;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to update income item";
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
+
   const deleteIncomeItem = useCallback(async (budgetId: string, itemId: string) => {
     try {
       setIsLoading(true);
@@ -103,6 +124,7 @@ export const useIncome = () => {
     fetchBudgetById,
     addIncomeItem,
     updateIncomeItems,
+    updateIncomeItem,
     deleteIncomeItem,
   };
 };

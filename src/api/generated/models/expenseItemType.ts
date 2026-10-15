@@ -9,7 +9,7 @@
 /**
  * Expense classification
  */
-export type ExpenseItemType = typeof ExpenseItemType[keyof typeof ExpenseItemType];
+export type ExpenseItemType = (typeof ExpenseItemType)[keyof typeof ExpenseItemType];
 
 export const ExpenseItemType = {
   Fixed: "Fixed",

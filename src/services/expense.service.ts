@@ -3,6 +3,7 @@ import { budgetLogger } from "@/config/logger";
 import type { ApiResponse } from "@/types/api";
 import type { AddExpenseItemDTO, Budget } from "@/types/budget";
 import { normalizeBudget } from "@/utils/budget-totals";
+import { getApiErrorMessage } from "@/utils/errors";
 
 const BASE_URL = "/budgets";
 
@@ -48,11 +49,60 @@ class ExpenseService {
         statusCode,
         response,
       });
-      throw new Error(response?.message || "Failed to add expense item");
+      throw new Error(getApiErrorMessage(response, "Failed to add expense item"));
     }
 
     budgetLogger.info("Expense item added successfully", { budgetId });
     return normalizeBudget(response.data);
+  }
+
+  /**
+   * Update a single expense item (PUT /budgets/:id/expense/:itemId).
+   *
+   * Prefer this over `updateExpenseItems` for edits: the bulk PATCH deletes and
+   * re-creates every item, which changes their ids and unlinks transactions.
+   *
+   * Returns nothing — the response carries only the item + totals, so callers
+   * refetch the budget.
+   */
+  async updateExpenseItem(
+    budgetId: string,
+    itemId: string,
+    data: AddExpenseItemDTO,
+  ): Promise<void> {
+    budgetLogger.debug("Updating expense item", {
+      budgetId,
+      itemId,
+    });
+    const token = getAuthToken();
+
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
+
+    const { response, status, statusCode } = await apiClient.put<ApiResponse<unknown>>(
+      `${BASE_URL}/${budgetId}/expense/${itemId}`,
+      {
+        body: JSON.parse(JSON.stringify(data)),
+        authentication: {
+          token,
+        },
+        options: {
+          requiredAuth: true,
+        },
+      },
+    );
+
+    if (status === "error" || statusCode !== 200) {
+      budgetLogger.error("Failed to update expense item", {
+        status,
+        statusCode,
+        response,
+      });
+      throw new Error(getApiErrorMessage(response, "Failed to update expense item"));
+    }
+
+    budgetLogger.info("Expense item updated successfully", { budgetId, itemId });
   }
 
   /**
@@ -88,7 +138,7 @@ class ExpenseService {
         statusCode,
         response,
       });
-      throw new Error(response?.message || "Failed to update expense items");
+      throw new Error(getApiErrorMessage(response, "Failed to update expense items"));
     }
 
     budgetLogger.info("Expense items updated successfully", { budgetId });
@@ -127,7 +177,7 @@ class ExpenseService {
         statusCode,
         response,
       });
-      throw new Error(response?.message || "Failed to delete expense item");
+      throw new Error(getApiErrorMessage(response, "Failed to delete expense item"));
     }
 
     budgetLogger.info("Expense item deleted successfully", {

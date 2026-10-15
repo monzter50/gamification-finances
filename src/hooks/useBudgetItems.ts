@@ -18,6 +18,8 @@ export interface UseBudgetItemsResult<T> {
   currentPage: number;
   nextPage: () => void;
   prevPage: () => void;
+  /** Jump to the last page, e.g. to show an item that was just appended. */
+  goToLastPage: () => void;
   // filters
   typeFilter: string; // "all" or a concrete type
   // eslint-disable-next-line no-unused-vars
@@ -44,16 +46,16 @@ export function useBudgetItems<T extends FilterableItem>(
   allItems: T[],
   defaultItemsPerPage = 5,
 ): UseBudgetItemsResult<T> {
-  const [ typeFilter, setTypeFilter ] = useState("all");
-  const [ search, setSearch ] = useState("");
-  const [ itemsPerPage, setItemsPerPage ] = useState(defaultItemsPerPage);
-  const [ page, setPage ] = useState(1);
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [search, setSearch] = useState("");
+  const [itemsPerPage, setItemsPerPage] = useState(defaultItemsPerPage);
+  const [page, setPage] = useState(1);
   const debouncedSearch = useDebouncedValue(search, 250);
 
   // Reset to the first page whenever the result set changes shape.
   useEffect(() => {
     setPage(1);
-  }, [ typeFilter, debouncedSearch, itemsPerPage ]);
+  }, [typeFilter, debouncedSearch, itemsPerPage]);
 
   const filtered = useMemo(() => {
     const q = debouncedSearch.trim().toLowerCase();
@@ -62,7 +64,7 @@ export function useBudgetItems<T extends FilterableItem>(
         (typeFilter === "all" || item.type === typeFilter) &&
         (q === "" || item.description.toLowerCase().includes(q)),
     );
-  }, [ allItems, typeFilter, debouncedSearch ]);
+  }, [allItems, typeFilter, debouncedSearch]);
 
   const totalItems = filtered.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
@@ -71,7 +73,7 @@ export function useBudgetItems<T extends FilterableItem>(
 
   const pageItems = useMemo(
     () => filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage),
-    [ filtered, currentPage, itemsPerPage ],
+    [filtered, currentPage, itemsPerPage],
   );
 
   const hasActiveFilters = typeFilter !== "all" || search.trim() !== "";
@@ -83,6 +85,9 @@ export function useBudgetItems<T extends FilterableItem>(
     currentPage,
     nextPage: () => setPage(Math.min(currentPage + 1, totalPages)),
     prevPage: () => setPage(Math.max(currentPage - 1, 1)),
+    // Infinity is clamped to the real last page on the next render, which
+    // already counts the new item (totalPages here would be one render stale).
+    goToLastPage: () => setPage(Number.POSITIVE_INFINITY),
     typeFilter,
     setTypeFilter,
     search,

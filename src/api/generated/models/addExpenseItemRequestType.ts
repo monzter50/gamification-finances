@@ -6,7 +6,8 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type AddExpenseItemRequestType = typeof AddExpenseItemRequestType[keyof typeof AddExpenseItemRequestType];
+export type AddExpenseItemRequestType =
+  (typeof AddExpenseItemRequestType)[keyof typeof AddExpenseItemRequestType];
 
 export const AddExpenseItemRequestType = {
   Fixed: "Fixed",

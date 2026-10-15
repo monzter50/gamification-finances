@@ -1,38 +1,33 @@
-import { ChevronLeft, ChevronRight, Pencil, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
+import { useRef, useState } from "react";
 
+import { Button, EmptyState } from "@/components/ui";
+import { cn } from "@/lib/utils";
+import type { Account } from "@/types/api";
+
+import { BudgetItemDraftRow } from "./BudgetItemDraftRow";
+import { BudgetItemEditableRow } from "./BudgetItemEditableRow";
+import { BudgetItemsPagination } from "./BudgetItemsPagination";
 import {
-  Badge,
-  Button,
-  EmptyState,
-  Money,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui";
+  BUDGET_ITEM_GRID,
+  type BudgetItemPatch,
+  type BudgetItemRow,
+  type BudgetItemValues,
+} from "./budgetItemTypes";
 
-/** Options for the "rows per page" selector. */
-export const ROWS_PER_PAGE_OPTIONS = [ 5, 10, 25, 50 ] as const;
-
-/** Row shape shared by IncomeItem and ExpenseItem. */
-export interface BudgetItemRow {
-  id?: string;
-  description: string;
-  amount: number;
-  type: string;
-}
+export type { BudgetItemPatch, BudgetItemRow, BudgetItemValues } from "./budgetItemTypes";
 
 interface BudgetItemsTableProps {
+  /** Accessible name for the list, e.g. "Income items". */
+  listLabel: string;
   items: BudgetItemRow[];
   tone: "income" | "expense";
   currency: string;
+  typeOptions: readonly string[];
+  /** Preselected type in the "+ New" row. */
+  defaultType?: string;
+  /** Pass to show the account column (income). Omit to hide it (expense). */
+  accounts?: Account[];
   currentPage: number;
   totalPages: number;
   totalItems: number;
@@ -40,7 +35,9 @@ interface BudgetItemsTableProps {
   hasActiveFilters: boolean;
   emptyLabel: string;
   // eslint-disable-next-line no-unused-vars
-  onEdit: (item: BudgetItemRow) => void;
+  onCreate: (values: BudgetItemValues) => Promise<void>;
+  // eslint-disable-next-line no-unused-vars
+  onUpdate: (id: string, patch: BudgetItemPatch) => Promise<void>;
   // eslint-disable-next-line no-unused-vars
   onRemove: (id: string) => void;
   onNextPage: () => void;
@@ -50,99 +47,135 @@ interface BudgetItemsTableProps {
   onClearFilters: () => void;
 }
 
+/**
+ * Notion-style items table: click any cell to edit it in place, "+ New" adds
+ * a row at the bottom. Cards on mobile, a table from md up.
+ */
 export const BudgetItemsTable = ({
+  listLabel,
   items,
   tone,
   currency,
-  currentPage,
-  totalPages,
-  totalItems,
-  itemsPerPage,
+  typeOptions,
+  defaultType,
+  accounts,
   hasActiveFilters,
   emptyLabel,
-  onEdit,
+  onCreate,
+  onUpdate,
   onRemove,
-  onNextPage,
-  onPreviousPage,
-  onItemsPerPageChange,
   onClearFilters,
+  ...pagination
 }: BudgetItemsTableProps) => {
-  if (items.length === 0) {
+  const [isDrafting, setIsDrafting] = useState(false);
+  // After the "+ New" row closes, focus goes back to the "+ New" button.
+  const refocusNewRef = useRef(false);
+
+  const typeSelectOptions = typeOptions.map((t) => ({ value: t, label: t }));
+  const accountOptions = accounts?.map((a) => ({ value: a.id, label: a.name }));
+  const hasAccount = accountOptions !== undefined;
+
+  const handleOpenDraft = () => setIsDrafting(true);
+  const handleCloseDraft = () => {
+    refocusNewRef.current = true;
+    setIsDrafting(false);
+  };
+
+  if (items.length === 0 && !isDrafting) {
     return hasActiveFilters ? (
       <EmptyState
         title="No matches"
         description="No items match your filters."
-        action={<Button variant="outline" onClick={onClearFilters}>Clear filters</Button>}
+        action={
+          <Button variant="outline" onClick={onClearFilters}>
+            Clear filters
+          </Button>
+        }
       />
     ) : (
-      <EmptyState title={emptyLabel} description="Add your first item above to get started." />
+      <EmptyState
+        title={emptyLabel}
+        description="Add your first item to start planning this month."
+        action={
+          <Button onClick={handleOpenDraft}>
+            <Plus />
+            New item
+          </Button>
+        }
+      />
     );
   }
 
   return (
-    <>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Description</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead className="text-right">Amount</TableHead>
-            <TableHead className="w-24">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {items.map((item) => (
-            <TableRow key={item.id}>
-              <TableCell className="font-medium">{item.description}</TableCell>
-              <TableCell>
-                <Badge variant="secondary">{item.type}</Badge>
-              </TableCell>
-              <TableCell className="text-right">
-                <Money value={item.amount} currency={currency} tone={tone} />
-              </TableCell>
-              <TableCell>
-                <div className="flex gap-1">
-                  <Button size="sm" variant="ghost" aria-label="Edit" onClick={() => onEdit(item)}>
-                    <Pencil className="h-4 w-4 text-muted-foreground" />
-                  </Button>
-                  <Button size="sm" variant="ghost" aria-label="Remove" onClick={() => item.id && onRemove(item.id)}>
-                    <Trash2 className="h-4 w-4 text-danger" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+    <div className="space-y-4">
+      <div>
+        {/* Column headings, md and up. Each cell also carries its own label for screen readers. */}
+        <div
+          aria-hidden
+          className={cn(
+            "hidden pb-2 text-xs font-medium text-muted-foreground md:grid",
+            hasAccount ? BUDGET_ITEM_GRID.withAccount : BUDGET_ITEM_GRID.withoutAccount,
+          )}
+        >
+          <span className="px-2">Description</span>
+          <span className="px-2">Type</span>
+          {hasAccount && <span className="px-2">Account</span>}
+          <span className="px-2 text-right">Amount</span>
+          <span />
+        </div>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t pt-4">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Rows per page</span>
-            <Select value={String(itemsPerPage)} onValueChange={(v) => onItemsPerPageChange(Number(v))}>
-              <SelectTrigger className="h-8 w-[72px]"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {ROWS_PER_PAGE_OPTIONS.map((n) => (
-                  <SelectItem key={n} value={String(n)}>{n}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Page {currentPage} of {totalPages} ({totalItems} total)
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={onPreviousPage} disabled={currentPage <= 1}>
-            <ChevronLeft className="mr-1 h-4 w-4" />
-            Previous
+        <ul
+          aria-label={listLabel}
+          className="space-y-2 md:space-y-0 md:divide-y md:divide-border md:border-y md:border-border"
+        >
+          {items.map((item) =>
+            item.id ? (
+              <BudgetItemEditableRow
+                key={item.id}
+                id={item.id}
+                item={item}
+                tone={tone}
+                currency={currency}
+                typeOptions={typeSelectOptions}
+                accountOptions={accountOptions}
+                onUpdate={onUpdate}
+                onRemove={onRemove}
+              />
+            ) : null,
+          )}
+          {isDrafting && (
+            <li className="py-2 md:py-1">
+              <BudgetItemDraftRow
+                currency={currency}
+                typeOptions={typeSelectOptions}
+                defaultType={defaultType}
+                accountOptions={accountOptions}
+                onSave={onCreate}
+                onClose={handleCloseDraft}
+              />
+            </li>
+          )}
+        </ul>
+
+        {!isDrafting && (
+          <Button
+            ref={(element) => {
+              if (element && refocusNewRef.current) {
+                refocusNewRef.current = false;
+                element.focus();
+              }
+            }}
+            variant="ghost"
+            className="mt-2 w-full justify-start text-muted-foreground"
+            onClick={handleOpenDraft}
+          >
+            <Plus />
+            New
           </Button>
-          <Button variant="outline" size="sm" onClick={onNextPage} disabled={currentPage >= totalPages}>
-            Next
-            <ChevronRight className="ml-1 h-4 w-4" />
-          </Button>
-        </div>
+        )}
       </div>
-    </>
+
+      {pagination.totalItems > 0 && <BudgetItemsPagination {...pagination} />}
+    </div>
   );
 };

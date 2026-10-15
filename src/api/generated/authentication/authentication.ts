@@ -15,36 +15,40 @@ import type {
   LogoutResponse,
   RegisterRequest,
   RegisterResponse,
-  UnauthorizedErrorResponse
+  UnauthorizedErrorResponse,
 } from "../models";
 
 export type postApiAuthRegisterResponse201 = {
-  data: RegisterResponse
-  status: 201
-}
+  data: RegisterResponse;
+  status: 201;
+};
 
 export type postApiAuthRegisterResponse400 = {
-  data: BadRequestErrorResponse
-  status: 400
-}
+  data: BadRequestErrorResponse;
+  status: 400;
+};
 
 export type postApiAuthRegisterResponse409 = {
-  data: Error
-  status: 409
-}
-
-export type postApiAuthRegisterResponseSuccess = (postApiAuthRegisterResponse201) & {
-  headers: Headers;
-};
-export type postApiAuthRegisterResponseError = (postApiAuthRegisterResponse400 | postApiAuthRegisterResponse409) & {
-  headers: Headers;
+  data: Error;
+  status: 409;
 };
 
-export type postApiAuthRegisterResponse = (postApiAuthRegisterResponseSuccess | postApiAuthRegisterResponseError)
+export type postApiAuthRegisterResponseSuccess = postApiAuthRegisterResponse201 & {
+  headers: Headers;
+};
+export type postApiAuthRegisterResponseError = (
+  | postApiAuthRegisterResponse400
+  | postApiAuthRegisterResponse409
+) & {
+  headers: Headers;
+};
+
+export type postApiAuthRegisterResponse =
+  | postApiAuthRegisterResponseSuccess
+  | postApiAuthRegisterResponseError;
 
 export const getPostApiAuthRegisterUrl = () => {
-
-  return "/api/auth/register";
+  return `/api/auth/register`;
 };
 
 /**
@@ -54,50 +58,61 @@ Email is normalized (lowercased + trimmed) by validation before storage.
 
  * @summary Register a new user
  */
-export const postApiAuthRegister = async (registerRequest: RegisterRequest, options?: RequestInit): Promise<postApiAuthRegisterResponse> => {
-
-  return customInstance<postApiAuthRegisterResponse>(getPostApiAuthRegisterUrl(),
-    {
-      ...options,
-      method: "POST",
-      headers: { "Content-Type": "application/json",
-        ...options?.headers },
-      body: JSON.stringify(registerRequest)
-    }
-  ); };
+export const postApiAuthRegister = async (
+  registerRequest: RegisterRequest,
+  options?: RequestInit,
+): Promise<postApiAuthRegisterResponse> => {
+  return customInstance<postApiAuthRegisterResponse>(getPostApiAuthRegisterUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(registerRequest),
+  });
+};
 
 export type postApiAuthLoginResponse200 = {
-  data: LoginResponse
-  status: 200
-}
+  data: LoginResponse;
+  status: 200;
+};
 
 export type postApiAuthLoginResponse400 = {
-  data: BadRequestErrorResponse
-  status: 400
-}
+  data: BadRequestErrorResponse;
+  status: 400;
+};
 
 export type postApiAuthLoginResponse401 = {
-  data: Error
-  status: 401
-}
+  data: Error;
+  status: 401;
+};
 
 export type postApiAuthLoginResponse403 = {
-  data: Error
-  status: 403
-}
-
-export type postApiAuthLoginResponseSuccess = (postApiAuthLoginResponse200) & {
-  headers: Headers;
-};
-export type postApiAuthLoginResponseError = (postApiAuthLoginResponse400 | postApiAuthLoginResponse401 | postApiAuthLoginResponse403) & {
-  headers: Headers;
+  data: Error;
+  status: 403;
 };
 
-export type postApiAuthLoginResponse = (postApiAuthLoginResponseSuccess | postApiAuthLoginResponseError)
+export type postApiAuthLoginResponse409 = {
+  data: Error;
+  status: 409;
+};
+
+export type postApiAuthLoginResponseSuccess = postApiAuthLoginResponse200 & {
+  headers: Headers;
+};
+export type postApiAuthLoginResponseError = (
+  | postApiAuthLoginResponse400
+  | postApiAuthLoginResponse401
+  | postApiAuthLoginResponse403
+  | postApiAuthLoginResponse409
+) & {
+  headers: Headers;
+};
+
+export type postApiAuthLoginResponse =
+  | postApiAuthLoginResponseSuccess
+  | postApiAuthLoginResponseError;
 
 export const getPostApiAuthLoginUrl = () => {
-
-  return "/api/auth/login";
+  return `/api/auth/login`;
 };
 
 /**
@@ -108,40 +123,41 @@ different UX for the two cases on the frontend.
 
  * @summary Log in with email + password
  */
-export const postApiAuthLogin = async (loginRequest: LoginRequest, options?: RequestInit): Promise<postApiAuthLoginResponse> => {
-
-  return customInstance<postApiAuthLoginResponse>(getPostApiAuthLoginUrl(),
-    {
-      ...options,
-      method: "POST",
-      headers: { "Content-Type": "application/json",
-        ...options?.headers },
-      body: JSON.stringify(loginRequest)
-    }
-  ); };
+export const postApiAuthLogin = async (
+  loginRequest: LoginRequest,
+  options?: RequestInit,
+): Promise<postApiAuthLoginResponse> => {
+  return customInstance<postApiAuthLoginResponse>(getPostApiAuthLoginUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(loginRequest),
+  });
+};
 
 export type postApiAuthLogoutResponse200 = {
-  data: LogoutResponse
-  status: 200
-}
+  data: LogoutResponse;
+  status: 200;
+};
 
 export type postApiAuthLogoutResponse401 = {
-  data: UnauthorizedErrorResponse
-  status: 401
-}
-
-export type postApiAuthLogoutResponseSuccess = (postApiAuthLogoutResponse200) & {
-  headers: Headers;
-};
-export type postApiAuthLogoutResponseError = (postApiAuthLogoutResponse401) & {
-  headers: Headers;
+  data: UnauthorizedErrorResponse;
+  status: 401;
 };
 
-export type postApiAuthLogoutResponse = (postApiAuthLogoutResponseSuccess | postApiAuthLogoutResponseError)
+export type postApiAuthLogoutResponseSuccess = postApiAuthLogoutResponse200 & {
+  headers: Headers;
+};
+export type postApiAuthLogoutResponseError = postApiAuthLogoutResponse401 & {
+  headers: Headers;
+};
+
+export type postApiAuthLogoutResponse =
+  | postApiAuthLogoutResponseSuccess
+  | postApiAuthLogoutResponseError;
 
 export const getPostApiAuthLogoutUrl = () => {
-
-  return "/api/auth/logout";
+  return `/api/auth/logout`;
 };
 
 /**
@@ -151,43 +167,41 @@ token receive 401 `TOKEN_BLACKLISTED` from `authenticateJWT`.
 
  * @summary Log out (blacklist the current token)
  */
-export const postApiAuthLogout = async ( options?: RequestInit): Promise<postApiAuthLogoutResponse> => {
-
-  return customInstance<postApiAuthLogoutResponse>(getPostApiAuthLogoutUrl(),
-    {
-      ...options,
-      method: "POST"
-
-    }
-  ); };
+export const postApiAuthLogout = async (
+  options?: RequestInit,
+): Promise<postApiAuthLogoutResponse> => {
+  return customInstance<postApiAuthLogoutResponse>(getPostApiAuthLogoutUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
 
 export type getApiAuthMeResponse200 = {
-  data: GetApiAuthMe200
-  status: 200
-}
+  data: GetApiAuthMe200;
+  status: 200;
+};
 
 export type getApiAuthMeResponse401 = {
-  data: UnauthorizedErrorResponse
-  status: 401
-}
+  data: UnauthorizedErrorResponse;
+  status: 401;
+};
 
 export type getApiAuthMeResponse404 = {
-  data: Error
-  status: 404
-}
+  data: Error;
+  status: 404;
+};
 
-export type getApiAuthMeResponseSuccess = (getApiAuthMeResponse200) & {
+export type getApiAuthMeResponseSuccess = getApiAuthMeResponse200 & {
   headers: Headers;
 };
 export type getApiAuthMeResponseError = (getApiAuthMeResponse401 | getApiAuthMeResponse404) & {
   headers: Headers;
 };
 
-export type getApiAuthMeResponse = (getApiAuthMeResponseSuccess | getApiAuthMeResponseError)
+export type getApiAuthMeResponse = getApiAuthMeResponseSuccess | getApiAuthMeResponseError;
 
 export const getGetApiAuthMeUrl = () => {
-
-  return "/api/auth/me";
+  return `/api/auth/me`;
 };
 
 /**
@@ -196,12 +210,9 @@ Use this on app startup to hydrate the auth store after a page refresh.
 
  * @summary Get the authenticated user's profile
  */
-export const getApiAuthMe = async ( options?: RequestInit): Promise<getApiAuthMeResponse> => {
-
-  return customInstance<getApiAuthMeResponse>(getGetApiAuthMeUrl(),
-    {
-      ...options,
-      method: "GET"
-
-    }
-  ); };
+export const getApiAuthMe = async (options?: RequestInit): Promise<getApiAuthMeResponse> => {
+  return customInstance<getApiAuthMeResponse>(getGetApiAuthMeUrl(), {
+    ...options,
+    method: "GET",
+  });
+};

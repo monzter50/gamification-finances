@@ -9,7 +9,7 @@
 /**
  * Type of transaction
  */
-export type TransactionType = typeof TransactionType[keyof typeof TransactionType];
+export type TransactionType = (typeof TransactionType)[keyof typeof TransactionType];
 
 export const TransactionType = {
   income: "income",

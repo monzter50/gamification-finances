@@ -34,21 +34,21 @@ primitive palette   →   semantic token   →   Tailwind class   →   componen
 
 ### Color decision tree
 
-| Situation                       | Use                                    |
-| ------------------------------- | -------------------------------------- |
-| Page/card background            | `bg-background` / `bg-card`            |
-| Subtle background (alerts, tags)| `bg-{intent}-subtle text-{intent}`     |
-| Body text                       | `text-foreground`                      |
-| Secondary text, captions        | `text-muted-foreground`                |
-| Borders, dividers               | `border-border`                        |
-| Money — positive flow (income)  | `text-income` (or `<Money tone="income">`) |
-| Money — negative flow (expense) | `text-expense`                         |
-| Money — zero / unchanged        | `text-muted-foreground`                |
-| Money — auto sign coloring      | `<Money tone="auto" />`                |
-| Success state (toast, banner)   | `bg-success-subtle text-success`       |
-| Warning state                   | `bg-warning-subtle text-warning`       |
-| Destructive action / error      | `bg-danger-subtle text-danger`         |
-| Gamification — XP/streak/level  | `text-xp`, `text-streak`, `text-level` |
+| Situation                        | Use                                        |
+| -------------------------------- | ------------------------------------------ |
+| Page/card background             | `bg-background` / `bg-card`                |
+| Subtle background (alerts, tags) | `bg-{intent}-subtle text-{intent}`         |
+| Body text                        | `text-foreground`                          |
+| Secondary text, captions         | `text-muted-foreground`                    |
+| Borders, dividers                | `border-border`                            |
+| Money — positive flow (income)   | `text-income` (or `<Money tone="income">`) |
+| Money — negative flow (expense)  | `text-expense`                             |
+| Money — zero / unchanged         | `text-muted-foreground`                    |
+| Money — auto sign coloring       | `<Money tone="auto" />`                    |
+| Success state (toast, banner)    | `bg-success-subtle text-success`           |
+| Warning state                    | `bg-warning-subtle text-warning`           |
+| Destructive action / error       | `bg-danger-subtle text-danger`             |
+| Gamification — XP/streak/level   | `text-xp`, `text-streak`, `text-level`     |
 
 Never use raw Tailwind palettes (`emerald-500`, `red-600`, etc.) in features
 — they bypass dark mode + branding.
@@ -62,11 +62,14 @@ import { Button, Card, Money, Stat, EmptyState, PageHeader } from "@/components/
 ```
 
 ### Primitives (shadcn-based, don't touch unless extending)
+
 `Button`, `Input`, `Label`, `Select`, `Card`, `Badge`, `Avatar`, `Progress`,
 `Skeleton`, `Table`, `Toast`.
 
 ### Enforcement
+
 The ESLint config (`.eslintrc.json`) warns on:
+
 - Raw Tailwind palettes in `className` (`text-red-*`, `bg-emerald-*`, …).
 - Hex codes in `className`.
 - Ad-hoc `new Intl.NumberFormat({ style: "currency" })` — use `<Money>`.
@@ -76,7 +79,9 @@ If you genuinely need a new color, add a token first (see "When to add a new tok
 ### Domain primitives (the new layer)
 
 #### `<Money>`
+
 The only way to render currency.
+
 ```tsx
 <Money value={1234.56} />                           {/* $1,234.56 neutral */}
 <Money value={-42} tone="auto" />                   {/* red, formatted */}
@@ -84,7 +89,9 @@ The only way to render currency.
 ```
 
 #### `<Stat>`
+
 KPI card. Use on dashboards. Don't roll your own.
+
 ```tsx
 <Stat
   label="This month"
@@ -95,7 +102,9 @@ KPI card. Use on dashboards. Don't roll your own.
 ```
 
 #### `<EmptyState>`
+
 Every list/table renders this when there's nothing. Title + action required.
+
 ```tsx
 <EmptyState
   icon={<Receipt />}
@@ -106,7 +115,9 @@ Every list/table renders this when there's nothing. Title + action required.
 ```
 
 #### `<PageHeader>`
+
 First child of every page route.
+
 ```tsx
 <PageHeader
   title="Transactions"
@@ -117,17 +128,21 @@ First child of every page route.
 ```
 
 #### `<TxTypePill>`
+
 Tiny intent-colored label for transaction type. Replaces hand-rolled
 green/red bubbles.
+
 ```tsx
 <TxTypePill type="income" />
 <TxTypePill type="expense" label="Outflow" />
 ```
 
 #### `<TransactionRow>`
+
 Composed row for transaction lists. Use this in any feed — dashboard,
 transactions page, search results. Sign handling is built-in: pass the raw
 positive amount and the `type`, it formats as `+`/`−` and colors via `<Money tone="auto">`.
+
 ```tsx
 <TransactionRow
   vendor="Spotify"
@@ -141,8 +156,10 @@ positive amount and the `type`, it formats as `+`/`−` and colors via `<Money t
 ```
 
 #### `<MoneyInput>`
+
 Controlled currency-aware input. Works with react-hook-form via `Controller`.
 Holds the value as a number (major units) and the symbol as a visual prefix.
+
 ```tsx
 <Controller
   control={control}
@@ -153,9 +170,57 @@ Holds the value as a number (major units) and the symbol as a visual prefix.
 />
 ```
 
+#### `<InlineText>`, `<InlineMoney>`, `<InlineSelect>` & `<InlineDate>`
+
+Notion-style editable cells. At rest they read as plain text (a soft
+`bg-muted` fill on hover); click or press Enter to edit. Enter or blur saves,
+Escape cancels and puts focus back on the cell. `InlineSelect` saves as soon
+as an option is picked. Each takes a `label` (the column name), which screen
+readers announce. Cells are at least 40px tall, so they work as touch targets.
+
+`onCommit` may return a promise. While it runs the cell shows the new value.
+If it rejects, the cell falls back to the stored value, so surface the error
+yourself (toast) and rethrow.
+
+```tsx
+<InlineText label="Description" value={item.description} onCommit={(v) => save({ description: v })} />
+<InlineMoney label="Amount" value={item.amount} currency="MXN" tone="expense" onCommit={(v) => save({ amount: v })} />
+<InlineSelect
+  label="Account"
+  value={item.accountId}
+  options={accounts.map((a) => ({ value: a.id, label: a.name }))}
+  emptyMessage="No accounts yet."
+  onCommit={(v) => save({ accountId: v })}
+/>
+```
+
+`<InlineDate>` takes and commits a `yyyy-mm-dd` day and shows it as a short
+local date. `InlineText` never commits empty text and `InlineMoney` never
+commits 0 or less.
+
+Ready-made tables built from these (cards on mobile, table from `md`):
+
+- `BudgetItemsTable` in `src/pages/main/budget/components/` — income and
+  expense items, "+ New" row at the bottom.
+- `TransactionsTable` in `src/pages/main/transactions/components/` — newest
+  first, so "+ New" sits at the top; description and the linked plan open in a
+  details panel.
+
+#### `<FieldError>`
+
+Inline error under a form field (`text-danger text-sm mt-1`). Point the
+control's `aria-describedby` at its `id`; it renders nothing without a message.
+
+```tsx
+<Input aria-invalid={!!error} aria-describedby={error ? "vendor-error" : undefined} />
+<FieldError id="vendor-error" message={error} />
+```
+
 #### `<LevelBadge>` & `<XPProgressBar>`
+
 Gamification primitives. Use the `level`/`xp`/`streak` tokens — never hand-pick
 amber/violet shades.
+
 ```tsx
 <LevelBadge level={7} />
 <LevelBadge level={42} tone="xp" size="lg" />
@@ -173,12 +238,22 @@ or arbitrary `col-span-[…]`.
 import { BentoGrid, BentoItem } from "@/components/ui";
 
 <BentoGrid>
-  <BentoItem span={8}><Card>Cash flow</Card></BentoItem>
-  <BentoItem span={4}><Card>XP / streak</Card></BentoItem>
-  <BentoItem span={6}><Card>Recent transactions</Card></BentoItem>
-  <BentoItem span={6}><Card>Budget</Card></BentoItem>
-  <BentoItem span={12}><Card>History</Card></BentoItem>
-</BentoGrid>
+  <BentoItem span={8}>
+    <Card>Cash flow</Card>
+  </BentoItem>
+  <BentoItem span={4}>
+    <Card>XP / streak</Card>
+  </BentoItem>
+  <BentoItem span={6}>
+    <Card>Recent transactions</Card>
+  </BentoItem>
+  <BentoItem span={6}>
+    <Card>Budget</Card>
+  </BentoItem>
+  <BentoItem span={12}>
+    <Card>History</Card>
+  </BentoItem>
+</BentoGrid>;
 ```
 
 - Gutter is fixed at **24px** (`gap-gutter`). Don't override per-grid.
@@ -187,15 +262,15 @@ import { BentoGrid, BentoItem } from "@/components/ui";
 
 ### Layout tokens
 
-| Token            | Class examples                  | Value  |
-| ---------------- | ------------------------------- | ------ |
-| Sidebar width    | `w-sidebar` / `w-sidebar-collapsed` | 260px / 80px |
-| Bento gutter     | `gap-gutter`                    | 24px   |
-| Card padding     | `p-card`                        | 24px   |
-| Stack rhythm     | `space-y-stack` / `gap-stack`   | 24px   |
-| Inline rhythm    | `gap-inline`                    | 16px   |
-| Container padding| `px-container-pad`              | 32px   |
-| Bento columns    | `grid-cols-bento`               | 12 col |
+| Token             | Class examples                      | Value        |
+| ----------------- | ----------------------------------- | ------------ |
+| Sidebar width     | `w-sidebar` / `w-sidebar-collapsed` | 260px / 80px |
+| Bento gutter      | `gap-gutter`                        | 24px         |
+| Card padding      | `p-card`                            | 24px         |
+| Stack rhythm      | `space-y-stack` / `gap-stack`       | 24px         |
+| Inline rhythm     | `gap-inline`                        | 16px         |
+| Container padding | `px-container-pad`                  | 32px         |
+| Bento columns     | `grid-cols-bento`                   | 12 col       |
 
 Don't hardcode `w-[260px]` / `gap-6` for these — use the tokens so the rhythm
 stays consistent and is changeable in one place (`tailwind.config.js`).
@@ -221,6 +296,7 @@ stays consistent and is changeable in one place (`tailwind.config.js`).
 ```
 
 ### Money in tables
+
 ```tsx
 <TableCell className="text-right">
   <Money value={row.amount} tone="auto" signed size="sm" />
@@ -228,10 +304,12 @@ stays consistent and is changeable in one place (`tailwind.config.js`).
 ```
 
 ### Loading
+
 Use `<Skeleton>` with the same shape and size as the final content. Don't
 spinners. Don't blank flashes.
 
 ### Forms
+
 - Always pair `<Input>` with `<Label htmlFor>`.
 - Inline error: `text-danger text-sm mt-1`.
 - Disabled submit while pending; never hide the button.
@@ -248,11 +326,11 @@ spinners. Don't blank flashes.
 
 ## Motion
 
-| Use                       | Class                             |
-| ------------------------- | --------------------------------- |
-| Hover, focus, tone change | `duration-fast ease-standard`     |
-| Enter/exit (default)      | `duration-base ease-standard`     |
-| Emphasized (modal open)   | `duration-slow ease-emphasized`   |
+| Use                       | Class                           |
+| ------------------------- | ------------------------------- |
+| Hover, focus, tone change | `duration-fast ease-standard`   |
+| Enter/exit (default)      | `duration-base ease-standard`   |
+| Emphasized (modal open)   | `duration-slow ease-emphasized` |
 
 ## Elevation
 
@@ -262,6 +340,7 @@ spinners. Don't blank flashes.
 ## When to add a new primitive
 
 Add to `src/components/ui/` only if:
+
 1. The same pattern is repeated in **3+ places** in features.
 2. The variation can be expressed as props/variants (CVA), not branching.
 3. It encapsulates an a11y or formatting concern (`Money`, `EmptyState`).
@@ -276,6 +355,7 @@ page, where each account type gets a distinct gradient identity (analogous
 to Visa/Amex/Mastercard).
 
 The pattern:
+
 1. Put the raw palette classes in a single module like `src/lib/account-styles.ts`.
 2. Wrap that file (or just the offending block) in
    `/* eslint-disable no-restricted-syntax -- decorative brand palette */`.
@@ -288,6 +368,7 @@ instead of scattering raw palettes across the codebase.
 ## When to add a new token
 
 Add a semantic token (not a primitive) when:
+
 - A new **intent** appears that isn't covered (e.g. `pending`, `archived`).
 - A new **domain concept** needs a color (e.g. `transfer`, `refund`).
 

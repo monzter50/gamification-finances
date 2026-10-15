@@ -218,6 +218,25 @@ export const useBudget = () => {
     [currentBudget],
   );
 
+  const updateExpenseItem = useCallback(
+    async (budgetId: string, itemId: string, data: AddExpenseItemDTO) => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        // PUT returns only { item, totals } — refetch the full budget.
+        await expenseService.updateExpenseItem(budgetId, itemId, data);
+        return await refreshBudget(budgetId);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to update expense item";
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [currentBudget],
+  );
+
   const deleteExpenseItem = useCallback(
     async (budgetId: string, itemId: string) => {
       try {
@@ -252,6 +271,7 @@ export const useBudget = () => {
     deleteIncomeItem,
     addExpenseItem,
     updateExpenseItems,
+    updateExpenseItem,
     deleteExpenseItem,
   };
 };

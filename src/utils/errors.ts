@@ -70,6 +70,37 @@ export const getErrorMessage = (error: unknown): string => {
 };
 
 /**
+ * Pull the human-readable reason out of an API error body.
+ *
+ * The backend answers failures with `{ error, errors: [{ msg }] }` (validation)
+ * or `{ error }` — not `message` — so reading only `message` hides the reason.
+ */
+export const getApiErrorMessage = (body: unknown, fallback: string): string => {
+  if (!body || typeof body !== "object") {
+    return fallback;
+  }
+  const { errors, error, message } = body as {
+    errors?: Array<{ msg?: unknown }>;
+    error?: unknown;
+    message?: unknown;
+  };
+
+  const validationMessages = Array.isArray(errors)
+    ? errors.map((e) => e?.msg).filter((m): m is string => typeof m === "string" && m !== "")
+    : [];
+  if (validationMessages.length > 0) {
+    return Array.from(new Set(validationMessages)).join(". ");
+  }
+  if (typeof error === "string" && error !== "") {
+    return error;
+  }
+  if (typeof message === "string" && message !== "") {
+    return message;
+  }
+  return fallback;
+};
+
+/**
  * Get user-friendly error message based on HTTP status code
  */
 export const getHttpErrorMessage = (statusCode?: number): string => {
@@ -148,19 +179,19 @@ export const getAuthErrorMessage = (error: unknown): string => {
 
   // Map status codes to auth-specific messages
   switch (parsedError.statusCode) {
-  case 401:
-    return AUTH_ERROR_MESSAGES.INVALID_CREDENTIALS;
-  case 403:
-    return AUTH_ERROR_MESSAGES.TOKEN_INVALID;
-  case 419:
-    return AUTH_ERROR_MESSAGES.TOKEN_EXPIRED;
-  default:
-    if (parsedError.code === "NETWORK_ERROR") {
-      return AUTH_ERROR_MESSAGES.NETWORK_ERROR;
-    }
-    if (parsedError.statusCode && parsedError.statusCode >= 500) {
-      return AUTH_ERROR_MESSAGES.SERVER_ERROR;
-    }
-    return parsedError.message || AUTH_ERROR_MESSAGES.UNKNOWN_ERROR;
+    case 401:
+      return AUTH_ERROR_MESSAGES.INVALID_CREDENTIALS;
+    case 403:
+      return AUTH_ERROR_MESSAGES.TOKEN_INVALID;
+    case 419:
+      return AUTH_ERROR_MESSAGES.TOKEN_EXPIRED;
+    default:
+      if (parsedError.code === "NETWORK_ERROR") {
+        return AUTH_ERROR_MESSAGES.NETWORK_ERROR;
+      }
+      if (parsedError.statusCode && parsedError.statusCode >= 500) {
+        return AUTH_ERROR_MESSAGES.SERVER_ERROR;
+      }
+      return parsedError.message || AUTH_ERROR_MESSAGES.UNKNOWN_ERROR;
   }
 };

@@ -14,40 +14,43 @@ import type {
   PostApiBudgetsIdDuplicateBody,
   PutApiBudgetsId200,
   PutApiBudgetsIdBody,
-  UnauthorizedErrorResponse
+  UnauthorizedErrorResponse,
 } from "../models";
 
 export type putApiBudgetsIdResponse200 = {
-  data: PutApiBudgetsId200
-  status: 200
-}
+  data: PutApiBudgetsId200;
+  status: 200;
+};
 
 export type putApiBudgetsIdResponse400 = {
-  data: BadRequestErrorResponse
-  status: 400
-}
+  data: BadRequestErrorResponse;
+  status: 400;
+};
 
 export type putApiBudgetsIdResponse401 = {
-  data: UnauthorizedErrorResponse
-  status: 401
-}
+  data: UnauthorizedErrorResponse;
+  status: 401;
+};
 
 export type putApiBudgetsIdResponse404 = {
-  data: NotFoundErrorResponse
-  status: 404
-}
-
-export type putApiBudgetsIdResponseSuccess = (putApiBudgetsIdResponse200) & {
-  headers: Headers;
-};
-export type putApiBudgetsIdResponseError = (putApiBudgetsIdResponse400 | putApiBudgetsIdResponse401 | putApiBudgetsIdResponse404) & {
-  headers: Headers;
+  data: NotFoundErrorResponse;
+  status: 404;
 };
 
-export type putApiBudgetsIdResponse = (putApiBudgetsIdResponseSuccess | putApiBudgetsIdResponseError)
+export type putApiBudgetsIdResponseSuccess = putApiBudgetsIdResponse200 & {
+  headers: Headers;
+};
+export type putApiBudgetsIdResponseError = (
+  | putApiBudgetsIdResponse400
+  | putApiBudgetsIdResponse401
+  | putApiBudgetsIdResponse404
+) & {
+  headers: Headers;
+};
 
-export const getPutApiBudgetsIdUrl = (id: string,) => {
+export type putApiBudgetsIdResponse = putApiBudgetsIdResponseSuccess | putApiBudgetsIdResponseError;
 
+export const getPutApiBudgetsIdUrl = (id: string) => {
   return `/api/budgets/${id}`;
 };
 
@@ -64,60 +67,67 @@ Transaction.incomeItemId / expenseItemId, breaking transaction history.
 
  * @summary Update budget scalar fields (year, month)
  */
-export const putApiBudgetsId = async (id: string,
-  putApiBudgetsIdBody: PutApiBudgetsIdBody, options?: RequestInit): Promise<putApiBudgetsIdResponse> => {
-
-  return customInstance<putApiBudgetsIdResponse>(getPutApiBudgetsIdUrl(id),
-    {
-      ...options,
-      method: "PUT",
-      headers: { "Content-Type": "application/json",
-        ...options?.headers },
-      body: JSON.stringify(putApiBudgetsIdBody)
-    }
-  ); };
+export const putApiBudgetsId = async (
+  id: string,
+  putApiBudgetsIdBody: PutApiBudgetsIdBody,
+  options?: RequestInit,
+): Promise<putApiBudgetsIdResponse> => {
+  return customInstance<putApiBudgetsIdResponse>(getPutApiBudgetsIdUrl(id), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(putApiBudgetsIdBody),
+  });
+};
 
 export type postApiBudgetsIdDuplicateResponse201 = {
-  data: PostApiBudgetsIdDuplicate201
-  status: 201
-}
+  data: PostApiBudgetsIdDuplicate201;
+  status: 201;
+};
 
 export type postApiBudgetsIdDuplicateResponse400 = {
-  data: BadRequestErrorResponse
-  status: 400
-}
+  data: BadRequestErrorResponse;
+  status: 400;
+};
 
 export type postApiBudgetsIdDuplicateResponse401 = {
-  data: UnauthorizedErrorResponse
-  status: 401
-}
+  data: UnauthorizedErrorResponse;
+  status: 401;
+};
 
 export type postApiBudgetsIdDuplicateResponse403 = {
-  data: void
-  status: 403
-}
+  data: void;
+  status: 403;
+};
 
 export type postApiBudgetsIdDuplicateResponse404 = {
-  data: NotFoundErrorResponse
-  status: 404
-}
+  data: NotFoundErrorResponse;
+  status: 404;
+};
 
 export type postApiBudgetsIdDuplicateResponse409 = {
-  data: Error
-  status: 409
-}
-
-export type postApiBudgetsIdDuplicateResponseSuccess = (postApiBudgetsIdDuplicateResponse201) & {
-  headers: Headers;
-};
-export type postApiBudgetsIdDuplicateResponseError = (postApiBudgetsIdDuplicateResponse400 | postApiBudgetsIdDuplicateResponse401 | postApiBudgetsIdDuplicateResponse403 | postApiBudgetsIdDuplicateResponse404 | postApiBudgetsIdDuplicateResponse409) & {
-  headers: Headers;
+  data: Error;
+  status: 409;
 };
 
-export type postApiBudgetsIdDuplicateResponse = (postApiBudgetsIdDuplicateResponseSuccess | postApiBudgetsIdDuplicateResponseError)
+export type postApiBudgetsIdDuplicateResponseSuccess = postApiBudgetsIdDuplicateResponse201 & {
+  headers: Headers;
+};
+export type postApiBudgetsIdDuplicateResponseError = (
+  | postApiBudgetsIdDuplicateResponse400
+  | postApiBudgetsIdDuplicateResponse401
+  | postApiBudgetsIdDuplicateResponse403
+  | postApiBudgetsIdDuplicateResponse404
+  | postApiBudgetsIdDuplicateResponse409
+) & {
+  headers: Headers;
+};
 
-export const getPostApiBudgetsIdDuplicateUrl = (id: string,) => {
+export type postApiBudgetsIdDuplicateResponse =
+  | postApiBudgetsIdDuplicateResponseSuccess
+  | postApiBudgetsIdDuplicateResponseError;
 
+export const getPostApiBudgetsIdDuplicateUrl = (id: string) => {
   return `/api/budgets/${id}/duplicate`;
 };
 
@@ -140,15 +150,15 @@ Items are NOT accepted in the body — pass only the target period.
 
  * @summary Duplicate a budget into a new (year, month)
  */
-export const postApiBudgetsIdDuplicate = async (id: string,
-  postApiBudgetsIdDuplicateBody: PostApiBudgetsIdDuplicateBody, options?: RequestInit): Promise<postApiBudgetsIdDuplicateResponse> => {
-
-  return customInstance<postApiBudgetsIdDuplicateResponse>(getPostApiBudgetsIdDuplicateUrl(id),
-    {
-      ...options,
-      method: "POST",
-      headers: { "Content-Type": "application/json",
-        ...options?.headers },
-      body: JSON.stringify(postApiBudgetsIdDuplicateBody)
-    }
-  ); };
+export const postApiBudgetsIdDuplicate = async (
+  id: string,
+  postApiBudgetsIdDuplicateBody: PostApiBudgetsIdDuplicateBody,
+  options?: RequestInit,
+): Promise<postApiBudgetsIdDuplicateResponse> => {
+  return customInstance<postApiBudgetsIdDuplicateResponse>(getPostApiBudgetsIdDuplicateUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(postApiBudgetsIdDuplicateBody),
+  });
+};

@@ -162,7 +162,13 @@ export interface CreateTransactionDto {
   installmentOriginal?: number;
 }
 
-export interface UpdateTransactionDto extends Partial<CreateTransactionDto> {}
+export interface UpdateTransactionDto
+  extends Partial<Omit<CreateTransactionDto, "incomeItemId" | "expenseItemId">> {
+  /** `null` unlinks the transaction from its planned income item. */
+  incomeItemId?: string | null;
+  /** `null` unlinks the transaction from its planned expense item. */
+  expenseItemId?: string | null;
+}
 
 export interface TransactionFilters {
   page?: number;
@@ -299,8 +305,8 @@ export interface Account {
 export interface CreateAccountDto {
   name: string;
   type: AccountType;
-  balance?: number;   // defaults to 0 server-side
-  currency?: string;  // defaults to "MXN" server-side
+  balance?: number; // defaults to 0 server-side
+  currency?: string; // defaults to "MXN" server-side
 }
 
 /**

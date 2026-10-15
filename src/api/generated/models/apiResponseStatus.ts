@@ -9,7 +9,7 @@
 /**
  * Status of the response
  */
-export type ApiResponseStatus = typeof ApiResponseStatus[keyof typeof ApiResponseStatus];
+export type ApiResponseStatus = (typeof ApiResponseStatus)[keyof typeof ApiResponseStatus];
 
 export const ApiResponseStatus = {
   ok: "ok",

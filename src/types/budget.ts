@@ -1,13 +1,8 @@
 // Budget Type Definitions
 
-export type IncomeType =
-  | "Debit Card"
-  | "Credit Card"
-  | "Cash"
-  | "Vales"
-  | "Transfer"
-  | "Check"
-  | "Other";
+// "Credit Card" is intentionally absent: the API rejects it (credit is debt,
+// not income). Keep this list in sync with the backend's INCOME_TYPES.
+export type IncomeType = "Debit Card" | "Cash" | "Vales" | "Transfer" | "Check" | "Other";
 
 export type ExpenseType = "Fixed" | "Variable";
 
@@ -91,7 +86,6 @@ export interface PaginatedResponse<T> {
 
 export const INCOME_TYPES: IncomeType[] = [
   "Debit Card",
-  "Credit Card",
   "Cash",
   "Vales",
   "Transfer",
