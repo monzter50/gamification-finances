@@ -3,6 +3,7 @@
 import type React from "react";
 import { createContext, useContext, useState, useEffect } from "react";
 
+import { queryClient } from "@/app/query-client";
 import { clearAuthData, setAuthExpiry, setAuthToken } from "@/config/api-client";
 import { authLogger } from "@/config/logger";
 import { isSessionAlreadyActive, type SessionBlockReason } from "@/config/session";
@@ -192,6 +193,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null);
       setAccounts([]);
     } finally {
+      // No cached server data may outlive the session (next user must not see it).
+      queryClient.clear();
       setLoading(false);
     }
   };

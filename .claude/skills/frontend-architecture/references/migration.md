@@ -1,34 +1,20 @@
 # Migration: layered → feature-sliced + React Query
 
-## Step 0 — bootstrap (once, its own PR: `chore/react-query-setup`)
+## Step 0 — bootstrap ✅ done
 
-Not done yet. Required before any slice migration.
+Already in place — use these, don't recreate them:
 
-1. `npm i @tanstack/react-query` and `npm i -D @tanstack/react-query-devtools`
-   (check bundle impact: ~13 kB gz — acceptable, it replaces hand-rolled
-   loading/error/refetch code in every hook).
-2. Create `src/app/query-client.ts`:
-   ```ts
-   export const queryClient = new QueryClient({
-     defaultOptions: {
-       queries: { staleTime: 30_000, retry: 1, refetchOnWindowFocus: false },
-     },
-     mutationCache: new MutationCache({
-       onError: (err, _vars, _ctx, mutation) => {
-         if (mutation.meta?.silent) return;
-         notifyError(err); // from @/shared/errors
-       },
-     }),
-   });
-   ```
-3. Wrap the app in `<QueryClientProvider client={queryClient}>` (inside
-   `AuthProvider`'s parent so auth can call `queryClient.clear()` on logout).
-4. Create `src/api/query-keys.ts` and `src/api/unwrap.ts` (see data-flow.md).
-5. On logout / session revoked: `queryClient.clear()` — no cached data
-   survives a user switch.
+| File                        | What it gives you                                                     |
+| --------------------------- | --------------------------------------------------------------------- |
+| `src/app/query-client.ts`   | `queryClient`: retries only retryable errors; failed mutations → `notifyError` (opt out: `meta: { silent: true }`, custom heading: `meta: { errorTitle }`); failed queries → `reportError`; cache cleared on session revoke |
+| `src/api/query-keys.ts`     | `queryKeys.*` — the only place keys are defined                       |
+| `src/api/invalidation.ts`   | `invalidateFor(qc, "transaction" \| "budget" \| …)` — cross-feature staleness map |
+| `src/api/unwrap.ts`         | `unwrap(res)` → body (paginated), `unwrapData(res)` → envelope `data` |
+| `App.tsx`                   | `QueryClientProvider` + lazy devtools (dev only)                      |
+| `AuthContext.logout`        | `queryClient.clear()`                                                 |
 
-Testing: Vitest + jsdom are installed (`npm test`). React Testing Library
-and MSW are not yet — add them when the first component test needs them.
+Testing: Vitest + jsdom (`npm test`). React Testing Library and MSW are not
+installed yet — add them when the first component test needs them.
 
 ## Legacy → target map
 

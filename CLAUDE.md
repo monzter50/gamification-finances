@@ -3,7 +3,7 @@
 - Framework: React 18 + TypeScript
 - Styling: Tailwind CSS (no inline styles, no CSS modules)
 - State: Zustand for global client state, React Query for server state
-  (target — React Query not installed yet; see frontend-architecture skill)
+  (migration in progress — see frontend-architecture skill)
 - API client: Orval-generated from OpenAPI (`npm run api:gen`)
 - Router: React Router v7
 - Build: Vite
