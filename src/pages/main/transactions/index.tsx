@@ -1,7 +1,7 @@
 "use client";
 
-import { FileSpreadsheet, Plus } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FileSpreadsheet } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 
 import {
@@ -16,12 +16,18 @@ import {
 } from "@/components/ui";
 import { useAuth } from "@/context/AuthContext";
 import { useSnackbar, useBudget, useTransactions, useTransactionSummary } from "@/hooks";
-import type { CreateTransactionDto, Transaction, TransactionFilters } from "@/types/api";
+import type { CreateTransactionDto, TransactionFilters, UpdateTransactionDto } from "@/types/api";
 import type { Budget } from "@/types/budget";
 
 import { TransactionFormModal } from "./components/TransactionFormModal";
-import { DEFAULT_FILTERS, TransactionListFilters, type TransactionListFilterValues } from "./components/TransactionListFilters";
-import { TransactionsTable } from "../budget/transactions/components/TransactionsTable";
+import {
+  DEFAULT_FILTERS,
+  TransactionListFilters,
+  type TransactionListFilterValues,
+} from "./components/TransactionListFilters";
+import { TransactionsTable } from "./components/TransactionsTable";
+import { findBudgetIdForDay, toIsoDay } from "./components/transactionTable";
+import { useTransactionDetails } from "./useTransactionDetails";
 
 const ITEMS_PER_PAGE = 10;
 const DEFAULT_CURRENCY = "MXN";
@@ -32,15 +38,16 @@ export default function Transactions() {
   const { accounts, refreshAccounts } = useAuth();
   const { fetchBudgetById, fetchBudgets } = useBudget();
 
-  // -------- Budgets (for filter dropdown + modal item linking) --------
-  const [ budgets, setBudgets ] = useState<Budget[]>([]);
-  const [ activeBudget, setActiveBudget ] = useState<Budget | null>(null);
-  const hasLoadedBudgets = useRef(false);
+  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const hasLoaded = useRef(false);
 
   useEffect(() => {
-    if (hasLoadedBudgets.current) { return; }
-    hasLoadedBudgets.current = true;
-
+    if (hasLoaded.current) {
+      return;
+    }
+    hasLoaded.current = true;
+    // The accounts list in context is only loaded at login and can be stale.
+    void refreshAccounts();
     fetchBudgets()
       .then(setBudgets)
       .catch((err) => {
@@ -49,103 +56,83 @@ export default function Transactions() {
           description: err instanceof Error ? err.message : "An error occurred",
         });
       });
-  }, [ fetchBudgets, snackbar ]);
+  }, [fetchBudgets, refreshAccounts, snackbar]);
 
-  // -------- Filters + pagination --------
-  const [ filterValues, setFilterValues ] = useState<TransactionListFilterValues>(DEFAULT_FILTERS);
-  const [ currentPage, setCurrentPage ] = useState(1);
+  const [filterValues, setFilterValues] = useState<TransactionListFilterValues>(DEFAULT_FILTERS);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => { setCurrentPage(1); }, [ filterValues ]);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterValues]);
 
-  const apiFilters: TransactionFilters = useMemo(() => {
-    const f: TransactionFilters = { page: currentPage,
-      limit: ITEMS_PER_PAGE };
-    if (filterValues.type !== "all")  { f.type      = filterValues.type; }
-    if (filterValues.startDate)       { f.startDate = filterValues.startDate; }
-    if (filterValues.endDate)         { f.endDate   = filterValues.endDate; }
-    return f;
-  }, [ currentPage, filterValues ]);
+  // Memoized: useTransactions reloads whenever this object's identity changes.
+  const apiFilters: TransactionFilters = useMemo(
+    () => ({
+      page: currentPage,
+      limit: ITEMS_PER_PAGE,
+      ...(filterValues.type !== "all" && { type: filterValues.type }),
+      ...(filterValues.startDate && { startDate: filterValues.startDate }),
+      ...(filterValues.endDate && { endDate: filterValues.endDate }),
+    }),
+    [currentPage, filterValues],
+  );
 
   const {
     transactions,
-    isLoading: isLoadingTransactions,
+    isLoading,
     pagination,
     addTransaction,
     updateTransaction,
     deleteTransaction,
   } = useTransactions({
     budgetId: filterValues.budgetId || undefined,
-    filters:  apiFilters,
+    filters: apiFilters,
+    notifySuccess: false,
   });
 
-  // -------- Global financial summary --------
-  const { summary, loading: isLoadingSummary, refetch: refetchSummary } = useTransactionSummary({ autoFetch: true });
+  const {
+    summary,
+    loading: isLoadingSummary,
+    refetch: refetchSummary,
+  } = useTransactionSummary({
+    autoFetch: true,
+  });
 
-  // -------- Modal state --------
-  const [ isModalOpen, setIsModalOpen ] = useState(false);
-  const [ editingTransaction, setEditingTransaction ] = useState<Transaction | null>(null);
-  const [ isSubmitting, setIsSubmitting ] = useState(false);
-
-  useEffect(() => {
-    if (!filterValues.budgetId) {
-      setActiveBudget(null);
-      return;
-    }
-    const cached = budgets.find((b) => b.id === filterValues.budgetId);
-    if (cached?.incomeItems && cached?.expenseItems) {
-      setActiveBudget(cached);
-      return;
-    }
-    fetchBudgetById(filterValues.budgetId)
-      .then(setActiveBudget)
-      .catch(() => setActiveBudget(null));
-  }, [ filterValues.budgetId, budgets, fetchBudgetById ]);
-
-  // -------- Handlers --------
-  const handleOpenCreate = () => {
-    setEditingTransaction(null);
-    setIsModalOpen(true);
+  const refreshTotals = () => {
+    refetchSummary();
+    void refreshAccounts();
   };
 
-  const handleOpenEdit = useCallback((itemId: string) => {
-    const tx = transactions.find((t) => t.id === itemId);
-    if (!tx) { return; }
-    setEditingTransaction(tx);
-    setIsModalOpen(true);
-  }, [ transactions ]);
+  // Description and the linked plan are edited in the details panel.
+  const details = useTransactionDetails({
+    transactions,
+    budgets,
+    fetchBudgetById,
+    updateTransaction,
+    onSaved: refreshTotals,
+  });
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setEditingTransaction(null);
+  // Mutations rethrow after the hook's error toast, so rows can roll back.
+  const handleCreate = async (values: CreateTransactionDto) => {
+    await addTransaction(values);
+    setCurrentPage(1);
+    refreshTotals();
   };
 
-  const handleSubmitTransaction = async (values: CreateTransactionDto) => {
-    setIsSubmitting(true);
+  const handleUpdate = async (id: string, patch: UpdateTransactionDto) => {
+    await updateTransaction(id, patch);
+    refreshTotals();
+  };
+
+  const handleDelete = async (id: string) => {
     try {
-      if (editingTransaction) {
-        await updateTransaction(editingTransaction.id, values);
-      } else {
-        await addTransaction(values);
-        setCurrentPage(1);
-      }
-      refetchSummary();
-      refreshAccounts();
-      handleCloseModal();
-    } catch {
-      // error toast already surfaced by the hook
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleDelete = async (itemId: string) => {
-    try {
-      await deleteTransaction(itemId);
-      refetchSummary();
-      refreshAccounts();
+      await deleteTransaction(id);
+      refreshTotals();
       const remaining = (pagination?.total ?? transactions.length) - 1;
       const newPages = Math.max(1, Math.ceil(remaining / ITEMS_PER_PAGE));
-      if (currentPage > newPages) { setCurrentPage(newPages); }
+      if (currentPage > newPages) {
+        setCurrentPage(newPages);
+      }
     } catch {
       // error toast already surfaced by the hook
     }
@@ -153,34 +140,21 @@ export default function Transactions() {
 
   const totalPages = pagination?.pages ?? 1;
   const totalItems = pagination?.total ?? transactions.length;
-
-  const modalBudgets = useMemo<Budget[]>(() => {
-    if (activeBudget) {
-      return [ activeBudget, ...budgets.filter((b) => b.id !== activeBudget.id) ];
-    }
-    return budgets;
-  }, [ activeBudget, budgets ]);
+  const hasActiveFilters = JSON.stringify(filterValues) !== JSON.stringify(DEFAULT_FILTERS);
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Transactions"
-        description="All income & expenses across your budgets. Every mutation updates your account balance atomically."
+        description="All income & expenses across your budgets. Every change updates your account balance."
         actions={
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate("/transactions/import-xlsx")}>
-              <FileSpreadsheet className="mr-2 h-4 w-4" />
-              Import Excel
-            </Button>
-            <Button onClick={handleOpenCreate} disabled={budgets.length === 0 || accounts.length === 0}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Transaction
-            </Button>
-          </div>
+          <Button variant="outline" onClick={() => navigate("/transactions/import-xlsx")}>
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            Import Excel
+          </Button>
         }
       />
 
-      {/* Summary cards (global) */}
       <div className="grid gap-4 md:grid-cols-3">
         <Stat
           label="Total Income"
@@ -205,7 +179,6 @@ export default function Transactions() {
         />
       </div>
 
-      {/* Filters */}
       <Card>
         <CardHeader>
           <CardTitle>Filters</CardTitle>
@@ -221,22 +194,29 @@ export default function Transactions() {
         </CardContent>
       </Card>
 
-      {/* Table */}
       <Card>
         <CardHeader>
           <CardTitle>All Transactions</CardTitle>
           <CardDescription>
-            {totalItems} total · page {currentPage} of {totalPages}
+            Click any cell to edit it. Use “New” to add a transaction.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <TransactionsTable
             transactions={transactions}
-            isLoading={isLoadingTransactions}
+            isLoading={isLoading}
+            accounts={accounts}
+            currency={DEFAULT_CURRENCY}
+            defaultDate={toIsoDay(new Date())}
+            resolveBudgetId={(day) => findBudgetIdForDay(budgets, day)}
+            hasActiveFilters={hasActiveFilters}
+            onClearFilters={() => setFilterValues(DEFAULT_FILTERS)}
             currentPage={currentPage}
             totalPages={totalPages}
             totalItems={totalItems}
-            onEdit={(id) => handleOpenEdit(id)}
+            onCreate={handleCreate}
+            onUpdate={handleUpdate}
+            onOpenDetails={details.openDetails}
             onRemove={handleDelete}
             onNextPage={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
             onPreviousPage={() => setCurrentPage((p) => Math.max(p - 1, 1))}
@@ -244,15 +224,7 @@ export default function Transactions() {
         </CardContent>
       </Card>
 
-      <TransactionFormModal
-        open={isModalOpen}
-        editingTransaction={editingTransaction}
-        accounts={accounts}
-        budgets={modalBudgets}
-        onClose={handleCloseModal}
-        onSubmit={handleSubmitTransaction}
-        isSubmitting={isSubmitting}
-      />
+      <TransactionFormModal {...details.modalProps} accounts={accounts} />
     </div>
   );
 }

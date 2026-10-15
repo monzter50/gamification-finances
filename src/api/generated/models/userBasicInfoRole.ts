@@ -6,7 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type UserBasicInfoRole = typeof UserBasicInfoRole[keyof typeof UserBasicInfoRole];
+export type UserBasicInfoRole = (typeof UserBasicInfoRole)[keyof typeof UserBasicInfoRole];
 
 export const UserBasicInfoRole = {
   user: "user",

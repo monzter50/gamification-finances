@@ -1,8 +1,7 @@
 "use client";
 
-import { ArrowLeft, Plus } from "lucide-react";
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { useForm } from "react-hook-form";
+import { ArrowLeft } from "lucide-react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
 
 import { PageHeader, Stat } from "@/components/ui";
@@ -11,73 +10,47 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from "@/context/AuthContext";
 import { useSnackbar, useBudget } from "@/hooks";
 import { useTransactions } from "@/hooks/useTransactions";
-import type { TransactionType, CreateTransactionDto } from "@/types/api";
+import type { CreateTransactionDto, Transaction, UpdateTransactionDto } from "@/types/api";
 import { MONTHS } from "@/types/budget";
 
-import { TransactionModal } from "./components/TransactionModal";
-import { TransactionsTable } from "./components/TransactionsTable";
+import { TransactionFormModal } from "../../transactions/components/TransactionFormModal";
+import { TransactionsTable } from "../../transactions/components/TransactionsTable";
+import { defaultDayForBudget } from "../../transactions/components/transactionTable";
+
+const ITEMS_PER_PAGE = 5;
+const CURRENCY = "MXN";
 
 export default function BudgetTransactions() {
   const { id } = useParams();
   const navigate = useNavigate();
   const snackbar = useSnackbar();
-  const { accounts } = useAuth();
-  const { currentBudget, isLoading, fetchBudgetById } = useBudget();
+  const { accounts, refreshAccounts } = useAuth();
+  const { currentBudget, fetchBudgetById } = useBudget();
   const hasFetched = useRef(false);
 
-  const [ isModalOpen, setIsModalOpen ] = useState(false);
-  const [ isEditMode, setIsEditMode ] = useState(false);
-  const [ editingItemId, setEditingItemId ] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  // Memoized: useTransactions reloads whenever this object's identity changes.
+  const filters = useMemo(() => ({ page: currentPage, limit: ITEMS_PER_PAGE }), [currentPage]);
 
-  // React Hook Form
   const {
-    register,
-    handleSubmit,
-    reset,
-    setValue,
-    watch,
-    formState: { errors },
-  } = useForm<CreateTransactionDto>({
-    defaultValues: {
-      budgetId: id || "",
-      description: "",
-      amount: 0,
-      type: "expense",
-      category: "",
-      vendor: "",
-      owner: "",
-      accountId: "",
-      date: new Date().toISOString().split("T")[0],
-    },
-  });
-
-  // Pagination state
-  const [ currentPage, setCurrentPage ] = useState(1);
-  const itemsPerPage = 5;
-
-  // Memoize filters to prevent unnecessary re-renders
-  const filters = useMemo(() => ({
-    page: currentPage,
-    limit: itemsPerPage,
-  }), [ currentPage, itemsPerPage ]);
-
-  // Use the transactions hook
-  const {
-    transactions: allTransactions,
+    transactions,
     isLoading: isLoadingTransactions,
     pagination,
-    totals: serverTotals,
+    totals,
     addTransaction,
     updateTransaction,
     deleteTransaction,
-  } = useTransactions({
-    budgetId: id,
-    filters,
-  });
+  } = useTransactions({ budgetId: id, filters, notifySuccess: false });
+
+  // Details panel (description, linked plan)
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (id && !hasFetched.current) {
       hasFetched.current = true;
+      // The accounts list in context is only loaded at login and can be stale.
+      void refreshAccounts();
       fetchBudgetById(id).catch((error) => {
         snackbar.error({
           title: "Failed to load budget",
@@ -86,33 +59,9 @@ export default function BudgetTransactions() {
         navigate("/budget");
       });
     }
-  }, [ id, fetchBudgetById, snackbar, navigate ]);
+  }, [id, fetchBudgetById, refreshAccounts, snackbar, navigate]);
 
-  // Use pagination from API or calculate from local data
-  const paginatedTransactions = allTransactions;
-  const totalPages = pagination?.pages || Math.ceil(allTransactions.length / itemsPerPage);
-
-  // Totals come from the BE (computed over the whole budget set, not just the
-  // current page). Fall back to zeros until the first response lands.
-  const totals = {
-    income: serverTotals?.income ?? 0,
-    expense: serverTotals?.expense ?? 0,
-    savings: serverTotals?.savings ?? 0,
-  };
-
-  const handleNextPage = useCallback(() => {
-    if (currentPage < totalPages) {
-      setCurrentPage((prev) => prev + 1);
-    }
-  }, [ currentPage, totalPages ]);
-
-  const handlePreviousPage = useCallback(() => {
-    if (currentPage > 1) {
-      setCurrentPage((prev) => prev - 1);
-    }
-  }, [ currentPage ]);
-
-  if (isLoading || !currentBudget) {
+  if (!currentBudget) {
     return (
       <div className="flex items-center justify-center h-64">
         <p className="text-muted-foreground">Loading budget...</p>
@@ -120,160 +69,126 @@ export default function BudgetTransactions() {
     );
   }
 
-  const handleOpenAddModal = () => {
-    setIsEditMode(false);
-    setEditingItemId(null);
-    reset({
-      budgetId: id || "",
-      description: "",
-      amount: 0,
-      type: "expense",
-      category: "",
-      vendor: "",
-      owner: "",
-      accountId: "",
-      date: new Date().toISOString().split("T")[0],
-    });
-    setIsModalOpen(true);
+  const totalPages = pagination?.pages ?? 1;
+  const totalItems = pagination?.total ?? transactions.length;
+
+  // Mutations rethrow after the hook's error toast, so rows can roll back.
+  const handleCreate = async (values: CreateTransactionDto) => {
+    await addTransaction(values);
+    setCurrentPage(1);
+    void refreshAccounts();
   };
 
-  const handleOpenEditModal = (
-    itemId: string,
-    description: string,
-    amount: number,
-    type: TransactionType,
-    category: string,
-    date: string,
-    vendor?: string,
-    owner?: string,
-    accountId?: string
-  ) => {
-    setIsEditMode(true);
-    setEditingItemId(itemId);
-    reset({
-      budgetId: id || "",
-      description,
-      amount,
-      type,
-      category,
-      vendor: vendor || "",
-      owner: owner || "",
-      accountId: accountId || "",
-      date: new Date(date).toISOString().split("T")[0],
-    });
-    setIsModalOpen(true);
+  const handleUpdate = async (itemId: string, patch: UpdateTransactionDto) => {
+    await updateTransaction(itemId, patch);
+    void refreshAccounts();
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setIsEditMode(false);
-    setEditingItemId(null);
-    reset({
-      budgetId: id || "",
-      description: "",
-      amount: 0,
-      type: "expense",
-      category: "",
-      vendor: "",
-      owner: "",
-      accountId: "",
-      date: new Date().toISOString().split("T")[0],
-    });
-  };
-
-  const onSubmit = handleSubmit(async (data) => {
-    try {
-      if (isEditMode && editingItemId) {
-        await updateTransaction(editingItemId, data);
-      } else {
-        await addTransaction(data);
-      }
-
-      handleCloseModal();
-      // Reset to page 1 when adding new transaction
-      if (!isEditMode) {
-        setCurrentPage(1);
-      }
-    } catch {
-      // Error already handled in the hook
+  const handleSubmitDetails = async (values: CreateTransactionDto) => {
+    if (!editingTransaction) {
+      return;
     }
-  });
+    setIsSubmitting(true);
+    try {
+      await updateTransaction(editingTransaction.id, values);
+      void refreshAccounts();
+      setEditingTransaction(null);
+    } catch {
+      // error toast already surfaced by the hook
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-  const handleRemoveTransaction = async (itemId: string) => {
+  const handleRemove = async (itemId: string) => {
     try {
       await deleteTransaction(itemId);
-
-      // Adjust page if current page becomes empty
-      const newTotalPages = Math.ceil((allTransactions.length - 1) / itemsPerPage);
-      if (currentPage > newTotalPages && newTotalPages > 0) {
-        setCurrentPage(newTotalPages);
+      void refreshAccounts();
+      const newPages = Math.max(1, Math.ceil((totalItems - 1) / ITEMS_PER_PAGE));
+      if (currentPage > newPages) {
+        setCurrentPage(newPages);
       }
     } catch {
-      // Error already handled in the hook
+      // error toast already surfaced by the hook
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <PageHeader
         title="Transaction Tracking"
         description={`${MONTHS[currentBudget.month]} ${currentBudget.year}`}
         actions={
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate(`/budget/${id}`)}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
-            </Button>
-            <Button onClick={handleOpenAddModal}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Transaction
-            </Button>
-          </div>
+          <Button variant="outline" onClick={() => navigate(`/budget/${id}`)}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
         }
       />
 
-      {/* Summary Cards */}
+      {/* Totals come from the API over the whole budget, not just this page. */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Stat label="Total Income" value={totals.income} currency="MXN" tone="income" loading={isLoadingTransactions} />
-        <Stat label="Total Expenses" value={totals.expense} currency="MXN" tone="expense" loading={isLoadingTransactions} />
-        <Stat label="Total Savings" value={totals.savings} currency="MXN" tone="neutral" loading={isLoadingTransactions} />
+        <Stat
+          label="Total Income"
+          value={totals?.income ?? 0}
+          currency={CURRENCY}
+          tone="income"
+          loading={isLoadingTransactions}
+        />
+        <Stat
+          label="Total Expenses"
+          value={totals?.expense ?? 0}
+          currency={CURRENCY}
+          tone="expense"
+          loading={isLoadingTransactions}
+        />
+        <Stat
+          label="Total Savings"
+          value={totals?.savings ?? 0}
+          currency={CURRENCY}
+          tone="neutral"
+          loading={isLoadingTransactions}
+        />
       </div>
 
-      {/* Transactions Table */}
       <Card>
         <CardHeader>
           <CardTitle>Transactions</CardTitle>
           <CardDescription>
-            Track all your financial transactions for this budget period
+            Click any cell to edit it. Use “New” to add a transaction.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <TransactionsTable
-            transactions={paginatedTransactions}
+            transactions={transactions}
             isLoading={isLoadingTransactions}
+            accounts={accounts}
+            currency={CURRENCY}
+            defaultDate={defaultDayForBudget(currentBudget)}
+            resolveBudgetId={() => currentBudget.id}
             currentPage={currentPage}
             totalPages={totalPages}
-            totalItems={pagination?.total || allTransactions.length}
-            onEdit={handleOpenEditModal}
-            onRemove={handleRemoveTransaction}
-            onNextPage={handleNextPage}
-            onPreviousPage={handlePreviousPage}
+            totalItems={totalItems}
+            onCreate={handleCreate}
+            onUpdate={handleUpdate}
+            onOpenDetails={(txId) =>
+              setEditingTransaction(transactions.find((t) => t.id === txId) ?? null)
+            }
+            onRemove={handleRemove}
+            onNextPage={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+            onPreviousPage={() => setCurrentPage((p) => Math.max(p - 1, 1))}
           />
         </CardContent>
       </Card>
 
-      {/* Add/Edit Transaction Modal */}
-      <TransactionModal
-        isOpen={isModalOpen}
-        isEditMode={isEditMode}
-        onClose={handleCloseModal}
-        onSubmit={onSubmit}
-        register={register}
-        setValue={setValue}
-        watch={watch}
-        errors={errors}
+      <TransactionFormModal
+        open={editingTransaction !== null}
+        editingTransaction={editingTransaction}
         accounts={accounts}
+        budgets={[currentBudget]}
+        onClose={() => setEditingTransaction(null)}
+        onSubmit={handleSubmitDetails}
+        isSubmitting={isSubmitting}
       />
     </div>
   );

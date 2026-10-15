@@ -7,7 +7,7 @@ import type {
   CreateTransactionDto,
   UpdateTransactionDto,
   TransactionFilters,
-  TransactionTotals
+  TransactionTotals,
 } from "@/types/api";
 
 import { useSnackbar } from "./useSnackbar";
@@ -16,6 +16,8 @@ interface UseTransactionsOptions {
   budgetId?: string;
   filters?: TransactionFilters;
   autoLoad?: boolean;
+  /** Show success toasts after add/update/delete (default true). Inline tables turn this off. */
+  notifySuccess?: boolean;
   onLoadSuccess?: (transactions: Transaction[]) => void;
   onLoadError?: (error: Error) => void;
 }
@@ -68,18 +70,19 @@ export function useTransactions({
   budgetId,
   filters,
   autoLoad = true,
+  notifySuccess = true,
   onLoadSuccess,
   onLoadError,
 }: UseTransactionsOptions): UseTransactionsReturn {
-  const [ transactions, setTransactions ] = useState<Transaction[]>([]);
-  const [ pagination, setPagination ] = useState<{
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [pagination, setPagination] = useState<{
     page: number;
     limit: number;
     total: number;
     pages: number;
   } | null>(null);
-  const [ totals, setTotals ] = useState<TransactionTotals | null>(null);
-  const [ isLoading, setIsLoading ] = useState(false);
+  const [totals, setTotals] = useState<TransactionTotals | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const snackbar = useSnackbar();
 
   // Track if we need to load on mount
@@ -103,7 +106,6 @@ export function useTransactions({
       setPagination(response.pagination);
       setTotals(response.totals ?? null);
       onLoadSuccess?.(response.data);
-
     } catch (error) {
       const err = error instanceof Error ? error : new Error("An error occurred");
 
@@ -113,11 +115,10 @@ export function useTransactions({
       });
 
       onLoadError?.(err);
-
     } finally {
       setIsLoading(false);
     }
-  }, [ budgetId, filters, onLoadSuccess, onLoadError, snackbar ]);
+  }, [budgetId, filters, onLoadSuccess, onLoadError, snackbar]);
 
   // Auto-load transactions when budgetId or filters change.
   // NB: `budgetId` is optional now — the cross-budget list page relies on
@@ -127,8 +128,7 @@ export function useTransactions({
       return;
     }
 
-    const cacheKey = JSON.stringify({ budgetId,
-      filters });
+    const cacheKey = JSON.stringify({ budgetId, filters });
     const hasKeyChanged = prevFiltersRef.current !== cacheKey;
 
     // Load if:
@@ -139,7 +139,7 @@ export function useTransactions({
       prevFiltersRef.current = cacheKey;
       loadTransactions();
     }
-  }, [ autoLoad, budgetId, filters, loadTransactions ]);
+  }, [autoLoad, budgetId, filters, loadTransactions]);
 
   /**
    * Add a new transaction and reload the list
@@ -152,10 +152,11 @@ export function useTransactions({
 
         await transactionService.create(data);
 
-        snackbar.success({
-          title: "Transaction added!",
-          description: "Transaction has been added successfully.",
-        });
+        if (notifySuccess)
+          snackbar.success({
+            title: "Transaction added!",
+            description: "Transaction has been added successfully.",
+          });
 
         // Reload transactions to get the updated list
         await loadTransactions();
@@ -169,7 +170,7 @@ export function useTransactions({
         setIsLoading(false);
       }
     },
-    [ loadTransactions, snackbar ]
+    [loadTransactions, notifySuccess, snackbar],
   );
 
   /**
@@ -179,15 +180,15 @@ export function useTransactions({
     async (id: string, data: UpdateTransactionDto) => {
       setIsLoading(true);
       try {
-        logger.debug("Updating transaction", { id,
-          data });
+        logger.debug("Updating transaction", { id, data });
 
         await transactionService.update(id, data);
 
-        snackbar.success({
-          title: "Transaction updated!",
-          description: "Transaction has been updated successfully.",
-        });
+        if (notifySuccess)
+          snackbar.success({
+            title: "Transaction updated!",
+            description: "Transaction has been updated successfully.",
+          });
 
         // Reload transactions to get the updated list
         await loadTransactions();
@@ -201,7 +202,7 @@ export function useTransactions({
         setIsLoading(false);
       }
     },
-    [ loadTransactions, snackbar ]
+    [loadTransactions, notifySuccess, snackbar],
   );
 
   /**
@@ -215,10 +216,11 @@ export function useTransactions({
 
         await transactionService.delete(id);
 
-        snackbar.success({
-          title: "Transaction removed",
-          description: "Transaction has been removed.",
-        });
+        if (notifySuccess)
+          snackbar.success({
+            title: "Transaction removed",
+            description: "Transaction has been removed.",
+          });
 
         // Reload transactions to get the updated list
         await loadTransactions();
@@ -232,7 +234,7 @@ export function useTransactions({
         setIsLoading(false);
       }
     },
-    [ loadTransactions, snackbar ]
+    [loadTransactions, notifySuccess, snackbar],
   );
 
   return {

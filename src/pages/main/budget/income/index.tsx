@@ -1,44 +1,41 @@
 "use client";
 
-import { ArrowLeft, Plus } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { ArrowLeft } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router";
 
 import { PageHeader, Stat } from "@/components/ui";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useSnackbar, useIncome, useBudgetItems } from "@/hooks";
+import { useSnackbar, useIncome, useBudgetItems, useAccounts } from "@/hooks";
 import { MONTHS, INCOME_TYPES } from "@/types/budget";
-import type { IncomeType, IncomeItem } from "@/types/budget";
+import type { AddIncomeItemDTO, IncomeType, IncomeItem } from "@/types/budget";
 import { calculateBudgetTotals } from "@/utils";
 
 import { BudgetItemsFilters } from "../components/BudgetItemsFilters";
-import { BudgetItemsTable, type BudgetItemRow } from "../components/BudgetItemsTable";
-import { IncomeModal } from "./components/IncomeModal";
+import {
+  BudgetItemsTable,
+  type BudgetItemPatch,
+  type BudgetItemValues,
+} from "../components/BudgetItemsTable";
 
 const CURRENCY = "MXN";
+
+const toIncomeDto = (item: IncomeItem, patch: BudgetItemPatch = {}): AddIncomeItemDTO => ({
+  description: patch.description ?? item.description,
+  amount: patch.amount ?? item.amount,
+  type: (patch.type ?? item.type) as IncomeType,
+  accountId: patch.accountId ?? item.accountId,
+});
 
 export default function BudgetIncome() {
   const { id } = useParams();
   const navigate = useNavigate();
   const snackbar = useSnackbar();
-  const {
-    currentBudget,
-    fetchBudgetById,
-    addIncomeItem,
-    updateIncomeItems,
-    deleteIncomeItem,
-  } = useIncome();
+  const { currentBudget, fetchBudgetById, addIncomeItem, updateIncomeItem, deleteIncomeItem } =
+    useIncome();
+  const { accounts, refresh: refreshAccounts } = useAccounts();
   const hasFetched = useRef(false);
-
-  const [ isModalOpen, setIsModalOpen ] = useState(false);
-  const [ isEditMode, setIsEditMode ] = useState(false);
-  const [ editingItemId, setEditingItemId ] = useState<string | null>(null);
-  const [ incomeItemForm, setIncomeItemForm ] = useState({
-    description: "",
-    amount: "",
-    type: "" as IncomeType | "",
-  });
 
   // Client-side filtering + pagination over the full (already-loaded) item set.
   const incomeItems = currentBudget?.incomeItems ?? [];
@@ -47,6 +44,9 @@ export default function BudgetIncome() {
   useEffect(() => {
     if (id && !hasFetched.current) {
       hasFetched.current = true;
+      // The accounts list in context is only loaded at login and can be empty
+      // here; reload it so the Account column has options (as the Accounts page does).
+      void refreshAccounts();
       fetchBudgetById(id).catch((error) => {
         snackbar.error({
           title: "Failed to load budget",
@@ -55,7 +55,7 @@ export default function BudgetIncome() {
         navigate("/budget");
       });
     }
-  }, [ id, fetchBudgetById, snackbar, navigate ]);
+  }, [id, fetchBudgetById, refreshAccounts, snackbar, navigate]);
 
   // Full-screen state only for the INITIAL budget load — never on table ops.
   if (!currentBudget) {
@@ -68,125 +68,84 @@ export default function BudgetIncome() {
 
   const { totalIncome } = calculateBudgetTotals(currentBudget);
 
-  const handleOpenAddModal = () => {
-    setIsEditMode(false);
-    setEditingItemId(null);
-    setIncomeItemForm({ description: "",
-      amount: "",
-      type: "" });
-    setIsModalOpen(true);
-  };
-
-  const handleOpenEditModal = (item: BudgetItemRow) => {
-    setIsEditMode(true);
-    setEditingItemId(item.id ?? null);
-    setIncomeItemForm({
-      description: item.description,
-      amount: item.amount.toString(),
-      type: item.type as IncomeType,
+  const showError = (title: string, error: unknown) => {
+    snackbar.error({
+      title,
+      description: error instanceof Error ? error.message : "An error occurred",
     });
-    setIsModalOpen(true);
   };
 
-  const handleFormChange = (field: "description" | "amount" | "type", value: string) => {
-    setIncomeItemForm((prev) => ({ ...prev,
-      [field]: value }));
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setIsEditMode(false);
-    setEditingItemId(null);
-    setIncomeItemForm({ description: "",
-      amount: "",
-      type: "" });
-  };
-
-  const handleSaveIncomeItem = async () => {
-    if (!incomeItemForm.description || !incomeItemForm.amount || !incomeItemForm.type || !id) {
-      snackbar.warning({
-        title: "Missing fields",
-        description: "Please fill in all required fields.",
-      });
+  // Create and update rethrow so the row keeps the typed value (create) or
+  // rolls the cell back (update).
+  const handleCreate = async (values: BudgetItemValues) => {
+    if (!id) {
       return;
     }
-
     try {
-      if (isEditMode && editingItemId) {
-        const updatedIncomeItems = currentBudget.incomeItems.map((item) =>
-          item.id === editingItemId
-            ? {
-              description: incomeItemForm.description,
-              amount: Number(incomeItemForm.amount),
-              type: incomeItemForm.type as IncomeType,
-            }
-            : { description: item.description,
-              amount: item.amount,
-              type: item.type },
-        );
-        await updateIncomeItems(id, updatedIncomeItems);
-        snackbar.success({ title: "Income updated!",
-          description: "Income item has been updated successfully." });
-      } else {
-        await addIncomeItem(id, {
-          description: incomeItemForm.description,
-          amount: Number(incomeItemForm.amount),
-          type: incomeItemForm.type as IncomeType,
-        });
-        snackbar.success({ title: "Income added!",
-          description: "Income item has been added successfully." });
-      }
-      handleCloseModal();
+      await addIncomeItem(id, { ...values, type: values.type as IncomeType });
+      table.goToLastPage();
     } catch (error) {
-      snackbar.error({
-        title: isEditMode ? "Failed to update income" : "Failed to add income",
-        description: error instanceof Error ? error.message : "An error occurred",
-      });
+      showError("Failed to add income", error);
+      throw error;
     }
   };
 
-  const handleRemoveIncomeItem = async (itemId: string) => {
-    if (!id) { return; }
+  const handleUpdate = async (itemId: string, patch: BudgetItemPatch) => {
+    if (!id) {
+      return;
+    }
+    const item = currentBudget.incomeItems.find((i) => i.id === itemId);
+    if (!item) {
+      return;
+    }
+    const data = toIncomeDto(item, patch);
+    // Items created before accounts were required have none, and the API rejects them.
+    if (!data.accountId) {
+      snackbar.warning({
+        title: "Pick an account first",
+        description: "This item has no account yet. Set its Account cell, then edit the rest.",
+      });
+      throw new Error("Income item has no account");
+    }
+    try {
+      await updateIncomeItem(id, itemId, data);
+    } catch (error) {
+      showError("Failed to update income", error);
+      throw error;
+    }
+  };
+
+  const handleRemove = async (itemId: string) => {
+    if (!id) {
+      return;
+    }
     try {
       await deleteIncomeItem(id, itemId);
-      snackbar.success({ title: "Income removed",
-        description: "Income item has been removed." });
+      snackbar.success({ title: "Income removed", description: "Income item has been removed." });
     } catch (error) {
-      snackbar.error({
-        title: "Failed to remove income",
-        description: error instanceof Error ? error.message : "An error occurred",
-      });
+      showError("Failed to remove income", error);
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <PageHeader
         title="Income Management"
         description={`${MONTHS[currentBudget.month]} ${currentBudget.year}`}
         actions={
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate(`/budget/${id}`)}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
-            </Button>
-            <Button onClick={handleOpenAddModal}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Income
-            </Button>
-          </div>
+          <Button variant="outline" onClick={() => navigate(`/budget/${id}`)}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
         }
       />
 
-      {/* Total Income */}
       <Stat label="Total Income" value={totalIncome} currency={CURRENCY} tone="income" />
 
-      {/* Income Items Table */}
       <Card>
         <CardHeader>
           <CardTitle>Income Sources</CardTitle>
-          <CardDescription>Manage your income items for this budget period</CardDescription>
+          <CardDescription>Click any cell to edit it. Use “New” to add a row.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <BudgetItemsFilters
@@ -199,17 +158,21 @@ export default function BudgetIncome() {
             onClear={table.clearFilters}
           />
           <BudgetItemsTable
+            listLabel="Income items"
             items={table.pageItems}
             tone="income"
             currency={CURRENCY}
+            typeOptions={INCOME_TYPES}
+            accounts={accounts}
             currentPage={table.currentPage}
             totalPages={table.totalPages}
             totalItems={table.totalItems}
             itemsPerPage={table.itemsPerPage}
             hasActiveFilters={table.hasActiveFilters}
             emptyLabel="No income items yet"
-            onEdit={handleOpenEditModal}
-            onRemove={handleRemoveIncomeItem}
+            onCreate={handleCreate}
+            onUpdate={handleUpdate}
+            onRemove={handleRemove}
             onNextPage={table.nextPage}
             onPreviousPage={table.prevPage}
             onItemsPerPageChange={table.setItemsPerPage}
@@ -217,16 +180,6 @@ export default function BudgetIncome() {
           />
         </CardContent>
       </Card>
-
-      {/* Add/Edit Income Modal */}
-      <IncomeModal
-        isOpen={isModalOpen}
-        isEditMode={isEditMode}
-        formData={incomeItemForm}
-        onClose={handleCloseModal}
-        onChange={handleFormChange}
-        onSave={handleSaveIncomeItem}
-      />
     </div>
   );
 }

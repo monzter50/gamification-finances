@@ -16,39 +16,42 @@ import type {
   NotFoundErrorResponse,
   PaginatedIncomeResponse,
   UnauthorizedErrorResponse,
-  UpdateIncomeItemsRequest
+  UpdateIncomeItemsRequest,
 } from "../models";
 
 export type getApiBudgetsIdIncomeResponse200 = {
-  data: PaginatedIncomeResponse
-  status: 200
-}
+  data: PaginatedIncomeResponse;
+  status: 200;
+};
 
 export type getApiBudgetsIdIncomeResponse401 = {
-  data: UnauthorizedErrorResponse
-  status: 401
-}
+  data: UnauthorizedErrorResponse;
+  status: 401;
+};
 
 export type getApiBudgetsIdIncomeResponse404 = {
-  data: NotFoundErrorResponse
-  status: 404
-}
-
-export type getApiBudgetsIdIncomeResponseSuccess = (getApiBudgetsIdIncomeResponse200) & {
-  headers: Headers;
-};
-export type getApiBudgetsIdIncomeResponseError = (getApiBudgetsIdIncomeResponse401 | getApiBudgetsIdIncomeResponse404) & {
-  headers: Headers;
+  data: NotFoundErrorResponse;
+  status: 404;
 };
 
-export type getApiBudgetsIdIncomeResponse = (getApiBudgetsIdIncomeResponseSuccess | getApiBudgetsIdIncomeResponseError)
+export type getApiBudgetsIdIncomeResponseSuccess = getApiBudgetsIdIncomeResponse200 & {
+  headers: Headers;
+};
+export type getApiBudgetsIdIncomeResponseError = (
+  | getApiBudgetsIdIncomeResponse401
+  | getApiBudgetsIdIncomeResponse404
+) & {
+  headers: Headers;
+};
 
-export const getGetApiBudgetsIdIncomeUrl = (id: string,
-  params?: GetApiBudgetsIdIncomeParams,) => {
+export type getApiBudgetsIdIncomeResponse =
+  | getApiBudgetsIdIncomeResponseSuccess
+  | getApiBudgetsIdIncomeResponseError;
+
+export const getGetApiBudgetsIdIncomeUrl = (id: string, params?: GetApiBudgetsIdIncomeParams) => {
   const normalizedParams = new URLSearchParams();
 
-  Object.entries(params || {}).forEach(([ key, value ]) => {
-
+  Object.entries(params || {}).forEach(([key, value]) => {
     if (value !== undefined) {
       normalizedParams.append(key, value === null ? "null" : value.toString());
     }
@@ -56,115 +59,129 @@ export const getGetApiBudgetsIdIncomeUrl = (id: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/budgets/${id}/income?${stringifiedParams}` : `/api/budgets/${id}/income`;
+  return stringifiedParams.length > 0
+    ? `/api/budgets/${id}/income?${stringifiedParams}`
+    : `/api/budgets/${id}/income`;
 };
 
 /**
  * Returns the paginated income items for the given budget, plus the user's accounts (useful to resolve `accountId`).
  * @summary List income items (paginated)
  */
-export const getApiBudgetsIdIncome = async (id: string,
-  params?: GetApiBudgetsIdIncomeParams, options?: RequestInit): Promise<getApiBudgetsIdIncomeResponse> => {
-
-  return customInstance<getApiBudgetsIdIncomeResponse>(getGetApiBudgetsIdIncomeUrl(id,params),
-    {
-      ...options,
-      method: "GET"
-
-    }
-  ); };
+export const getApiBudgetsIdIncome = async (
+  id: string,
+  params?: GetApiBudgetsIdIncomeParams,
+  options?: RequestInit,
+): Promise<getApiBudgetsIdIncomeResponse> => {
+  return customInstance<getApiBudgetsIdIncomeResponse>(getGetApiBudgetsIdIncomeUrl(id, params), {
+    ...options,
+    method: "GET",
+  });
+};
 
 export type postApiBudgetsIdIncomeResponse201 = {
-  data: IncomeItemMutationResponse
-  status: 201
-}
+  data: IncomeItemMutationResponse;
+  status: 201;
+};
 
 export type postApiBudgetsIdIncomeResponse400 = {
-  data: BadRequestErrorResponse
-  status: 400
-}
+  data: BadRequestErrorResponse;
+  status: 400;
+};
 
 export type postApiBudgetsIdIncomeResponse401 = {
-  data: UnauthorizedErrorResponse
-  status: 401
-}
+  data: UnauthorizedErrorResponse;
+  status: 401;
+};
 
 export type postApiBudgetsIdIncomeResponse403 = {
-  data: void
-  status: 403
-}
+  data: void;
+  status: 403;
+};
 
 export type postApiBudgetsIdIncomeResponse404 = {
-  data: NotFoundErrorResponse
-  status: 404
-}
-
-export type postApiBudgetsIdIncomeResponseSuccess = (postApiBudgetsIdIncomeResponse201) & {
-  headers: Headers;
-};
-export type postApiBudgetsIdIncomeResponseError = (postApiBudgetsIdIncomeResponse400 | postApiBudgetsIdIncomeResponse401 | postApiBudgetsIdIncomeResponse403 | postApiBudgetsIdIncomeResponse404) & {
-  headers: Headers;
+  data: NotFoundErrorResponse;
+  status: 404;
 };
 
-export type postApiBudgetsIdIncomeResponse = (postApiBudgetsIdIncomeResponseSuccess | postApiBudgetsIdIncomeResponseError)
+export type postApiBudgetsIdIncomeResponseSuccess = postApiBudgetsIdIncomeResponse201 & {
+  headers: Headers;
+};
+export type postApiBudgetsIdIncomeResponseError = (
+  | postApiBudgetsIdIncomeResponse400
+  | postApiBudgetsIdIncomeResponse401
+  | postApiBudgetsIdIncomeResponse403
+  | postApiBudgetsIdIncomeResponse404
+) & {
+  headers: Headers;
+};
 
-export const getPostApiBudgetsIdIncomeUrl = (id: string,) => {
+export type postApiBudgetsIdIncomeResponse =
+  | postApiBudgetsIdIncomeResponseSuccess
+  | postApiBudgetsIdIncomeResponseError;
 
+export const getPostApiBudgetsIdIncomeUrl = (id: string) => {
   return `/api/budgets/${id}/income`;
 };
 
 /**
  * @summary Add a single income item
  */
-export const postApiBudgetsIdIncome = async (id: string,
-  addIncomeItemRequest: AddIncomeItemRequest, options?: RequestInit): Promise<postApiBudgetsIdIncomeResponse> => {
-
-  return customInstance<postApiBudgetsIdIncomeResponse>(getPostApiBudgetsIdIncomeUrl(id),
-    {
-      ...options,
-      method: "POST",
-      headers: { "Content-Type": "application/json",
-        ...options?.headers },
-      body: JSON.stringify(addIncomeItemRequest)
-    }
-  ); };
+export const postApiBudgetsIdIncome = async (
+  id: string,
+  addIncomeItemRequest: AddIncomeItemRequest,
+  options?: RequestInit,
+): Promise<postApiBudgetsIdIncomeResponse> => {
+  return customInstance<postApiBudgetsIdIncomeResponse>(getPostApiBudgetsIdIncomeUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(addIncomeItemRequest),
+  });
+};
 
 export type patchApiBudgetsIdIncomeResponse200 = {
-  data: BudgetMutationResponse
-  status: 200
-}
+  data: BudgetMutationResponse;
+  status: 200;
+};
 
 export type patchApiBudgetsIdIncomeResponse400 = {
-  data: BadRequestErrorResponse
-  status: 400
-}
+  data: BadRequestErrorResponse;
+  status: 400;
+};
 
 export type patchApiBudgetsIdIncomeResponse401 = {
-  data: UnauthorizedErrorResponse
-  status: 401
-}
+  data: UnauthorizedErrorResponse;
+  status: 401;
+};
 
 export type patchApiBudgetsIdIncomeResponse403 = {
-  data: void
-  status: 403
-}
+  data: void;
+  status: 403;
+};
 
 export type patchApiBudgetsIdIncomeResponse404 = {
-  data: NotFoundErrorResponse
-  status: 404
-}
-
-export type patchApiBudgetsIdIncomeResponseSuccess = (patchApiBudgetsIdIncomeResponse200) & {
-  headers: Headers;
-};
-export type patchApiBudgetsIdIncomeResponseError = (patchApiBudgetsIdIncomeResponse400 | patchApiBudgetsIdIncomeResponse401 | patchApiBudgetsIdIncomeResponse403 | patchApiBudgetsIdIncomeResponse404) & {
-  headers: Headers;
+  data: NotFoundErrorResponse;
+  status: 404;
 };
 
-export type patchApiBudgetsIdIncomeResponse = (patchApiBudgetsIdIncomeResponseSuccess | patchApiBudgetsIdIncomeResponseError)
+export type patchApiBudgetsIdIncomeResponseSuccess = patchApiBudgetsIdIncomeResponse200 & {
+  headers: Headers;
+};
+export type patchApiBudgetsIdIncomeResponseError = (
+  | patchApiBudgetsIdIncomeResponse400
+  | patchApiBudgetsIdIncomeResponse401
+  | patchApiBudgetsIdIncomeResponse403
+  | patchApiBudgetsIdIncomeResponse404
+) & {
+  headers: Headers;
+};
 
-export const getPatchApiBudgetsIdIncomeUrl = (id: string,) => {
+export type patchApiBudgetsIdIncomeResponse =
+  | patchApiBudgetsIdIncomeResponseSuccess
+  | patchApiBudgetsIdIncomeResponseError;
 
+export const getPatchApiBudgetsIdIncomeUrl = (id: string) => {
   return `/api/budgets/${id}/income`;
 };
 
@@ -172,121 +189,138 @@ export const getPatchApiBudgetsIdIncomeUrl = (id: string,) => {
  * Overwrites the full income list. To add/update a single item, prefer POST or PUT.
  * @summary Replace all income items for this budget
  */
-export const patchApiBudgetsIdIncome = async (id: string,
-  updateIncomeItemsRequest: UpdateIncomeItemsRequest, options?: RequestInit): Promise<patchApiBudgetsIdIncomeResponse> => {
-
-  return customInstance<patchApiBudgetsIdIncomeResponse>(getPatchApiBudgetsIdIncomeUrl(id),
-    {
-      ...options,
-      method: "PATCH",
-      headers: { "Content-Type": "application/json",
-        ...options?.headers },
-      body: JSON.stringify(updateIncomeItemsRequest)
-    }
-  ); };
+export const patchApiBudgetsIdIncome = async (
+  id: string,
+  updateIncomeItemsRequest: UpdateIncomeItemsRequest,
+  options?: RequestInit,
+): Promise<patchApiBudgetsIdIncomeResponse> => {
+  return customInstance<patchApiBudgetsIdIncomeResponse>(getPatchApiBudgetsIdIncomeUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateIncomeItemsRequest),
+  });
+};
 
 export type putApiBudgetsIdIncomeIncomeIdResponse200 = {
-  data: IncomeItemMutationResponse
-  status: 200
-}
+  data: IncomeItemMutationResponse;
+  status: 200;
+};
 
 export type putApiBudgetsIdIncomeIncomeIdResponse400 = {
-  data: BadRequestErrorResponse
-  status: 400
-}
+  data: BadRequestErrorResponse;
+  status: 400;
+};
 
 export type putApiBudgetsIdIncomeIncomeIdResponse401 = {
-  data: UnauthorizedErrorResponse
-  status: 401
-}
+  data: UnauthorizedErrorResponse;
+  status: 401;
+};
 
 export type putApiBudgetsIdIncomeIncomeIdResponse403 = {
-  data: void
-  status: 403
-}
+  data: void;
+  status: 403;
+};
 
 export type putApiBudgetsIdIncomeIncomeIdResponse404 = {
-  data: NotFoundErrorResponse
-  status: 404
-}
-
-export type putApiBudgetsIdIncomeIncomeIdResponseSuccess = (putApiBudgetsIdIncomeIncomeIdResponse200) & {
-  headers: Headers;
-};
-export type putApiBudgetsIdIncomeIncomeIdResponseError = (putApiBudgetsIdIncomeIncomeIdResponse400 | putApiBudgetsIdIncomeIncomeIdResponse401 | putApiBudgetsIdIncomeIncomeIdResponse403 | putApiBudgetsIdIncomeIncomeIdResponse404) & {
-  headers: Headers;
+  data: NotFoundErrorResponse;
+  status: 404;
 };
 
-export type putApiBudgetsIdIncomeIncomeIdResponse = (putApiBudgetsIdIncomeIncomeIdResponseSuccess | putApiBudgetsIdIncomeIncomeIdResponseError)
+export type putApiBudgetsIdIncomeIncomeIdResponseSuccess =
+  putApiBudgetsIdIncomeIncomeIdResponse200 & {
+    headers: Headers;
+  };
+export type putApiBudgetsIdIncomeIncomeIdResponseError = (
+  | putApiBudgetsIdIncomeIncomeIdResponse400
+  | putApiBudgetsIdIncomeIncomeIdResponse401
+  | putApiBudgetsIdIncomeIncomeIdResponse403
+  | putApiBudgetsIdIncomeIncomeIdResponse404
+) & {
+  headers: Headers;
+};
 
-export const getPutApiBudgetsIdIncomeIncomeIdUrl = (id: string,
-  incomeId: string,) => {
+export type putApiBudgetsIdIncomeIncomeIdResponse =
+  | putApiBudgetsIdIncomeIncomeIdResponseSuccess
+  | putApiBudgetsIdIncomeIncomeIdResponseError;
 
+export const getPutApiBudgetsIdIncomeIncomeIdUrl = (id: string, incomeId: string) => {
   return `/api/budgets/${id}/income/${incomeId}`;
 };
 
 /**
  * @summary Update a single income item
  */
-export const putApiBudgetsIdIncomeIncomeId = async (id: string,
+export const putApiBudgetsIdIncomeIncomeId = async (
+  id: string,
   incomeId: string,
-  addIncomeItemRequest: AddIncomeItemRequest, options?: RequestInit): Promise<putApiBudgetsIdIncomeIncomeIdResponse> => {
-
-  return customInstance<putApiBudgetsIdIncomeIncomeIdResponse>(getPutApiBudgetsIdIncomeIncomeIdUrl(id,incomeId),
+  addIncomeItemRequest: AddIncomeItemRequest,
+  options?: RequestInit,
+): Promise<putApiBudgetsIdIncomeIncomeIdResponse> => {
+  return customInstance<putApiBudgetsIdIncomeIncomeIdResponse>(
+    getPutApiBudgetsIdIncomeIncomeIdUrl(id, incomeId),
     {
       ...options,
       method: "PUT",
-      headers: { "Content-Type": "application/json",
-        ...options?.headers },
-      body: JSON.stringify(addIncomeItemRequest)
-    }
-  ); };
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(addIncomeItemRequest),
+    },
+  );
+};
 
 export type deleteApiBudgetsIdIncomeIncomeIdResponse200 = {
-  data: ItemRemovalResponse
-  status: 200
-}
+  data: ItemRemovalResponse;
+  status: 200;
+};
 
 export type deleteApiBudgetsIdIncomeIncomeIdResponse401 = {
-  data: UnauthorizedErrorResponse
-  status: 401
-}
+  data: UnauthorizedErrorResponse;
+  status: 401;
+};
 
 export type deleteApiBudgetsIdIncomeIncomeIdResponse403 = {
-  data: void
-  status: 403
-}
+  data: void;
+  status: 403;
+};
 
 export type deleteApiBudgetsIdIncomeIncomeIdResponse404 = {
-  data: NotFoundErrorResponse
-  status: 404
-}
-
-export type deleteApiBudgetsIdIncomeIncomeIdResponseSuccess = (deleteApiBudgetsIdIncomeIncomeIdResponse200) & {
-  headers: Headers;
-};
-export type deleteApiBudgetsIdIncomeIncomeIdResponseError = (deleteApiBudgetsIdIncomeIncomeIdResponse401 | deleteApiBudgetsIdIncomeIncomeIdResponse403 | deleteApiBudgetsIdIncomeIncomeIdResponse404) & {
-  headers: Headers;
+  data: NotFoundErrorResponse;
+  status: 404;
 };
 
-export type deleteApiBudgetsIdIncomeIncomeIdResponse = (deleteApiBudgetsIdIncomeIncomeIdResponseSuccess | deleteApiBudgetsIdIncomeIncomeIdResponseError)
+export type deleteApiBudgetsIdIncomeIncomeIdResponseSuccess =
+  deleteApiBudgetsIdIncomeIncomeIdResponse200 & {
+    headers: Headers;
+  };
+export type deleteApiBudgetsIdIncomeIncomeIdResponseError = (
+  | deleteApiBudgetsIdIncomeIncomeIdResponse401
+  | deleteApiBudgetsIdIncomeIncomeIdResponse403
+  | deleteApiBudgetsIdIncomeIncomeIdResponse404
+) & {
+  headers: Headers;
+};
 
-export const getDeleteApiBudgetsIdIncomeIncomeIdUrl = (id: string,
-  incomeId: string,) => {
+export type deleteApiBudgetsIdIncomeIncomeIdResponse =
+  | deleteApiBudgetsIdIncomeIncomeIdResponseSuccess
+  | deleteApiBudgetsIdIncomeIncomeIdResponseError;
 
+export const getDeleteApiBudgetsIdIncomeIncomeIdUrl = (id: string, incomeId: string) => {
   return `/api/budgets/${id}/income/${incomeId}`;
 };
 
 /**
  * @summary Delete a single income item
  */
-export const deleteApiBudgetsIdIncomeIncomeId = async (id: string,
-  incomeId: string, options?: RequestInit): Promise<deleteApiBudgetsIdIncomeIncomeIdResponse> => {
-
-  return customInstance<deleteApiBudgetsIdIncomeIncomeIdResponse>(getDeleteApiBudgetsIdIncomeIncomeIdUrl(id,incomeId),
+export const deleteApiBudgetsIdIncomeIncomeId = async (
+  id: string,
+  incomeId: string,
+  options?: RequestInit,
+): Promise<deleteApiBudgetsIdIncomeIncomeIdResponse> => {
+  return customInstance<deleteApiBudgetsIdIncomeIncomeIdResponse>(
+    getDeleteApiBudgetsIdIncomeIncomeIdUrl(id, incomeId),
     {
       ...options,
-      method: "DELETE"
-
-    }
-  ); };
+      method: "DELETE",
+    },
+  );
+};

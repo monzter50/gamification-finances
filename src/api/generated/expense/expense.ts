@@ -16,39 +16,42 @@ import type {
   NotFoundErrorResponse,
   PaginatedExpenseResponse,
   UnauthorizedErrorResponse,
-  UpdateExpenseItemsRequest
+  UpdateExpenseItemsRequest,
 } from "../models";
 
 export type getApiBudgetsIdExpenseResponse200 = {
-  data: PaginatedExpenseResponse
-  status: 200
-}
+  data: PaginatedExpenseResponse;
+  status: 200;
+};
 
 export type getApiBudgetsIdExpenseResponse401 = {
-  data: UnauthorizedErrorResponse
-  status: 401
-}
+  data: UnauthorizedErrorResponse;
+  status: 401;
+};
 
 export type getApiBudgetsIdExpenseResponse404 = {
-  data: NotFoundErrorResponse
-  status: 404
-}
-
-export type getApiBudgetsIdExpenseResponseSuccess = (getApiBudgetsIdExpenseResponse200) & {
-  headers: Headers;
-};
-export type getApiBudgetsIdExpenseResponseError = (getApiBudgetsIdExpenseResponse401 | getApiBudgetsIdExpenseResponse404) & {
-  headers: Headers;
+  data: NotFoundErrorResponse;
+  status: 404;
 };
 
-export type getApiBudgetsIdExpenseResponse = (getApiBudgetsIdExpenseResponseSuccess | getApiBudgetsIdExpenseResponseError)
+export type getApiBudgetsIdExpenseResponseSuccess = getApiBudgetsIdExpenseResponse200 & {
+  headers: Headers;
+};
+export type getApiBudgetsIdExpenseResponseError = (
+  | getApiBudgetsIdExpenseResponse401
+  | getApiBudgetsIdExpenseResponse404
+) & {
+  headers: Headers;
+};
 
-export const getGetApiBudgetsIdExpenseUrl = (id: string,
-  params?: GetApiBudgetsIdExpenseParams,) => {
+export type getApiBudgetsIdExpenseResponse =
+  | getApiBudgetsIdExpenseResponseSuccess
+  | getApiBudgetsIdExpenseResponseError;
+
+export const getGetApiBudgetsIdExpenseUrl = (id: string, params?: GetApiBudgetsIdExpenseParams) => {
   const normalizedParams = new URLSearchParams();
 
-  Object.entries(params || {}).forEach(([ key, value ]) => {
-
+  Object.entries(params || {}).forEach(([key, value]) => {
     if (value !== undefined) {
       normalizedParams.append(key, value === null ? "null" : value.toString());
     }
@@ -56,114 +59,128 @@ export const getGetApiBudgetsIdExpenseUrl = (id: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/budgets/${id}/expense?${stringifiedParams}` : `/api/budgets/${id}/expense`;
+  return stringifiedParams.length > 0
+    ? `/api/budgets/${id}/expense?${stringifiedParams}`
+    : `/api/budgets/${id}/expense`;
 };
 
 /**
  * @summary List expense items (paginated)
  */
-export const getApiBudgetsIdExpense = async (id: string,
-  params?: GetApiBudgetsIdExpenseParams, options?: RequestInit): Promise<getApiBudgetsIdExpenseResponse> => {
-
-  return customInstance<getApiBudgetsIdExpenseResponse>(getGetApiBudgetsIdExpenseUrl(id,params),
-    {
-      ...options,
-      method: "GET"
-
-    }
-  ); };
+export const getApiBudgetsIdExpense = async (
+  id: string,
+  params?: GetApiBudgetsIdExpenseParams,
+  options?: RequestInit,
+): Promise<getApiBudgetsIdExpenseResponse> => {
+  return customInstance<getApiBudgetsIdExpenseResponse>(getGetApiBudgetsIdExpenseUrl(id, params), {
+    ...options,
+    method: "GET",
+  });
+};
 
 export type postApiBudgetsIdExpenseResponse201 = {
-  data: ExpenseItemMutationResponse
-  status: 201
-}
+  data: ExpenseItemMutationResponse;
+  status: 201;
+};
 
 export type postApiBudgetsIdExpenseResponse400 = {
-  data: BadRequestErrorResponse
-  status: 400
-}
+  data: BadRequestErrorResponse;
+  status: 400;
+};
 
 export type postApiBudgetsIdExpenseResponse401 = {
-  data: UnauthorizedErrorResponse
-  status: 401
-}
+  data: UnauthorizedErrorResponse;
+  status: 401;
+};
 
 export type postApiBudgetsIdExpenseResponse403 = {
-  data: void
-  status: 403
-}
+  data: void;
+  status: 403;
+};
 
 export type postApiBudgetsIdExpenseResponse404 = {
-  data: NotFoundErrorResponse
-  status: 404
-}
-
-export type postApiBudgetsIdExpenseResponseSuccess = (postApiBudgetsIdExpenseResponse201) & {
-  headers: Headers;
-};
-export type postApiBudgetsIdExpenseResponseError = (postApiBudgetsIdExpenseResponse400 | postApiBudgetsIdExpenseResponse401 | postApiBudgetsIdExpenseResponse403 | postApiBudgetsIdExpenseResponse404) & {
-  headers: Headers;
+  data: NotFoundErrorResponse;
+  status: 404;
 };
 
-export type postApiBudgetsIdExpenseResponse = (postApiBudgetsIdExpenseResponseSuccess | postApiBudgetsIdExpenseResponseError)
+export type postApiBudgetsIdExpenseResponseSuccess = postApiBudgetsIdExpenseResponse201 & {
+  headers: Headers;
+};
+export type postApiBudgetsIdExpenseResponseError = (
+  | postApiBudgetsIdExpenseResponse400
+  | postApiBudgetsIdExpenseResponse401
+  | postApiBudgetsIdExpenseResponse403
+  | postApiBudgetsIdExpenseResponse404
+) & {
+  headers: Headers;
+};
 
-export const getPostApiBudgetsIdExpenseUrl = (id: string,) => {
+export type postApiBudgetsIdExpenseResponse =
+  | postApiBudgetsIdExpenseResponseSuccess
+  | postApiBudgetsIdExpenseResponseError;
 
+export const getPostApiBudgetsIdExpenseUrl = (id: string) => {
   return `/api/budgets/${id}/expense`;
 };
 
 /**
  * @summary Add a single expense item
  */
-export const postApiBudgetsIdExpense = async (id: string,
-  addExpenseItemRequest: AddExpenseItemRequest, options?: RequestInit): Promise<postApiBudgetsIdExpenseResponse> => {
-
-  return customInstance<postApiBudgetsIdExpenseResponse>(getPostApiBudgetsIdExpenseUrl(id),
-    {
-      ...options,
-      method: "POST",
-      headers: { "Content-Type": "application/json",
-        ...options?.headers },
-      body: JSON.stringify(addExpenseItemRequest)
-    }
-  ); };
+export const postApiBudgetsIdExpense = async (
+  id: string,
+  addExpenseItemRequest: AddExpenseItemRequest,
+  options?: RequestInit,
+): Promise<postApiBudgetsIdExpenseResponse> => {
+  return customInstance<postApiBudgetsIdExpenseResponse>(getPostApiBudgetsIdExpenseUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(addExpenseItemRequest),
+  });
+};
 
 export type patchApiBudgetsIdExpenseResponse200 = {
-  data: BudgetMutationResponse
-  status: 200
-}
+  data: BudgetMutationResponse;
+  status: 200;
+};
 
 export type patchApiBudgetsIdExpenseResponse400 = {
-  data: BadRequestErrorResponse
-  status: 400
-}
+  data: BadRequestErrorResponse;
+  status: 400;
+};
 
 export type patchApiBudgetsIdExpenseResponse401 = {
-  data: UnauthorizedErrorResponse
-  status: 401
-}
+  data: UnauthorizedErrorResponse;
+  status: 401;
+};
 
 export type patchApiBudgetsIdExpenseResponse403 = {
-  data: void
-  status: 403
-}
+  data: void;
+  status: 403;
+};
 
 export type patchApiBudgetsIdExpenseResponse404 = {
-  data: NotFoundErrorResponse
-  status: 404
-}
-
-export type patchApiBudgetsIdExpenseResponseSuccess = (patchApiBudgetsIdExpenseResponse200) & {
-  headers: Headers;
-};
-export type patchApiBudgetsIdExpenseResponseError = (patchApiBudgetsIdExpenseResponse400 | patchApiBudgetsIdExpenseResponse401 | patchApiBudgetsIdExpenseResponse403 | patchApiBudgetsIdExpenseResponse404) & {
-  headers: Headers;
+  data: NotFoundErrorResponse;
+  status: 404;
 };
 
-export type patchApiBudgetsIdExpenseResponse = (patchApiBudgetsIdExpenseResponseSuccess | patchApiBudgetsIdExpenseResponseError)
+export type patchApiBudgetsIdExpenseResponseSuccess = patchApiBudgetsIdExpenseResponse200 & {
+  headers: Headers;
+};
+export type patchApiBudgetsIdExpenseResponseError = (
+  | patchApiBudgetsIdExpenseResponse400
+  | patchApiBudgetsIdExpenseResponse401
+  | patchApiBudgetsIdExpenseResponse403
+  | patchApiBudgetsIdExpenseResponse404
+) & {
+  headers: Headers;
+};
 
-export const getPatchApiBudgetsIdExpenseUrl = (id: string,) => {
+export type patchApiBudgetsIdExpenseResponse =
+  | patchApiBudgetsIdExpenseResponseSuccess
+  | patchApiBudgetsIdExpenseResponseError;
 
+export const getPatchApiBudgetsIdExpenseUrl = (id: string) => {
   return `/api/budgets/${id}/expense`;
 };
 
@@ -171,121 +188,138 @@ export const getPatchApiBudgetsIdExpenseUrl = (id: string,) => {
  * Overwrites the full expense list. To add/update a single item, prefer POST or PUT.
  * @summary Replace all expense items for this budget
  */
-export const patchApiBudgetsIdExpense = async (id: string,
-  updateExpenseItemsRequest: UpdateExpenseItemsRequest, options?: RequestInit): Promise<patchApiBudgetsIdExpenseResponse> => {
-
-  return customInstance<patchApiBudgetsIdExpenseResponse>(getPatchApiBudgetsIdExpenseUrl(id),
-    {
-      ...options,
-      method: "PATCH",
-      headers: { "Content-Type": "application/json",
-        ...options?.headers },
-      body: JSON.stringify(updateExpenseItemsRequest)
-    }
-  ); };
+export const patchApiBudgetsIdExpense = async (
+  id: string,
+  updateExpenseItemsRequest: UpdateExpenseItemsRequest,
+  options?: RequestInit,
+): Promise<patchApiBudgetsIdExpenseResponse> => {
+  return customInstance<patchApiBudgetsIdExpenseResponse>(getPatchApiBudgetsIdExpenseUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateExpenseItemsRequest),
+  });
+};
 
 export type putApiBudgetsIdExpenseExpenseIdResponse200 = {
-  data: ExpenseItemMutationResponse
-  status: 200
-}
+  data: ExpenseItemMutationResponse;
+  status: 200;
+};
 
 export type putApiBudgetsIdExpenseExpenseIdResponse400 = {
-  data: BadRequestErrorResponse
-  status: 400
-}
+  data: BadRequestErrorResponse;
+  status: 400;
+};
 
 export type putApiBudgetsIdExpenseExpenseIdResponse401 = {
-  data: UnauthorizedErrorResponse
-  status: 401
-}
+  data: UnauthorizedErrorResponse;
+  status: 401;
+};
 
 export type putApiBudgetsIdExpenseExpenseIdResponse403 = {
-  data: void
-  status: 403
-}
+  data: void;
+  status: 403;
+};
 
 export type putApiBudgetsIdExpenseExpenseIdResponse404 = {
-  data: NotFoundErrorResponse
-  status: 404
-}
-
-export type putApiBudgetsIdExpenseExpenseIdResponseSuccess = (putApiBudgetsIdExpenseExpenseIdResponse200) & {
-  headers: Headers;
-};
-export type putApiBudgetsIdExpenseExpenseIdResponseError = (putApiBudgetsIdExpenseExpenseIdResponse400 | putApiBudgetsIdExpenseExpenseIdResponse401 | putApiBudgetsIdExpenseExpenseIdResponse403 | putApiBudgetsIdExpenseExpenseIdResponse404) & {
-  headers: Headers;
+  data: NotFoundErrorResponse;
+  status: 404;
 };
 
-export type putApiBudgetsIdExpenseExpenseIdResponse = (putApiBudgetsIdExpenseExpenseIdResponseSuccess | putApiBudgetsIdExpenseExpenseIdResponseError)
+export type putApiBudgetsIdExpenseExpenseIdResponseSuccess =
+  putApiBudgetsIdExpenseExpenseIdResponse200 & {
+    headers: Headers;
+  };
+export type putApiBudgetsIdExpenseExpenseIdResponseError = (
+  | putApiBudgetsIdExpenseExpenseIdResponse400
+  | putApiBudgetsIdExpenseExpenseIdResponse401
+  | putApiBudgetsIdExpenseExpenseIdResponse403
+  | putApiBudgetsIdExpenseExpenseIdResponse404
+) & {
+  headers: Headers;
+};
 
-export const getPutApiBudgetsIdExpenseExpenseIdUrl = (id: string,
-  expenseId: string,) => {
+export type putApiBudgetsIdExpenseExpenseIdResponse =
+  | putApiBudgetsIdExpenseExpenseIdResponseSuccess
+  | putApiBudgetsIdExpenseExpenseIdResponseError;
 
+export const getPutApiBudgetsIdExpenseExpenseIdUrl = (id: string, expenseId: string) => {
   return `/api/budgets/${id}/expense/${expenseId}`;
 };
 
 /**
  * @summary Update a single expense item
  */
-export const putApiBudgetsIdExpenseExpenseId = async (id: string,
+export const putApiBudgetsIdExpenseExpenseId = async (
+  id: string,
   expenseId: string,
-  addExpenseItemRequest: AddExpenseItemRequest, options?: RequestInit): Promise<putApiBudgetsIdExpenseExpenseIdResponse> => {
-
-  return customInstance<putApiBudgetsIdExpenseExpenseIdResponse>(getPutApiBudgetsIdExpenseExpenseIdUrl(id,expenseId),
+  addExpenseItemRequest: AddExpenseItemRequest,
+  options?: RequestInit,
+): Promise<putApiBudgetsIdExpenseExpenseIdResponse> => {
+  return customInstance<putApiBudgetsIdExpenseExpenseIdResponse>(
+    getPutApiBudgetsIdExpenseExpenseIdUrl(id, expenseId),
     {
       ...options,
       method: "PUT",
-      headers: { "Content-Type": "application/json",
-        ...options?.headers },
-      body: JSON.stringify(addExpenseItemRequest)
-    }
-  ); };
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(addExpenseItemRequest),
+    },
+  );
+};
 
 export type deleteApiBudgetsIdExpenseExpenseIdResponse200 = {
-  data: ItemRemovalResponse
-  status: 200
-}
+  data: ItemRemovalResponse;
+  status: 200;
+};
 
 export type deleteApiBudgetsIdExpenseExpenseIdResponse401 = {
-  data: UnauthorizedErrorResponse
-  status: 401
-}
+  data: UnauthorizedErrorResponse;
+  status: 401;
+};
 
 export type deleteApiBudgetsIdExpenseExpenseIdResponse403 = {
-  data: void
-  status: 403
-}
+  data: void;
+  status: 403;
+};
 
 export type deleteApiBudgetsIdExpenseExpenseIdResponse404 = {
-  data: NotFoundErrorResponse
-  status: 404
-}
-
-export type deleteApiBudgetsIdExpenseExpenseIdResponseSuccess = (deleteApiBudgetsIdExpenseExpenseIdResponse200) & {
-  headers: Headers;
-};
-export type deleteApiBudgetsIdExpenseExpenseIdResponseError = (deleteApiBudgetsIdExpenseExpenseIdResponse401 | deleteApiBudgetsIdExpenseExpenseIdResponse403 | deleteApiBudgetsIdExpenseExpenseIdResponse404) & {
-  headers: Headers;
+  data: NotFoundErrorResponse;
+  status: 404;
 };
 
-export type deleteApiBudgetsIdExpenseExpenseIdResponse = (deleteApiBudgetsIdExpenseExpenseIdResponseSuccess | deleteApiBudgetsIdExpenseExpenseIdResponseError)
+export type deleteApiBudgetsIdExpenseExpenseIdResponseSuccess =
+  deleteApiBudgetsIdExpenseExpenseIdResponse200 & {
+    headers: Headers;
+  };
+export type deleteApiBudgetsIdExpenseExpenseIdResponseError = (
+  | deleteApiBudgetsIdExpenseExpenseIdResponse401
+  | deleteApiBudgetsIdExpenseExpenseIdResponse403
+  | deleteApiBudgetsIdExpenseExpenseIdResponse404
+) & {
+  headers: Headers;
+};
 
-export const getDeleteApiBudgetsIdExpenseExpenseIdUrl = (id: string,
-  expenseId: string,) => {
+export type deleteApiBudgetsIdExpenseExpenseIdResponse =
+  | deleteApiBudgetsIdExpenseExpenseIdResponseSuccess
+  | deleteApiBudgetsIdExpenseExpenseIdResponseError;
 
+export const getDeleteApiBudgetsIdExpenseExpenseIdUrl = (id: string, expenseId: string) => {
   return `/api/budgets/${id}/expense/${expenseId}`;
 };
 
 /**
  * @summary Delete a single expense item
  */
-export const deleteApiBudgetsIdExpenseExpenseId = async (id: string,
-  expenseId: string, options?: RequestInit): Promise<deleteApiBudgetsIdExpenseExpenseIdResponse> => {
-
-  return customInstance<deleteApiBudgetsIdExpenseExpenseIdResponse>(getDeleteApiBudgetsIdExpenseExpenseIdUrl(id,expenseId),
+export const deleteApiBudgetsIdExpenseExpenseId = async (
+  id: string,
+  expenseId: string,
+  options?: RequestInit,
+): Promise<deleteApiBudgetsIdExpenseExpenseIdResponse> => {
+  return customInstance<deleteApiBudgetsIdExpenseExpenseIdResponse>(
+    getDeleteApiBudgetsIdExpenseExpenseIdUrl(id, expenseId),
     {
       ...options,
-      method: "DELETE"
-
-    }
-  ); };
+      method: "DELETE",
+    },
+  );
+};

@@ -17,6 +17,7 @@ import type {
   Pagination,
   TransactionTotals,
 } from "@/types/api";
+import { getApiErrorMessage } from "@/utils/errors";
 
 class TransactionService {
   /**
@@ -32,12 +33,24 @@ class TransactionService {
 
     const params = new URLSearchParams();
 
-    if (filters?.page) { params.append("page", filters.page.toString()); }
-    if (filters?.limit) { params.append("limit", filters.limit.toString()); }
-    if (filters?.type) { params.append("type", filters.type); }
-    if (filters?.budgetId) { params.append("budgetId", filters.budgetId); }
-    if (filters?.startDate) { params.append("startDate", filters.startDate); }
-    if (filters?.endDate) { params.append("endDate", filters.endDate); }
+    if (filters?.page) {
+      params.append("page", filters.page.toString());
+    }
+    if (filters?.limit) {
+      params.append("limit", filters.limit.toString());
+    }
+    if (filters?.type) {
+      params.append("type", filters.type);
+    }
+    if (filters?.budgetId) {
+      params.append("budgetId", filters.budgetId);
+    }
+    if (filters?.startDate) {
+      params.append("startDate", filters.startDate);
+    }
+    if (filters?.endDate) {
+      params.append("endDate", filters.endDate);
+    }
 
     const queryString = params.toString();
     const url = `/transactions${queryString ? `?${queryString}` : ""}`;
@@ -62,10 +75,10 @@ class TransactionService {
         page: response.pagination.page,
         pages: response.pagination.pages,
         total: response.pagination.total,
-        limit: response.pagination.limit
+        limit: response.pagination.limit,
       },
       ...(response.totals ? { totals: response.totals } : {}),
-      message: response.message ?? "Transactions retrieved successfully"
+      message: response.message ?? "Transactions retrieved successfully",
     };
   }
 
@@ -80,19 +93,22 @@ class TransactionService {
       throw new Error("No authentication token found");
     }
 
-    const { status, response } = await apiClient.get<ApiResponse<Transaction>>(`/transactions/${id}`, {
-      authentication: {
-        token,
+    const { status, response } = await apiClient.get<ApiResponse<Transaction>>(
+      `/transactions/${id}`,
+      {
+        authentication: {
+          token,
+        },
+        options: {
+          requiredAuth: true,
+        },
       },
-      options: {
-        requiredAuth: true,
-      },
-    });
+    );
 
     return {
-      success: status ==="ok",
-      data:response.data,
-      message: response.message ?? ""
+      success: status === "ok",
+      data: response.data,
+      message: response.message ?? "",
     };
   }
 
@@ -107,7 +123,7 @@ class TransactionService {
       throw new Error("No authentication token found");
     }
 
-    const { status,response } = await apiClient.post<ApiResponse<Transaction>>("/transactions", {
+    const { status, response } = await apiClient.post<ApiResponse<Transaction>>("/transactions", {
       body: { ...data },
       authentication: {
         token,
@@ -117,10 +133,15 @@ class TransactionService {
       },
     });
 
+    // The client resolves (not rejects) on 4xx/5xx — surface it so callers can roll back.
+    if (status !== "ok") {
+      throw new Error(getApiErrorMessage(response, "Failed to add transaction"));
+    }
+
     return {
       success: status === "ok",
-      data:response?.data,
-      message:response?.message
+      data: response?.data,
+      message: response?.message,
     };
   }
 
@@ -135,15 +156,23 @@ class TransactionService {
       throw new Error("No authentication token found");
     }
 
-    const { status, response } = await apiClient.put<ApiResponse<Transaction>>(`/transactions/${id}`, {
-      body: { ...data },
-      authentication: {
-        token,
+    const { status, response } = await apiClient.put<ApiResponse<Transaction>>(
+      `/transactions/${id}`,
+      {
+        body: { ...data },
+        authentication: {
+          token,
+        },
+        options: {
+          requiredAuth: true,
+        },
       },
-      options: {
-        requiredAuth: true,
-      },
-    });
+    );
+
+    // The client resolves (not rejects) on 4xx/5xx — surface it so callers can roll back.
+    if (status !== "ok") {
+      throw new Error(getApiErrorMessage(response, "Failed to update transaction"));
+    }
 
     return {
       success: status === "ok",
@@ -172,6 +201,11 @@ class TransactionService {
       },
     });
 
+    // The client resolves (not rejects) on 4xx/5xx — surface it so callers can roll back.
+    if (status !== "ok") {
+      throw new Error(getApiErrorMessage(response, "Failed to remove transaction"));
+    }
+
     return {
       success: status === "ok",
       data: response?.data,
@@ -190,14 +224,17 @@ class TransactionService {
       throw new Error("No authentication token found");
     }
 
-    const { status, response } = await apiClient.get<ApiResponse<FinancialSummary>>("/transactions/summary", {
-      authentication: {
-        token,
+    const { status, response } = await apiClient.get<ApiResponse<FinancialSummary>>(
+      "/transactions/summary",
+      {
+        authentication: {
+          token,
+        },
+        options: {
+          requiredAuth: true,
+        },
       },
-      options: {
-        requiredAuth: true,
-      },
-    });
+    );
 
     return {
       success: status === "ok",
@@ -226,7 +263,7 @@ class TransactionService {
         options: {
           requiredAuth: true,
         },
-      }
+      },
     );
 
     return {
@@ -256,7 +293,7 @@ class TransactionService {
         options: {
           requiredAuth: true,
         },
-      }
+      },
     );
 
     return {
