@@ -1,53 +1,64 @@
 "use client";
 
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { createContext, useContext, useState, useEffect } from "react";
 
+import { queryKeys } from "@/api/query-keys";
 import { queryClient } from "@/app/query-client";
 import { clearAuthData, setAuthExpiry, setAuthToken } from "@/config/api-client";
 import { authLogger } from "@/config/logger";
 import { isSessionAlreadyActive, type SessionBlockReason } from "@/config/session";
 import { resetSessionRevoked, subscribeSessionRevoked } from "@/config/session-revocation";
+import { accountsListQuery } from "@/features/accounts";
 import { authService } from "@/services";
-import { accountService } from "@/services/account.service";
 import type { UserProfile, Account } from "@/types/api";
 
 interface AuthContextType {
-  isAuthenticated: boolean
-  user: UserProfile | null
-  accounts: Account[]
+  isAuthenticated: boolean;
+  user: UserProfile | null;
+  accounts: Account[];
   // eslint-disable-next-line no-unused-vars
-  login: (email: string, password: string) => Promise<void>
-  logout: () => Promise<void>
-  checkAuth: () => boolean
-  fetchUserProfile: () => Promise<void>
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  checkAuth: () => boolean;
+  fetchUserProfile: () => Promise<void>;
   /**
-   * Refresh the account list from the server. Call this after any operation
-   * that can change an Account.balance — transactions, direct edits, deletes.
-   * Per frontend-integration-guide.md §9, any transaction mutation changes
-   * `Account.balance` and must invalidate the accounts list.
+   * @deprecated MIGRATION BRIDGE. `accounts` mirrors the React Query cache
+   * (`accountsListQuery`) and `refreshAccounts` just invalidates it. New code:
+   * `useAccountsList()` from `@/features/accounts`, and mutations call
+   * `invalidateFor(qc, "transaction" | "account")`. Remove both once the
+   * budget / transactions slices stop reading them.
    */
-  refreshAccounts: () => Promise<void>
-  // eslint-disable-next-line no-unused-vars
-  setAccounts: (accounts: Account[]) => void
-  loading: boolean
+  refreshAccounts: () => Promise<void>;
+  loading: boolean;
   /**
    * Single-active-session: non-null when a blocking screen must be shown —
    * "revoked" (token superseded mid-session) or "already_active" (login
    * rejected because a session is already active elsewhere).
    */
-  sessionBlock: SessionBlockReason | null
-  dismissSessionBlock: () => void
+  sessionBlock: SessionBlockReason | null;
+  dismissSessionBlock: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+/** Stable empty list so consumers don't re-render on every provider render. */
+const NO_ACCOUNTS: Account[] = [];
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [ isAuthenticated, setIsAuthenticated ] = useState<boolean>(false);
-  const [ user, setUser ] = useState<UserProfile | null>(null);
-  const [ accounts, setAccounts ] = useState<Account[]>([]);
-  const [ loading, setLoading ] = useState<boolean>(true);
-  const [ sessionBlock, setSessionBlock ] = useState<SessionBlockReason | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [sessionBlock, setSessionBlock] = useState<SessionBlockReason | null>(null);
+
+  // Bridge: accounts live in the query cache; context only mirrors them.
+  const qc = useQueryClient();
+  const { data: accounts = NO_ACCOUNTS } = useQuery({
+    ...accountsListQuery(),
+    enabled: isAuthenticated,
+  });
+  const refreshAccounts = () => qc.invalidateQueries({ queryKey: queryKeys.accounts.all });
 
   useEffect(() => {
     let isMounted = true;
@@ -56,7 +67,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const isAuth = checkAuth();
       if (isAuth && isMounted) {
         await fetchUserProfile();
-        await fetchAccounts();
       } else if (isMounted) {
         setLoading(false);
       }
@@ -77,7 +87,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       authLogger.warn("Session revoked by a newer login");
       setIsAuthenticated(false);
       setUser(null);
-      setAccounts([]);
       clearAuthData();
       setSessionBlock("revoked");
     });
@@ -115,7 +124,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       authLogger.info("User profile fetched", { userId: response.id });
       setUser(response);
-
     } catch (error) {
       authLogger.error("Failed to fetch user profile", error);
       // If fetching profile fails, clear auth state
@@ -127,17 +135,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const fetchAccounts = async (): Promise<void> => {
-    try {
-      const response = await accountService.getAll();
-      if (response.success) {
-        setAccounts(response.data ?? []);
-      }
-    } catch (error) {
-      authLogger.error("Failed to fetch accounts", error);
-    }
-  };
-
   const login = async (email: string, password: string): Promise<void> => {
     try {
       setLoading(true);
@@ -145,19 +142,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const { token, expiresIn } = await authService.login({
         email,
-        password
+        password,
       });
 
       setAuthToken(token);
       // Convert expiresIn (seconds) to absolute timestamp (milliseconds)
-      const expiryTimestamp = Date.now() + (expiresIn * 1000);
+      const expiryTimestamp = Date.now() + expiresIn * 1000;
       setAuthExpiry(expiryTimestamp);
       setIsAuthenticated(true);
 
       authLogger.info("Login successful, fetching user profile");
-      // Get user profile and accounts after successful login
+      // Get user profile after login (accounts load via accountsListQuery once authenticated)
       await fetchUserProfile();
-      await fetchAccounts();
     } catch (error) {
       // Single-active-session: a 409 means the account already has an active
       // session elsewhere — show the blocking screen. We still rethrow so the
@@ -182,7 +178,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await authService.logout();
       setIsAuthenticated(false);
       setUser(null);
-      setAccounts([]);
       clearAuthData();
 
       authLogger.info("Logout completed");
@@ -191,7 +186,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Still clear local state even if API call fails
       setIsAuthenticated(false);
       setUser(null);
-      setAccounts([]);
     } finally {
       // No cached server data may outlive the session (next user must not see it).
       queryClient.clear();
@@ -199,20 +193,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  return <AuthContext.Provider value={{
-    isAuthenticated,
-    user,
-    accounts,
-    login,
-    logout,
-    checkAuth,
-    fetchUserProfile,
-    refreshAccounts: fetchAccounts,
-    setAccounts,
-    loading,
-    sessionBlock,
-    dismissSessionBlock
-  }}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        isAuthenticated,
+        user,
+        accounts,
+        login,
+        logout,
+        checkAuth,
+        fetchUserProfile,
+        refreshAccounts,
+        loading,
+        sessionBlock,
+        dismissSessionBlock,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuth = () => {

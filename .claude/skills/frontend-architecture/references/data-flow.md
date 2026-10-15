@@ -206,8 +206,9 @@ every feature.
 
 ## Testing
 
-- Network mocked at the HTTP layer (MSW, or a stubbed `fetch` until MSW is
-  installed) — never `vi.mock("@/services/…")`.
-- Render with a fresh `QueryClient` per test (`retry: false`).
+- Network mocked at the HTTP layer with MSW (`src/test/server.ts`) — never
+  `vi.mock("@/services/…")`.
+- Render with `renderWithProviders` (`src/test/render.tsx`): fresh
+  `QueryClient` per test with the app's error routing and `retry: false`.
 - Test mutations by asserting the UI after the invalidation refetch, not by
   spying on `invalidateQueries`.

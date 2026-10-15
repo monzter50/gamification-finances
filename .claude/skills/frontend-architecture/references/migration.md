@@ -13,8 +13,27 @@ Already in place — use these, don't recreate them:
 | `App.tsx`                 | `QueryClientProvider` + lazy devtools (dev only)                                                                                                                                                                            |
 | `AuthContext.logout`      | `queryClient.clear()`                                                                                                                                                                                                       |
 
-Testing: Vitest + jsdom (`yarn test`). React Testing Library and MSW are not
-installed yet — add them when the first component test needs them.
+Testing: Vitest + jsdom + React Testing Library + MSW (`yarn test`).
+
+- `renderWithProviders(ui)` (`src/test/render.tsx`) — isolated QueryClient with
+  the app's error routing, router, Toaster; signed in by default.
+- `server.use(http.get(api("/accounts"), …))` (`src/test/server.ts`) — mock the
+  network; unhandled requests fail the test.
+- Reference test: `src/pages/main/accounts/AccountsPage.test.tsx`.
+
+## Progress
+
+| Slice                                    | Status | Notes                                                                                         |
+| ---------------------------------------- | ------ | --------------------------------------------------------------------------------------------- |
+| 0. Bootstrap                             | ✅     | query client, keys, invalidation, unwrap, test harness                                        |
+| 1. accounts                              | ✅     | `features/accounts`; `AuthContext.accounts`/`refreshAccounts` are a bridge to the query cache |
+| 2. budget (detail, income, expense)      | ⏳     | next                                                                                          |
+| 3. transactions (+ summary, xlsx-import) | ⏳     |                                                                                               |
+| 4. profile, gamification                 | ⏳     |                                                                                               |
+| 5. auth                                  | ⏳     | remove the AuthContext accounts bridge here at the latest                                     |
+| 6. app shell                             | ⏳     | router → `app/`, lazy routes, delete `src/services` + domain hooks                            |
+
+Update this table in each slice PR.
 
 ## Legacy → target map
 
