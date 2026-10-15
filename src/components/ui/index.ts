@@ -12,6 +12,7 @@ export * from "./bento";
 export * from "./button";
 export * from "./card";
 export * from "./empty-state";
+export * from "./error-state";
 export * from "./field-error";
 export * from "./inline-cell";
 export * from "./inline-date";

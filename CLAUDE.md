@@ -67,6 +67,16 @@ domain hooks in `src/hooks`.
 - No console.log in committed code
 - No hardcoded strings for UI copy — use i18n keys
 
+## Errors
+
+Use `@/shared/errors` — never show `error.message` to users or branch on it.
+
+- Catch → `normalizeError(err)` → branch on `kind` / `code`.
+- User copy: `toUserMessage(err)`. Failed action: `notifyError(err, { title })`.
+- Failed section: `<ErrorPanel error={err} onRetry={retry} />`.
+- Backend validation → `applyFieldErrors(err, setError, fields)`.
+- New code throws `AppError`, not `ApplicationError` / `Error`.
+
 ## Design System
 
 When working on UI components, first read @docs/design-system.md — it is the
