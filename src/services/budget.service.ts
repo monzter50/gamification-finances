@@ -261,7 +261,9 @@ class BudgetService {
     budgetLogger.debug("Duplicating budget", { sourceId, ...body });
 
     const res = await postApiBudgetsIdDuplicate(sourceId, body);
-    const created = res.data?.data as Budget | undefined;
+    // The mutator throws an AppError on any non-2xx, so only the 201 arm
+    // reaches here. Narrow on status: the 409 arm's `Error` schema has no `data`.
+    const created = res.status === 201 ? (res.data.data as Budget | undefined) : undefined;
     if (!created) {
       budgetLogger.error("Duplicate succeeded but response.data was empty");
       throw new ApplicationError(
