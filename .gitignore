@@ -31,3 +31,5 @@ dist-ssr
 .env.*.local
 
 .claude/*
+# Project skills are shared, versioned docs — keep them in git.
+!.claude/skills/
