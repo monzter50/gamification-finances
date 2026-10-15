@@ -5,8 +5,10 @@ import { defineConfig } from "orval";
  *
  *   npm run api:gen
  *
- * Source of truth: the live /api-docs.json endpoint served by the backend.
- * If the backend is offline, swap `input` to a committed ./openapi.json snapshot.
+ * Source of truth: openapi/openapi.json — a committed copy of the backend's
+ * openapi-schema.json. Refresh it with `npm run api:pull` (or `api:sync` to
+ * pull + generate). Never point this at a live server: generation must be
+ * deterministic so CI (`npm run api:check`) can verify the committed client.
  *
  * Output convention:
  *   src/api/generated/index.ts          — barrel re-export
@@ -20,17 +22,17 @@ import { defineConfig } from "orval";
 export default defineConfig({
   api: {
     input: {
-      target: "http://localhost:3000/api-docs.json",
+      target: "./openapi/openapi.json",
     },
     output: {
-      mode:       "tags-split",
-      target:     "./src/api/generated/index.ts",
-      schemas:    "./src/api/generated/models",
-      client:     "fetch",
+      mode: "tags-split",
+      target: "./src/api/generated/index.ts",
+      schemas: "./src/api/generated/models",
+      client: "fetch",
       httpClient: "fetch",
-      clean:      true,           // wipe stale files before each gen so renames don't leave orphans
-      prettier:   false,          // ESLint --fix handles formatting (see hooks below)
-      override:   {
+      clean: true, // wipe stale files before each gen so renames don't leave orphans
+      prettier: false, // `npm run api:gen` runs prettier after the eslint --fix hook
+      override: {
         mutator: {
           path: "./src/api/orval-mutator.ts",
           name: "customInstance",
