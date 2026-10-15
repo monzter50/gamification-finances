@@ -1,8 +1,10 @@
 ## Stack
 
-- Framework: React 19 + TypeScript
+- Framework: React 18 + TypeScript
 - Styling: Tailwind CSS (no inline styles, no CSS modules)
-- State: Zustand for global, React Query for server state
+- State: Zustand for global client state, React Query for server state
+  (target — React Query not installed yet; see frontend-architecture skill)
+- API client: Orval-generated from OpenAPI (`npm run api:gen`)
 - Router: React Router v7
 - Build: Vite
 
@@ -15,20 +17,15 @@
 - Max component size: 200 lines — split if larger
 - Barrel exports via index.ts per feature folder
 
-## Folder Structure
+## Architecture & Folder Structure
 
-src/
-features/ # Feature-sliced design
-auth/
-components/
-hooks/
-store/
-api/
-shared/
-components/ # Reusable UI primitives
-hooks/
-utils/
-pages/ # Route-level components only
+The codebase is migrating from layered (`src/services` → `src/hooks` →
+`src/pages`) to feature-sliced (`src/features/<domain>/{api,components,hooks,store,model}`).
+Before adding, moving, or refactoring non-UI code, use the
+**frontend-architecture** skill (`.claude/skills/frontend-architecture/`).
+It defines where files go, how features communicate, the React Query data
+flow, and the migration rules. New code never goes into `src/services` or
+domain hooks in `src/hooks`.
 
 ## Naming
 
@@ -89,7 +86,14 @@ see @docs/brand-brief.md. If the two conflict, design-system.md wins.
 
 ## API Contracts
 
-When writing API hooks, refer to @docs/api-schema.md
+The backend OpenAPI spec is the contract. It's copied into
+`openapi/openapi.json` and the typed client is generated into
+`src/api/generated/` — never edit either by hand.
+
+- Backend changed? `npm run api:sync`, then review the git diff.
+- Available endpoints: `src/api/ENDPOINTS.md` (generated). Not listed = not
+  in the contract — add it to the backend spec first, don't hand-write fetch.
+- Writing API hooks: `.claude/skills/frontend-architecture/references/data-flow.md`.
 
 ## Git
 
