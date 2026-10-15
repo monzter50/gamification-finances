@@ -31,7 +31,11 @@ const CODE_MESSAGES: Partial<Record<KnownErrorCode, string>> = {
   INVALID_BUDGET_ITEM_REFERENCE: "The selected budget item doesn't belong to this budget.",
   ACCOUNT_NOT_FOUND: "This account doesn't exist or was deleted.",
   ACCOUNT_HAS_TRANSACTIONS: "This account has transactions. Move or delete them first.",
+  INVALID_ACCOUNT_REFERENCE: "One of the selected accounts no longer exists. Pick another account.",
+  // STALE_ACCOUNT_REFERENCES has no copy on purpose: the backend message lists
+  // the offending account ids, which is what the user needs to fix it.
   TRANSACTION_NOT_FOUND: "This transaction doesn't exist or was deleted.",
+  UNSUPPORTED_TRANSACTION_TYPE: "That transaction type isn't supported.",
   NO_FILE_UPLOADED: "Choose a file to upload.",
   UNSUPPORTED_FILE_TYPE: "That file type isn't supported. Upload an .xlsx file.",
   FILE_TOO_LARGE: "That file is too large.",

@@ -6,7 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type ErrorResponse = {
+export type ErrorErrorsItem = {
+  field?: string;
   message?: string;
-  error?: string;
 };

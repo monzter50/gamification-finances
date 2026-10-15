@@ -12,22 +12,23 @@ import {
   SelectValue,
 } from "@/components/ui";
 import { Modal } from "@/components/ui/Modal";
+import { duplicateBudgetErrorCopy } from "@/features/budget";
 import { useSnackbar } from "@/hooks";
 import { budgetService } from "@/services/budget.service";
+import { notifyError } from "@/shared/errors";
 import { MONTHS } from "@/types/budget";
 import type { Budget } from "@/types/budget";
-import { ApplicationError } from "@/utils/errors";
 
 interface DuplicateBudgetModalProps {
-  open:         boolean;
+  open: boolean;
   sourceBudget: Pick<Budget, "id" | "year" | "month">;
-  onClose:      () => void;
+  onClose: () => void;
   // eslint-disable-next-line no-unused-vars
   onDuplicated: (created: Budget) => void;
 }
 
 interface DuplicateFormValues {
-  year:  number;
+  year: number;
   month: number;
 }
 
@@ -37,7 +38,7 @@ interface DuplicateFormValues {
  */
 const nextPeriod = (source: Pick<Budget, "year" | "month">): DuplicateFormValues => ({
   month: (source.month + 1) % 12,
-  year:  source.month === 11 ? source.year + 1 : source.year,
+  year: source.month === 11 ? source.year + 1 : source.year,
 });
 
 export function DuplicateBudgetModal({
@@ -57,13 +58,15 @@ export function DuplicateBudgetModal({
     formState: { errors, isSubmitting },
   } = useForm<DuplicateFormValues>({
     defaultValues: nextPeriod(sourceBudget),
-    mode:          "onTouched",
+    mode: "onTouched",
   });
 
   // Re-seed defaults whenever the modal opens against a different source.
   useEffect(() => {
-    if (open) { reset(nextPeriod(sourceBudget)); }
-  }, [ open, sourceBudget, reset ]);
+    if (open) {
+      reset(nextPeriod(sourceBudget));
+    }
+  }, [open, sourceBudget, reset]);
 
   const selectedMonth = watch("month");
 
@@ -71,60 +74,16 @@ export function DuplicateBudgetModal({
     try {
       const created = await budgetService.duplicateBudget(sourceBudget.id, { year, month });
       snackbar.success({
-        title:       "Budget duplicated",
+        title: "Budget duplicated",
         description: `Cloned into ${MONTHS[month]} ${year}.`,
       });
       onDuplicated(created);
       onClose();
     } catch (err) {
-      handleDuplicateError(err);
+      const copy = duplicateBudgetErrorCopy(err, `${MONTHS[month]} ${year}`);
+      notifyError(err, { ...copy, context: { source: "budget.duplicate" } });
     }
   });
-
-  /**
-   * Surface per-status messaging per duplicate-budget-frontend.md §6.
-   * The service layer pre-mapped each branch to a stable `code`, so we
-   * branch on that rather than re-parsing strings.
-   */
-  const handleDuplicateError = (err: unknown) => {
-    if (!(err instanceof ApplicationError)) {
-      snackbar.error({
-        title:       "Unexpected error",
-        description: err instanceof Error ? err.message : "Please try again.",
-      });
-      return;
-    }
-
-    switch (err.code) {
-      case "BUDGET_CONFLICT":
-        snackbar.error({
-          title:       `${MONTHS[selectedMonth]} is already taken`,
-          description: "You already have a budget for that period. Open or delete it first.",
-        });
-        break;
-      case "STALE_ACCOUNT":
-        // Server message includes the offending account ids — surface verbatim.
-        snackbar.error({
-          title:       "Source has stale account references",
-          description: err.message,
-        });
-        break;
-      case "FORBIDDEN":
-        snackbar.error({ title: "Not yours", description: err.message });
-        break;
-      case "NOT_FOUND":
-        snackbar.error({ title: "Source budget missing", description: err.message });
-        break;
-      case "VALIDATION":
-        snackbar.error({ title: "Invalid year or month", description: err.message });
-        break;
-      default:
-        snackbar.error({
-          title:       "Duplicate failed",
-          description: err.message,
-        });
-    }
-  };
 
   return (
     <Modal open={open} onClose={onClose} title="Duplicate budget">
@@ -134,7 +93,8 @@ export function DuplicateBudgetModal({
           <span className="font-medium text-foreground">
             {MONTHS[sourceBudget.month]} {sourceBudget.year}
           </span>{" "}
-          into a new month. <span className="font-medium text-foreground">Transactions are not copied.</span>
+          into a new month.{" "}
+          <span className="font-medium text-foreground">Transactions are not copied.</span>
         </p>
 
         {/* Target month */}
@@ -159,8 +119,8 @@ export function DuplicateBudgetModal({
             type="hidden"
             {...register("month", {
               required: "Month is required",
-              min:      { value: 0,  message: "Month must be between January and December" },
-              max:      { value: 11, message: "Month must be between January and December" },
+              min: { value: 0, message: "Month must be between January and December" },
+              max: { value: 11, message: "Month must be between January and December" },
             })}
           />
           {errors.month && (
@@ -181,10 +141,10 @@ export function DuplicateBudgetModal({
             aria-invalid={errors.year ? "true" : "false"}
             disabled={isSubmitting}
             {...register("year", {
-              required:    "Year is required",
+              required: "Year is required",
               valueAsNumber: true,
-              min:         { value: 2000, message: "Year must be 2000 or later" },
-              max:         { value: 2100, message: "Year must be 2100 or earlier" },
+              min: { value: 2000, message: "Year must be 2000 or later" },
+              max: { value: 2100, message: "Year must be 2100 or earlier" },
             })}
           />
           {errors.year && (
