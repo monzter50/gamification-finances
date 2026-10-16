@@ -1,6 +1,7 @@
-import { apiClient, getAuthToken } from "@/config/api-client";
+import { expectStatus, legacyAuth } from "@/api/legacy-client";
+import { apiClient } from "@/config/api-client";
 import { normalizeBudget } from "@/features/budget/model/budget-totals";
-import { AppError, errorFromResponse, normalizeError } from "@/shared/errors";
+import { AppError, normalizeError } from "@/shared/errors";
 import type { ApiResponse } from "@/types/api";
 import type { Budget } from "@/types/budget";
 
@@ -22,36 +23,6 @@ export interface BudgetPeriod {
   month: number;
 }
 
-const authOptions = () => {
-  const token = getAuthToken();
-  if (!token) {
-    throw new AppError({
-      message: "No authentication token found",
-      kind: "unauthorized",
-      status: 401,
-    });
-  }
-  return { authentication: { token }, options: { requiredAuth: true } };
-};
-
-/**
- * api-core already throws on non-2xx (status only — the body is dropped, see
- * normalizeError). This guards the rest: no status, or an unexpected 2xx.
- */
-const ensureOk = <T>(
-  result: { response: ApiResponse<T>; statusCode?: number },
-  expected: number,
-): T => {
-  if (result.statusCode !== expected) {
-    // No status = the request never got a response (offline, CORS, DNS).
-    if (result.statusCode === undefined) {
-      throw new AppError({ message: "Network request failed", kind: "network" });
-    }
-    throw errorFromResponse(result.statusCode, result.response);
-  }
-  return result.response.data;
-};
-
 // TODO(openapi): GET /budgets missing from spec
 export const fetchBudgets = async (filters: BudgetListFilters = {}): Promise<Budget[]> => {
   const params = new URLSearchParams();
@@ -61,15 +32,15 @@ export const fetchBudgets = async (filters: BudgetListFilters = {}): Promise<Bud
 
   const result = await apiClient.get<ApiResponse<Budget[]>>(
     query ? `/budgets?${query}` : "/budgets",
-    authOptions(),
+    legacyAuth(),
   );
-  return (ensureOk(result, 200) ?? []).map(normalizeBudget);
+  return (expectStatus(result, 200).data ?? []).map(normalizeBudget);
 };
 
 // TODO(openapi): GET /budgets/{id} missing from spec
 export const fetchBudget = async (id: string): Promise<Budget> => {
-  const result = await apiClient.get<ApiResponse<Budget>>(`/budgets/${id}`, authOptions());
-  return normalizeBudget(ensureOk(result, 200));
+  const result = await apiClient.get<ApiResponse<Budget>>(`/budgets/${id}`, legacyAuth());
+  return normalizeBudget(expectStatus(result, 200).data);
 };
 
 // TODO(openapi): POST /budgets missing from spec
@@ -77,9 +48,9 @@ export const createBudget = async ({ year, month }: BudgetPeriod): Promise<Budge
   try {
     const result = await apiClient.post<ApiResponse<Budget>>("/budgets", {
       body: { year, month },
-      ...authOptions(),
+      ...legacyAuth(),
     });
-    return normalizeBudget(ensureOk(result, 201));
+    return normalizeBudget(expectStatus(result, 201).data);
   } catch (err) {
     // The legacy client drops the body; on create a 409 can only mean the
     // period is taken — restore the backend's errorCode so the copy is right.
