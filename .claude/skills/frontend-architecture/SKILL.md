@@ -62,7 +62,7 @@ shared/  components/ui (design system)  api/ (generated + queryKeys)  config/
 | Component used by 2+ domains, no domain logic    | `src/shared/components/`                         |
 | Design-system primitive (Money, Stat, Button…)   | `src/components/ui/` (see design-system skill)   |
 | Pure calc (totals, normalization, validation)    | `src/features/<domain>/model/`                   |
-| Generic hook (`useDebouncedValue`, `useMounted`) | `src/shared/hooks/`                              |
+| Generic hook (`useDebouncedValue`)               | `src/shared/hooks/`                              |
 | Query key                                        | `src/api/query-keys.ts` — the single registry    |
 | API transport, auth header, error mapping        | `src/api/orval-mutator.ts` (don't bypass it)     |
 | Error types, copy, toasts, reporting, boundaries | `src/shared/errors/` — see data-flow.md "Errors" |

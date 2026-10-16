@@ -29,8 +29,8 @@ Testing: Vitest + jsdom + React Testing Library + MSW (`yarn test`).
 | 1. accounts                              | ✅     | `features/accounts`                                                                                                                 |
 | 2. budget (detail, income, expense)      | ✅     | `features/budget`; list/get/create are legacy fetchers in `budget/api/budgetFetchers.ts` (TODO(openapi))                            |
 | 3. transactions (+ summary, xlsx-import) | ✅     | `features/transactions` (+ `xlsx-import/`); AuthContext accounts bridge removed; CRUD/summaries are legacy fetchers (TODO(openapi)) |
-| 4. profile, gamification                 | ⏳     | next                                                                                                                                |
-| 5. auth                                  | ⏳     | session only — the accounts bridge is already gone                                                                                  |
+| 4. profile, gamification                 | ✅     | `features/profile`; achievements had no backend routes → service deleted, no gamification feature yet                               |
+| 5. auth                                  | ⏳     | next — session user as a query (`/auth/me`); profile page reads XP-to-next from it                                                  |
 | 6. app shell                             | ⏳     | router → `app/`, lazy routes, delete `src/services` + domain hooks                                                                  |
 
 Update this table in each slice PR.
@@ -51,7 +51,7 @@ Update this table in each slice PR.
 | `src/hooks/useTransactions.ts`, `useTransactionSummary.ts`                           | `features/transactions/api/`                                                      |
 | `src/hooks/useAccounts.ts`                                                           | `features/accounts/api/accountsQuery`                                             |
 | `src/hooks/useProfile.ts`                                                            | `features/profile/api/`                                                           |
-| `src/hooks/useDebouncedValue.ts`, `useMounted.ts`                                    | `shared/hooks/` (`useMounted` likely deletable — RQ handles unmount)              |
+| `src/hooks/useDebouncedValue.ts` (`useMounted` deleted in slice 4)                   | `shared/hooks/`                                                                   |
 | `src/hooks/use-toast.ts`, `useSnackbar.ts`, `useTheme.ts`                            | `shared/hooks/` (consolidate toast/snackbar)                                      |
 | `src/pages/main/<x>/components/*`                                                    | `features/<domain>/components/`                                                   |
 | `src/pages/main/<x>/use*.ts`, `validate.ts`, `types.ts`                              | `features/<domain>/hooks                                                          | model/` |

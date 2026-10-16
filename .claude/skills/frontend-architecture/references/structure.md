@@ -47,7 +47,7 @@ src/
   shared/
     components/                 # domain-free composites (not design-system primitives)
     errors/                     # AppError, normalizeError, toUserMessage, notifyError, ErrorPanel
-    hooks/                      # useDebouncedValue, useMounted
+    hooks/                      # useDebouncedValue
     utils/                      # pure helpers
 
   components/ui/                # Design system — stays here (design-system.md contract)
@@ -76,12 +76,12 @@ export it deliberately (that's a design decision, so it's visible in review).
 
 ## Allowed imports
 
-| From ↓ / may import →  | app | pages | features (barrel) | features (own internals) | shared, components/ui, api, config |
-| ---------------------- | --- | ----- | ----------------- | ------------------------ | ---------------------------------- |
-| `app/`                 | ✓   | ✓ (lazy) | ✓              | ✗                        | ✓                                  |
-| `pages/`               | ✗   | ✗     | ✓                 | ✗                        | ✓                                  |
-| `features/X`           | ✗   | ✗     | ✓ (other features, sparingly) | ✓ (X only)   | ✓                                  |
-| `shared/`, `components/ui` | ✗ | ✗   | ✗                 | ✗                        | ✓ (downward only)                  |
+| From ↓ / may import →      | app | pages    | features (barrel)             | features (own internals) | shared, components/ui, api, config |
+| -------------------------- | --- | -------- | ----------------------------- | ------------------------ | ---------------------------------- |
+| `app/`                     | ✓   | ✓ (lazy) | ✓                             | ✗                        | ✓                                  |
+| `pages/`                   | ✗   | ✗        | ✓                             | ✗                        | ✓                                  |
+| `features/X`               | ✗   | ✗        | ✓ (other features, sparingly) | ✓ (X only)               | ✓                                  |
+| `shared/`, `components/ui` | ✗   | ✗        | ✗                             | ✗                        | ✓ (downward only)                  |
 
 `components/` inside a feature may not import `@/api/generated` — go through
 the feature's `api/`.
