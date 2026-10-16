@@ -1,36 +1,24 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { createContext, useContext, useState, useEffect } from "react";
 
-import { queryKeys } from "@/api/query-keys";
 import { queryClient } from "@/app/query-client";
 import { clearAuthData, setAuthExpiry, setAuthToken } from "@/config/api-client";
 import { authLogger } from "@/config/logger";
 import { isSessionAlreadyActive, type SessionBlockReason } from "@/config/session";
 import { resetSessionRevoked, subscribeSessionRevoked } from "@/config/session-revocation";
-import { accountsListQuery } from "@/features/accounts";
 import { authService } from "@/services";
-import type { UserProfile, Account } from "@/types/api";
+import type { UserProfile } from "@/types/api";
 
 interface AuthContextType {
   isAuthenticated: boolean;
   user: UserProfile | null;
-  accounts: Account[];
   // eslint-disable-next-line no-unused-vars
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   checkAuth: () => boolean;
   fetchUserProfile: () => Promise<void>;
-  /**
-   * @deprecated MIGRATION BRIDGE. `accounts` mirrors the React Query cache
-   * (`accountsListQuery`) and `refreshAccounts` just invalidates it. New code:
-   * `useAccountsList()` from `@/features/accounts`, and mutations call
-   * `invalidateFor(qc, "transaction" | "account")`. Remove both once the
-   * budget / transactions slices stop reading them.
-   */
-  refreshAccounts: () => Promise<void>;
   loading: boolean;
   /**
    * Single-active-session: non-null when a blocking screen must be shown —
@@ -43,22 +31,11 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-/** Stable empty list so consumers don't re-render on every provider render. */
-const NO_ACCOUNTS: Account[] = [];
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [sessionBlock, setSessionBlock] = useState<SessionBlockReason | null>(null);
-
-  // Bridge: accounts live in the query cache; context only mirrors them.
-  const qc = useQueryClient();
-  const { data: accounts = NO_ACCOUNTS } = useQuery({
-    ...accountsListQuery(),
-    enabled: isAuthenticated,
-  });
-  const refreshAccounts = () => qc.invalidateQueries({ queryKey: queryKeys.accounts.all });
 
   useEffect(() => {
     let isMounted = true;
@@ -152,7 +129,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsAuthenticated(true);
 
       authLogger.info("Login successful, fetching user profile");
-      // Get user profile after login (accounts load via accountsListQuery once authenticated)
+      // Get user profile after login
       await fetchUserProfile();
     } catch (error) {
       // Single-active-session: a 409 means the account already has an active
@@ -198,12 +175,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         isAuthenticated,
         user,
-        accounts,
         login,
         logout,
         checkAuth,
         fetchUserProfile,
-        refreshAccounts,
         loading,
         sessionBlock,
         dismissSessionBlock,

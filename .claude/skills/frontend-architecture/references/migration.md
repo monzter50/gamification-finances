@@ -23,15 +23,15 @@ Testing: Vitest + jsdom + React Testing Library + MSW (`yarn test`).
 
 ## Progress
 
-| Slice                                    | Status | Notes                                                                                                    |
-| ---------------------------------------- | ------ | -------------------------------------------------------------------------------------------------------- |
-| 0. Bootstrap                             | ✅     | query client, keys, invalidation, unwrap, test harness                                                   |
-| 1. accounts                              | ✅     | `features/accounts`; `AuthContext.accounts`/`refreshAccounts` are a bridge to the query cache            |
-| 2. budget (detail, income, expense)      | ✅     | `features/budget`; list/get/create are legacy fetchers in `budget/api/budgetFetchers.ts` (TODO(openapi)) |
-| 3. transactions (+ summary, xlsx-import) | ⏳     | next — drop the `refreshAccounts`/`invalidateFor` bridges in the transactions + xlsx-import pages        |
-| 4. profile, gamification                 | ⏳     |                                                                                                          |
-| 5. auth                                  | ⏳     | remove the AuthContext accounts bridge here at the latest                                                |
-| 6. app shell                             | ⏳     | router → `app/`, lazy routes, delete `src/services` + domain hooks                                       |
+| Slice                                    | Status | Notes                                                                                                                               |
+| ---------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| 0. Bootstrap                             | ✅     | query client, keys, invalidation, unwrap, test harness                                                                              |
+| 1. accounts                              | ✅     | `features/accounts`                                                                                                                 |
+| 2. budget (detail, income, expense)      | ✅     | `features/budget`; list/get/create are legacy fetchers in `budget/api/budgetFetchers.ts` (TODO(openapi))                            |
+| 3. transactions (+ summary, xlsx-import) | ✅     | `features/transactions` (+ `xlsx-import/`); AuthContext accounts bridge removed; CRUD/summaries are legacy fetchers (TODO(openapi)) |
+| 4. profile, gamification                 | ⏳     | next                                                                                                                                |
+| 5. auth                                  | ⏳     | session only — the accounts bridge is already gone                                                                                  |
+| 6. app shell                             | ⏳     | router → `app/`, lazy routes, delete `src/services` + domain hooks                                                                  |
 
 Update this table in each slice PR.
 
@@ -93,16 +93,14 @@ Keep each PR to one slice. Branch: `refactor/<domain>-<slice>-rq`.
 
 ## Bridging legacy and new during coexistence
 
-`AuthContext.refreshAccounts()` is called after transaction mutations today.
-Once accounts are a query, make it a shim:
+While a legacy writer still mutates data that a migrated query reads, it must
+invalidate the query keys after it succeeds (rule 3). Example from the
+budget slice: the not-yet-migrated xlsx import called
+`invalidateFor(queryClient, "transaction")` after confirm until slice 3 moved
+it into `features/transactions`.
 
-```ts
-const refreshAccounts = () => queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all });
-```
-
-Then remove the call sites as their mutations move to hooks that invalidate
-`accounts.all` themselves, and finally remove `refreshAccounts` and
-`accounts` from the context.
+The `AuthContext.accounts` / `refreshAccounts` bridge (slice 1) was removed in
+slice 3: read accounts with `useAccountsList()`, and let mutations invalidate.
 
 ## Suggested order
 

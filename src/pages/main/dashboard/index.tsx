@@ -30,13 +30,16 @@ import {
   TransactionRow,
 } from "@/components/ui";
 import { useAuth } from "@/context/AuthContext";
+import { useAccountsList } from "@/features/accounts";
 import { useBudgetsList } from "@/features/budget";
-import { useMonthlySummary, useTransactions } from "@/hooks";
+import { useMonthlySummary, useTransactionsList } from "@/features/transactions";
 import type { Account } from "@/types/api";
 import { MONTHS } from "@/types/budget";
 
 // Default currency for this app. When user-currency lands, move to a context.
 const DEFAULT_CURRENCY = "MXN";
+const RECENT_COUNT = 5;
+const NO_ACCOUNTS: Account[] = [];
 
 interface AccountSnapshotRowProps {
   account: Account;
@@ -59,7 +62,8 @@ function AccountSnapshotRow({ account }: AccountSnapshotRowProps) {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { accounts, user } = useAuth();
+  const { user } = useAuth();
+  const { data: accounts = NO_ACCOUNTS } = useAccountsList();
 
   // ---- Current period ----
   const today = useMemo(() => new Date(), []);
@@ -67,11 +71,11 @@ export default function Dashboard() {
   const currentMonth = today.getMonth();
   const monthLabel = MONTHS[currentMonth];
 
-  // ---- Monthly summary (1-indexed month on the API) ----
-  const { summary: monthly, loading: isLoadingMonthly } = useMonthlySummary({
-    year: currentYear,
-    month: currentMonth + 1,
-  });
+  // ---- Monthly summary ----
+  const { data: monthly, isPending: isLoadingMonthly } = useMonthlySummary(
+    currentYear,
+    currentMonth,
+  );
 
   // ---- Current month's budget ----
   const { data: monthBudgets, isPending: isLoadingBudget } = useBudgetsList({
@@ -81,10 +85,11 @@ export default function Dashboard() {
   const currentBudget = monthBudgets?.[0] ?? null;
 
   // ---- Recent transactions ----
-  const recentFilters = useMemo(() => ({ page: 1, limit: 5 }), []);
-  const { transactions: recentTx, isLoading: isLoadingRecent } = useTransactions({
-    filters: recentFilters,
+  const { data: recentPage, isPending: isLoadingRecent } = useTransactionsList({
+    page: 1,
+    limit: RECENT_COUNT,
   });
+  const recentTx = recentPage?.transactions ?? [];
 
   // ---- Derived: total balance ----
   const totalBalance = useMemo(() => accounts.reduce((sum, a) => sum + a.balance, 0), [accounts]);
