@@ -19,7 +19,7 @@ export const normalizeBudget = (budget: Budget): Budget => ({
  *
  * Pure domain math over an in-memory Budget aggregate. Lives here — not in a
  * service — because it performs no network calls. Return shape is preserved
- * from the previous `budgetService.calculateTotals` (`savings`/`savingsRate`)
+ * from the previous `budget service` (`savings`/`savingsRate`)
  * to keep existing consumers working. Tolerates missing child arrays defensively.
  */
 export const calculateBudgetTotals = (budget: Budget) => {
@@ -35,3 +35,32 @@ export const calculateBudgetTotals = (budget: Budget) => {
     savingsRate,
   };
 };
+
+export interface YearlyTotals {
+  income: number;
+  expense: number;
+  savings: number;
+}
+
+/** Planned income/expense/savings per year, across that year's budgets. */
+export const summarizeByYear = (budgets: Budget[]): Record<number, YearlyTotals> => {
+  const byYear: Record<number, YearlyTotals> = {};
+  for (const budget of budgets) {
+    const { totalIncome, totalExpense } = calculateBudgetTotals(budget);
+    const year = (byYear[budget.year] ??= { income: 0, expense: 0, savings: 0 });
+    year.income += totalIncome;
+    year.expense += totalExpense;
+    year.savings = year.income - year.expense;
+  }
+  return byYear;
+};
+
+/** Newest period first. */
+export const sortBudgetsByPeriodDesc = (budgets: Budget[]): Budget[] =>
+  [...budgets].sort((a, b) => b.year - a.year || b.month - a.month);
+
+/** Next calendar period after `source` (December rolls into next January). */
+export const nextPeriod = (source: Pick<Budget, "year" | "month">) => ({
+  month: (source.month + 1) % 12,
+  year: source.month === 11 ? source.year + 1 : source.year,
+});

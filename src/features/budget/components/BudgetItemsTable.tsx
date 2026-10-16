@@ -2,20 +2,23 @@ import { Plus } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { Button, EmptyState } from "@/components/ui";
-import { cn } from "@/lib/utils";
-import type { Account } from "@/types/api";
-
-import { BudgetItemDraftRow } from "./BudgetItemDraftRow";
-import { BudgetItemEditableRow } from "./BudgetItemEditableRow";
-import { BudgetItemsPagination } from "./BudgetItemsPagination";
+import { BudgetItemDraftRow } from "@/features/budget/components/BudgetItemDraftRow";
+import { BudgetItemEditableRow } from "@/features/budget/components/BudgetItemEditableRow";
+import { BudgetItemsPagination } from "@/features/budget/components/BudgetItemsPagination";
 import {
   BUDGET_ITEM_GRID,
   type BudgetItemPatch,
   type BudgetItemRow,
   type BudgetItemValues,
-} from "./budgetItemTypes";
+} from "@/features/budget/components/budgetItemTypes";
+import { cn } from "@/lib/utils";
+import type { Account } from "@/types/api";
 
-export type { BudgetItemPatch, BudgetItemRow, BudgetItemValues } from "./budgetItemTypes";
+export type {
+  BudgetItemPatch,
+  BudgetItemRow,
+  BudgetItemValues,
+} from "@/features/budget/components/budgetItemTypes";
 
 interface BudgetItemsTableProps {
   /** Accessible name for the list, e.g. "Income items". */

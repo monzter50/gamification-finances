@@ -154,7 +154,7 @@ import { useMounted } from "@/hooks";
 import { useTransactions } from "@/hooks/useTransactions";
 
 function BudgetTransactions() {
-  const { currentBudget } = useBudget();
+  const { data: currentBudget } = useBudgetDetail(budgetId); // @/features/budget
   const { isMounted, cleanup } = useMounted();
 
   // Inicializar hook
@@ -212,10 +212,7 @@ El hook filtra automáticamente las transacciones por el período del budget:
 ```typescript
 const filteredTransactions = response.data.filter((transaction) => {
   const transactionDate = new Date(transaction.date);
-  return (
-    transactionDate.getFullYear() === budgetYear &&
-    transactionDate.getMonth() === budgetMonth
-  );
+  return transactionDate.getFullYear() === budgetYear && transactionDate.getMonth() === budgetMonth;
 });
 ```
 

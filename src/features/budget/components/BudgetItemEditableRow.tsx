@@ -1,8 +1,6 @@
 import { Trash2 } from "lucide-react";
 
 import { Button, InlineMoney, InlineSelect, InlineText } from "@/components/ui";
-import { cn } from "@/lib/utils";
-
 import {
   BUDGET_ITEM_CELL,
   BUDGET_ITEM_GRID,
@@ -11,7 +9,8 @@ import {
   type BudgetItemOption,
   type BudgetItemPatch,
   type BudgetItemRow,
-} from "./budgetItemTypes";
+} from "@/features/budget/components/budgetItemTypes";
+import { cn } from "@/lib/utils";
 
 interface BudgetItemEditableRowProps {
   id: string;

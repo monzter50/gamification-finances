@@ -50,11 +50,15 @@ export const BudgetItemsFilters = ({
     <div className="flex flex-col space-y-1.5">
       <Label htmlFor="item-type">Type</Label>
       <Select value={typeFilter} onValueChange={onTypeChange}>
-        <SelectTrigger id="item-type"><SelectValue placeholder="All types" /></SelectTrigger>
+        <SelectTrigger id="item-type">
+          <SelectValue placeholder="All types" />
+        </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All types</SelectItem>
           {typeOptions.map((t) => (
-            <SelectItem key={t} value={t}>{t}</SelectItem>
+            <SelectItem key={t} value={t}>
+              {t}
+            </SelectItem>
           ))}
         </SelectContent>
       </Select>

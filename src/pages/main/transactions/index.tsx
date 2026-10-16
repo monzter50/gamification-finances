@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { FileSpreadsheet } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
@@ -15,7 +16,8 @@ import {
   Stat,
 } from "@/components/ui";
 import { useAuth } from "@/context/AuthContext";
-import { useSnackbar, useBudget, useTransactions, useTransactionSummary } from "@/hooks";
+import { budgetDetailQuery, useBudgetsList } from "@/features/budget";
+import { useTransactions, useTransactionSummary } from "@/hooks";
 import type { CreateTransactionDto, TransactionFilters, UpdateTransactionDto } from "@/types/api";
 import type { Budget } from "@/types/budget";
 
@@ -31,14 +33,13 @@ import { useTransactionDetails } from "./useTransactionDetails";
 
 const ITEMS_PER_PAGE = 10;
 const DEFAULT_CURRENCY = "MXN";
+const NO_BUDGETS: Budget[] = [];
 
 export default function Transactions() {
-  const snackbar = useSnackbar();
   const navigate = useNavigate();
   const { accounts, refreshAccounts } = useAuth();
-  const { fetchBudgetById, fetchBudgets } = useBudget();
-
-  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const queryClient = useQueryClient();
+  const { data: budgets = NO_BUDGETS } = useBudgetsList();
   const hasLoaded = useRef(false);
 
   useEffect(() => {
@@ -48,15 +49,7 @@ export default function Transactions() {
     hasLoaded.current = true;
     // The accounts list in context is only loaded at login and can be stale.
     void refreshAccounts();
-    fetchBudgets()
-      .then(setBudgets)
-      .catch((err) => {
-        snackbar.error({
-          title: "Failed to load budgets",
-          description: err instanceof Error ? err.message : "An error occurred",
-        });
-      });
-  }, [fetchBudgets, refreshAccounts, snackbar]);
+  }, [refreshAccounts]);
 
   const [filterValues, setFilterValues] = useState<TransactionListFilterValues>(DEFAULT_FILTERS);
   const [currentPage, setCurrentPage] = useState(1);
@@ -107,7 +100,8 @@ export default function Transactions() {
   const details = useTransactionDetails({
     transactions,
     budgets,
-    fetchBudgetById,
+    // Budget summaries carry no items; the details panel needs the full budget.
+    fetchBudgetById: (budgetId) => queryClient.fetchQuery(budgetDetailQuery(budgetId)),
     updateTransaction,
     onSaved: refreshTotals,
   });

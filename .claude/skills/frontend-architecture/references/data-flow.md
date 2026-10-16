@@ -66,16 +66,14 @@ import { queryOptions } from "@tanstack/react-query";
 import { getApiBudgetsIdIncome } from "@/api/generated/income/income";
 import { queryKeys } from "@/api/query-keys";
 import { unwrap } from "@/api/unwrap";
-import { budgetService } from "@/services/budget.service"; // legacy — remove when in spec
-
-import { normalizeBudget } from "../model/budget-totals";
+import { fetchBudget } from "@/features/budget/api/budgetFetchers"; // legacy — remove when in spec
 
 export const budgetDetailQuery = (id: string) =>
   queryOptions({
     queryKey: queryKeys.budgets.detail(id),
     // TODO(openapi): GET /budgets/:id missing from spec — legacy fetcher
-    queryFn: () => budgetService.getBudgetById(id),
-    select: normalizeBudget, // derived data in select, never in useEffect
+    // (it normalizes at the boundary; derive anything else in `select`, never in useEffect)
+    queryFn: () => fetchBudget(id),
   });
 
 export const budgetIncomeQuery = (id: string, params: ItemListParams) =>

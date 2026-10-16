@@ -218,7 +218,7 @@ commits 0 or less.
 
 Ready-made tables built from these (cards on mobile, table from `md`):
 
-- `BudgetItemsTable` in `src/pages/main/budget/components/` — income and
+- `BudgetItemsTable` in `src/features/budget/components/` — income and
   expense items, "+ New" row at the bottom.
 - `TransactionsTable` in `src/pages/main/transactions/components/` — newest
   first, so "+ New" sits at the top; description and the linked plan open in a

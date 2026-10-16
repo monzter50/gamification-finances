@@ -1,7 +1,15 @@
 "use client";
 
-import { ArrowRight, CreditCard, Plus, Receipt, TrendingDown, TrendingUp, Wallet } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  ArrowRight,
+  CreditCard,
+  Plus,
+  Receipt,
+  TrendingDown,
+  TrendingUp,
+  Wallet,
+} from "lucide-react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router";
 
 import {
@@ -22,9 +30,9 @@ import {
   TransactionRow,
 } from "@/components/ui";
 import { useAuth } from "@/context/AuthContext";
-import { useBudget, useMonthlySummary, useTransactions } from "@/hooks";
+import { useBudgetsList } from "@/features/budget";
+import { useMonthlySummary, useTransactions } from "@/hooks";
 import type { Account } from "@/types/api";
-import type { Budget } from "@/types/budget";
 import { MONTHS } from "@/types/budget";
 
 // Default currency for this app. When user-currency lands, move to a context.
@@ -52,35 +60,25 @@ function AccountSnapshotRow({ account }: AccountSnapshotRowProps) {
 export default function Dashboard() {
   const navigate = useNavigate();
   const { accounts, user } = useAuth();
-  const { fetchBudgets } = useBudget();
 
   // ---- Current period ----
   const today = useMemo(() => new Date(), []);
-  const currentYear  = today.getFullYear();
+  const currentYear = today.getFullYear();
   const currentMonth = today.getMonth();
-  const monthLabel   = MONTHS[currentMonth];
+  const monthLabel = MONTHS[currentMonth];
 
   // ---- Monthly summary (1-indexed month on the API) ----
   const { summary: monthly, loading: isLoadingMonthly } = useMonthlySummary({
-    year:  currentYear,
+    year: currentYear,
     month: currentMonth + 1,
   });
 
   // ---- Current month's budget ----
-  const [ currentBudget, setCurrentBudget ] = useState<Budget | null>(null);
-  const [ isLoadingBudget, setIsLoadingBudget ] = useState(true);
-  const hasFetchedBudget = useRef(false);
-
-  useEffect(() => {
-    if (hasFetchedBudget.current) { return; }
-    hasFetchedBudget.current = true;
-
-    setIsLoadingBudget(true);
-    fetchBudgets({ year: currentYear, month: currentMonth })
-      .then((list) => setCurrentBudget(list?.[0] ?? null))
-      .catch(() => setCurrentBudget(null))
-      .finally(() => setIsLoadingBudget(false));
-  }, [ fetchBudgets, currentYear, currentMonth ]);
+  const { data: monthBudgets, isPending: isLoadingBudget } = useBudgetsList({
+    year: currentYear,
+    month: currentMonth,
+  });
+  const currentBudget = monthBudgets?.[0] ?? null;
 
   // ---- Recent transactions ----
   const recentFilters = useMemo(() => ({ page: 1, limit: 5 }), []);
@@ -89,36 +87,37 @@ export default function Dashboard() {
   });
 
   // ---- Derived: total balance ----
-  const totalBalance = useMemo(
-    () => accounts.reduce((sum, a) => sum + a.balance, 0),
-    [ accounts ],
-  );
+  const totalBalance = useMemo(() => accounts.reduce((sum, a) => sum + a.balance, 0), [accounts]);
 
   // ---- Derived: budget progress ----
   const budgetProgress = useMemo(() => {
-    if (!currentBudget) { return null; }
+    if (!currentBudget) {
+      return null;
+    }
     const totalPlanned = currentBudget.totalExpense ?? 0;
-    const totalSpent   = monthly?.totalExpense ?? 0;
-    const pct          = totalPlanned > 0 ? Math.min(100, (totalSpent / totalPlanned) * 100) : 0;
-    const remaining    = totalPlanned - totalSpent;
+    const totalSpent = monthly?.totalExpense ?? 0;
+    const pct = totalPlanned > 0 ? Math.min(100, (totalSpent / totalPlanned) * 100) : 0;
+    const remaining = totalPlanned - totalSpent;
     return { totalPlanned, totalSpent, pct, remaining };
-  }, [ currentBudget, monthly ]);
+  }, [currentBudget, monthly]);
 
   // ---- Top 4 accounts for the snapshot ----
   const topAccounts = useMemo(
-    () => [ ...accounts ].sort((a, b) => b.balance - a.balance).slice(0, 4),
-    [ accounts ],
+    () => [...accounts].sort((a, b) => b.balance - a.balance).slice(0, 4),
+    [accounts],
   );
 
   // ---- Account name lookup for recent tx rows ----
   const accountNameById = useMemo(() => {
     const map = new Map<string, string>();
-    for (const a of accounts) { map.set(a.id, a.name); }
+    for (const a of accounts) {
+      map.set(a.id, a.name);
+    }
     return map;
-  }, [ accounts ]);
+  }, [accounts]);
 
   const hasAccounts = accounts.length > 0;
-  const greeting    = user?.name ? `Hi, ${user.name.split(" ")[0]}` : "Welcome back";
+  const greeting = user?.name ? `Hi, ${user.name.split(" ")[0]}` : "Welcome back";
 
   return (
     <div className="space-y-6">
@@ -170,140 +169,172 @@ export default function Dashboard() {
       <BentoGrid>
         {/* Current budget */}
         <BentoItem span={8}>
-        <Card className="h-full">
-          <CardHeader>
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <CardTitle>Budget · {monthLabel} {currentYear}</CardTitle>
-                <CardDescription>
-                  {currentBudget
-                    ? "How much of your planned expenses you've used so far."
-                    : "No budget for this month yet."}
-                </CardDescription>
-              </div>
-              {currentBudget && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate(`/budget/${currentBudget.id}`)}
-                >
-                  View <ArrowRight className="ml-1 h-3 w-3" />
-                </Button>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {isLoadingBudget ? (
-              <div className="space-y-3">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-2 w-full" />
-                <Skeleton className="h-4 w-3/4" />
-              </div>
-            ) : !currentBudget ? (
-              <EmptyState
-                title="No budget yet"
-                description={`Plan your ${monthLabel.toLowerCase()} income and expenses to start tracking.`}
-                action={
-                  <Button onClick={() => navigate("/budget")}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create budget
-                  </Button>
-                }
-              />
-            ) : budgetProgress && budgetProgress.totalPlanned > 0 ? (
-              <div className="space-y-4">
+          <Card className="h-full">
+            <CardHeader>
+              <div className="flex items-start justify-between gap-2">
                 <div>
-                  <div className="flex items-baseline justify-between mb-1">
-                    <span className="text-sm font-medium">Expenses used</span>
-                    <span className="text-sm tabular-nums text-muted-foreground">
-                      <Money value={budgetProgress.totalSpent} currency={DEFAULT_CURRENCY} size="sm" />
-                      {" / "}
-                      <Money value={budgetProgress.totalPlanned} currency={DEFAULT_CURRENCY} size="sm" />
-                    </span>
-                  </div>
-                  <Progress value={budgetProgress.pct} />
-                  <p className={budgetProgress.remaining >= 0
-                    ? "text-xs mt-1 text-muted-foreground"
-                    : "text-xs mt-1 text-danger"}>
-                    {budgetProgress.remaining >= 0
-                      ? <>
-                        <Money value={budgetProgress.remaining} currency={DEFAULT_CURRENCY} size="sm" />
-                        {" "}remaining ({(100 - budgetProgress.pct).toFixed(0)}%)
-                      </>
-                      : <>
-                        Over budget by{" "}
-                        <Money value={Math.abs(budgetProgress.remaining)} currency={DEFAULT_CURRENCY} size="sm" tone="expense" />
-                      </>}
-                  </p>
+                  <CardTitle>
+                    Budget · {monthLabel} {currentYear}
+                  </CardTitle>
+                  <CardDescription>
+                    {currentBudget
+                      ? "How much of your planned expenses you've used so far."
+                      : "No budget for this month yet."}
+                  </CardDescription>
                 </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Planned income</p>
-                    <Money value={currentBudget.totalIncome ?? 0} currency={DEFAULT_CURRENCY} size="sm" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Net savings target</p>
-                    <Money value={currentBudget.netSavings ?? 0} currency={DEFAULT_CURRENCY} size="sm" />
-                  </div>
-                </div>
+                {currentBudget && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate(`/budget/${currentBudget.id}`)}
+                  >
+                    View <ArrowRight className="ml-1 h-3 w-3" />
+                  </Button>
+                )}
               </div>
-            ) : (
-              <p className="text-sm text-muted-foreground py-6 text-center">
-                This budget has no expense items yet.{" "}
-                <button
-                  type="button"
-                  className="text-primary underline underline-offset-2"
-                  onClick={() => navigate(`/budget/${currentBudget.id}`)}
-                >
-                  Add some
-                </button>
-                .
-              </p>
-            )}
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent>
+              {isLoadingBudget ? (
+                <div className="space-y-3">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-2 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                </div>
+              ) : !currentBudget ? (
+                <EmptyState
+                  title="No budget yet"
+                  description={`Plan your ${monthLabel.toLowerCase()} income and expenses to start tracking.`}
+                  action={
+                    <Button onClick={() => navigate("/budget")}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Create budget
+                    </Button>
+                  }
+                />
+              ) : budgetProgress && budgetProgress.totalPlanned > 0 ? (
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex items-baseline justify-between mb-1">
+                      <span className="text-sm font-medium">Expenses used</span>
+                      <span className="text-sm tabular-nums text-muted-foreground">
+                        <Money
+                          value={budgetProgress.totalSpent}
+                          currency={DEFAULT_CURRENCY}
+                          size="sm"
+                        />
+                        {" / "}
+                        <Money
+                          value={budgetProgress.totalPlanned}
+                          currency={DEFAULT_CURRENCY}
+                          size="sm"
+                        />
+                      </span>
+                    </div>
+                    <Progress value={budgetProgress.pct} />
+                    <p
+                      className={
+                        budgetProgress.remaining >= 0
+                          ? "text-xs mt-1 text-muted-foreground"
+                          : "text-xs mt-1 text-danger"
+                      }
+                    >
+                      {budgetProgress.remaining >= 0 ? (
+                        <>
+                          <Money
+                            value={budgetProgress.remaining}
+                            currency={DEFAULT_CURRENCY}
+                            size="sm"
+                          />{" "}
+                          remaining ({(100 - budgetProgress.pct).toFixed(0)}%)
+                        </>
+                      ) : (
+                        <>
+                          Over budget by{" "}
+                          <Money
+                            value={Math.abs(budgetProgress.remaining)}
+                            currency={DEFAULT_CURRENCY}
+                            size="sm"
+                            tone="expense"
+                          />
+                        </>
+                      )}
+                    </p>
+                  </div>
 
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Planned income</p>
+                      <Money
+                        value={currentBudget.totalIncome ?? 0}
+                        currency={DEFAULT_CURRENCY}
+                        size="sm"
+                      />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Net savings target</p>
+                      <Money
+                        value={currentBudget.netSavings ?? 0}
+                        currency={DEFAULT_CURRENCY}
+                        size="sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground py-6 text-center">
+                  This budget has no expense items yet.{" "}
+                  <button
+                    type="button"
+                    className="text-primary underline underline-offset-2"
+                    onClick={() => navigate(`/budget/${currentBudget.id}`)}
+                  >
+                    Add some
+                  </button>
+                  .
+                </p>
+              )}
+            </CardContent>
+          </Card>
         </BentoItem>
 
         {/* Accounts snapshot */}
         <BentoItem span={4}>
-        <Card className="h-full">
-          <CardHeader>
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <CardTitle>Accounts</CardTitle>
-                <CardDescription>
-                  {hasAccounts ? `Top ${topAccounts.length} by balance` : "No accounts yet"}
-                </CardDescription>
+          <Card className="h-full">
+            <CardHeader>
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <CardTitle>Accounts</CardTitle>
+                  <CardDescription>
+                    {hasAccounts ? `Top ${topAccounts.length} by balance` : "No accounts yet"}
+                  </CardDescription>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => navigate("/accounts")}>
+                  View <ArrowRight className="ml-1 h-3 w-3" />
+                </Button>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/accounts")}>
-                View <ArrowRight className="ml-1 h-3 w-3" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {!hasAccounts ? (
-              <EmptyState
-                icon={<Wallet size={20} />}
-                title="No accounts yet"
-                description="Create an account to start tracking balances."
-                action={
-                  <Button variant="outline" onClick={() => navigate("/accounts")}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    New account
-                  </Button>
-                }
-              />
-            ) : (
-              <div className="divide-y divide-border">
-                {topAccounts.map((a) => (
-                  <AccountSnapshotRow key={a.id} account={a} />
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent>
+              {!hasAccounts ? (
+                <EmptyState
+                  icon={<Wallet size={20} />}
+                  title="No accounts yet"
+                  description="Create an account to start tracking balances."
+                  action={
+                    <Button variant="outline" onClick={() => navigate("/accounts")}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      New account
+                    </Button>
+                  }
+                />
+              ) : (
+                <div className="divide-y divide-border">
+                  {topAccounts.map((a) => (
+                    <AccountSnapshotRow key={a.id} account={a} />
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </BentoItem>
       </BentoGrid>
 
@@ -360,7 +391,6 @@ export default function Dashboard() {
           )}
         </CardContent>
       </Card>
-
     </div>
   );
 }
