@@ -32,6 +32,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { useAccountsList } from "@/features/accounts";
 import { useBudgetsList } from "@/features/budget";
+import { useProfile } from "@/features/profile";
 import { useMonthlySummary, useTransactionsList } from "@/features/transactions";
 import type { Account } from "@/types/api";
 import { MONTHS } from "@/types/budget";
@@ -63,6 +64,7 @@ function AccountSnapshotRow({ account }: AccountSnapshotRowProps) {
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { data: profile } = useProfile();
   const { data: accounts = NO_ACCOUNTS } = useAccountsList();
 
   // ---- Current period ----
@@ -122,7 +124,9 @@ export default function Dashboard() {
   }, [accounts]);
 
   const hasAccounts = accounts.length > 0;
-  const greeting = user?.name ? `Hi, ${user.name.split(" ")[0]}` : "Welcome back";
+  // The profile query updates as soon as the name is saved; the session user is the first-paint fallback.
+  const name = profile?.name ?? user?.name;
+  const greeting = name ? `Hi, ${name.split(" ")[0]}` : "Welcome back";
 
   return (
     <div className="space-y-6">
