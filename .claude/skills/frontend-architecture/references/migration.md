@@ -4,45 +4,45 @@
 
 Already in place — use these, don't recreate them:
 
-| File                        | What it gives you                                                     |
-| --------------------------- | --------------------------------------------------------------------- |
-| `src/app/query-client.ts`   | `queryClient`: retries only retryable errors; failed mutations → `notifyError` (opt out: `meta: { silent: true }`, custom heading: `meta: { errorTitle }`); failed queries → `reportError`; cache cleared on session revoke |
-| `src/api/query-keys.ts`     | `queryKeys.*` — the only place keys are defined                       |
-| `src/api/invalidation.ts`   | `invalidateFor(qc, "transaction" \| "budget" \| …)` — cross-feature staleness map |
-| `src/api/unwrap.ts`         | `unwrap(res)` → body (paginated), `unwrapData(res)` → envelope `data` |
-| `App.tsx`                   | `QueryClientProvider` + lazy devtools (dev only)                      |
-| `AuthContext.logout`        | `queryClient.clear()`                                                 |
+| File                      | What it gives you                                                                                                                                                                                                           |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/app/query-client.ts` | `queryClient`: retries only retryable errors; failed mutations → `notifyError` (opt out: `meta: { silent: true }`, custom heading: `meta: { errorTitle }`); failed queries → `reportError`; cache cleared on session revoke |
+| `src/api/query-keys.ts`   | `queryKeys.*` — the only place keys are defined                                                                                                                                                                             |
+| `src/api/invalidation.ts` | `invalidateFor(qc, "transaction" \| "budget" \| …)` — cross-feature staleness map                                                                                                                                           |
+| `src/api/unwrap.ts`       | `unwrap(res)` → body (paginated), `unwrapData(res)` → envelope `data`                                                                                                                                                       |
+| `App.tsx`                 | `QueryClientProvider` + lazy devtools (dev only)                                                                                                                                                                            |
+| `AuthContext.logout`      | `queryClient.clear()`                                                                                                                                                                                                       |
 
-Testing: Vitest + jsdom (`npm test`). React Testing Library and MSW are not
+Testing: Vitest + jsdom (`yarn test`). React Testing Library and MSW are not
 installed yet — add them when the first component test needs them.
 
 ## Legacy → target map
 
-| Legacy                                         | Target                                                       |
-| ---------------------------------------------- | ------------------------------------------------------------ |
-| `src/services/budget.service.ts`               | `features/budget/api/*` (generated client where available)   |
-| `src/services/income.service.ts`, `expense.service.ts` | `features/budget/api/` mutation hooks                |
-| `src/services/transaction.service.ts`          | `features/transactions/api/`                                 |
-| `src/services/account.service.ts`              | `features/accounts/api/`                                     |
-| `src/services/auth.service.ts`, `auth-errors.ts` | `features/auth/api/`; error mapping → `@/shared/errors`    |
-| `src/services/user.service.ts`                 | `features/profile/api/`                                      |
-| `src/services/achievement.service.ts`          | `features/gamification/api/`                                 |
-| `src/services/xlsxImport.service.ts`           | `features/transactions/xlsx-import/api/`                     |
-| `src/hooks/useBudget.ts`, `useBudgetItems.ts`, `useBudgetBalance.ts`, `useIncome.ts` | `features/budget/api/` queries + mutations |
-| `src/hooks/useTransactions.ts`, `useTransactionSummary.ts` | `features/transactions/api/`                     |
-| `src/hooks/useAccounts.ts`                     | `features/accounts/api/accountsQuery`                        |
-| `src/hooks/useProfile.ts`                      | `features/profile/api/`                                      |
-| `src/hooks/useDebouncedValue.ts`, `useMounted.ts` | `shared/hooks/` (`useMounted` likely deletable — RQ handles unmount) |
-| `src/hooks/use-toast.ts`, `useSnackbar.ts`, `useTheme.ts` | `shared/hooks/` (consolidate toast/snackbar)       |
-| `src/pages/main/<x>/components/*`              | `features/<domain>/components/`                              |
-| `src/pages/main/<x>/use*.ts`, `validate.ts`, `types.ts` | `features/<domain>/hooks|model/`                    |
-| `src/pages/main/<x>/index.tsx`                 | `src/pages/<x>/index.tsx` (thin)                             |
-| `src/utils/budget-totals.ts`                   | `features/budget/model/`                                     |
-| `src/utils/errors.ts` (`ApplicationError`, `getApiErrorMessage`, …) | `@/shared/errors` (`AppError`, `toUserMessage`, …) — delete helpers as imports go |
-| `src/types/budget.ts`, `api.ts`                | generated models first; leftovers → `features/<d>/model/`    |
-| `src/context/AuthContext.tsx`                  | `app/providers/AuthProvider` — session only; `user` + `accounts` become queries |
-| `src/context/ThemeContext.tsx`                 | `app/providers/ThemeProvider`                                |
-| `src/App.tsx` route table                      | `app/router.tsx` with `React.lazy` per page                  |
+| Legacy                                                                               | Target                                                                            |
+| ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- | ------- |
+| `src/services/budget.service.ts`                                                     | `features/budget/api/*` (generated client where available)                        |
+| `src/services/income.service.ts`, `expense.service.ts`                               | `features/budget/api/` mutation hooks                                             |
+| `src/services/transaction.service.ts`                                                | `features/transactions/api/`                                                      |
+| `src/services/account.service.ts`                                                    | `features/accounts/api/`                                                          |
+| `src/services/auth.service.ts`, `auth-errors.ts`                                     | `features/auth/api/`; error mapping → `@/shared/errors`                           |
+| `src/services/user.service.ts`                                                       | `features/profile/api/`                                                           |
+| `src/services/achievement.service.ts`                                                | `features/gamification/api/`                                                      |
+| `src/services/xlsxImport.service.ts`                                                 | `features/transactions/xlsx-import/api/`                                          |
+| `src/hooks/useBudget.ts`, `useBudgetItems.ts`, `useBudgetBalance.ts`, `useIncome.ts` | `features/budget/api/` queries + mutations                                        |
+| `src/hooks/useTransactions.ts`, `useTransactionSummary.ts`                           | `features/transactions/api/`                                                      |
+| `src/hooks/useAccounts.ts`                                                           | `features/accounts/api/accountsQuery`                                             |
+| `src/hooks/useProfile.ts`                                                            | `features/profile/api/`                                                           |
+| `src/hooks/useDebouncedValue.ts`, `useMounted.ts`                                    | `shared/hooks/` (`useMounted` likely deletable — RQ handles unmount)              |
+| `src/hooks/use-toast.ts`, `useSnackbar.ts`, `useTheme.ts`                            | `shared/hooks/` (consolidate toast/snackbar)                                      |
+| `src/pages/main/<x>/components/*`                                                    | `features/<domain>/components/`                                                   |
+| `src/pages/main/<x>/use*.ts`, `validate.ts`, `types.ts`                              | `features/<domain>/hooks                                                          | model/` |
+| `src/pages/main/<x>/index.tsx`                                                       | `src/pages/<x>/index.tsx` (thin)                                                  |
+| `src/utils/budget-totals.ts`                                                         | `features/budget/model/`                                                          |
+| `src/utils/errors.ts` (`ApplicationError`, `getApiErrorMessage`, …)                  | `@/shared/errors` (`AppError`, `toUserMessage`, …) — delete helpers as imports go |
+| `src/types/budget.ts`, `api.ts`                                                      | generated models first; leftovers → `features/<d>/model/`                         |
+| `src/context/AuthContext.tsx`                                                        | `app/providers/AuthProvider` — session only; `user` + `accounts` become queries   |
+| `src/context/ThemeContext.tsx`                                                       | `app/providers/ThemeProvider`                                                     |
+| `src/App.tsx` route table                                                            | `app/router.tsx` with `React.lazy` per page                                       |
 
 ## Recipe — migrating one slice
 
@@ -68,7 +68,7 @@ Example: "budget income page".
 8. **Delete dead code** — if `useIncome` / `incomeService` has no remaining
    imports, delete it in this PR.
 9. **Tests** — at least one behavior test per migrated mutation.
-10. `npm run lint && npm run type-check && npm test`.
+10. `yarn lint && yarn type-check && yarn test`.
 
 Keep each PR to one slice. Branch: `refactor/<domain>-<slice>-rq`.
 
@@ -78,8 +78,7 @@ Keep each PR to one slice. Branch: `refactor/<domain>-<slice>-rq`.
 Once accounts are a query, make it a shim:
 
 ```ts
-const refreshAccounts = () =>
-  queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all });
+const refreshAccounts = () => queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all });
 ```
 
 Then remove the call sites as their mutations move to hooks that invalidate

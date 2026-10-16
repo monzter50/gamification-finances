@@ -3,12 +3,12 @@ import { defineConfig } from "orval";
 /**
  * Orval generates a typed API client from the backend's OpenAPI spec.
  *
- *   npm run api:gen
+ *   yarn api:gen
  *
  * Source of truth: openapi/openapi.json — a committed copy of the backend's
- * openapi-schema.json. Refresh it with `npm run api:pull` (or `api:sync` to
+ * openapi-schema.json. Refresh it with `yarn api:pull` (or `api:sync` to
  * pull + generate). Never point this at a live server: generation must be
- * deterministic so CI (`npm run api:check`) can verify the committed client.
+ * deterministic so CI (`yarn api:check`) can verify the committed client.
  *
  * Output convention:
  *   src/api/generated/index.ts          — barrel re-export
@@ -31,7 +31,7 @@ export default defineConfig({
       client: "fetch",
       httpClient: "fetch",
       clean: true, // wipe stale files before each gen so renames don't leave orphans
-      prettier: false, // `npm run api:gen` runs prettier after the eslint --fix hook
+      prettier: false, // `yarn api:gen` runs prettier after the eslint --fix hook
       override: {
         mutator: {
           path: "./src/api/orval-mutator.ts",

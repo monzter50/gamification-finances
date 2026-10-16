@@ -125,7 +125,7 @@ if (checkOnly) {
   }
   fail(
     `openapi/openapi.json is out of date with ${meta.source}` +
-      `${meta.ref ? `@${meta.ref}` : ""}. Run: npm run api:sync`,
+      `${meta.ref ? `@${meta.ref}` : ""}. Run: yarn api:sync`,
   );
 }
 

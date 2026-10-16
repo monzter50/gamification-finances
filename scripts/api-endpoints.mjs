@@ -7,7 +7,7 @@
  * isn't in the contract — add it to the backend spec first, don't hand-write
  * a fetch.
  *
- * Runs automatically as part of `npm run api:gen`.
+ * Runs automatically as part of `yarn api:gen`.
  */
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -105,7 +105,7 @@ const lines = [
   "",
   "Import functions from `@/api/generated/<tag>/<tag>` **only inside**",
   "`src/features/*/api/`. Not listed here = not in the contract: add it to the",
-  "backend spec, then `npm run api:sync`.",
+  "backend spec, then `yarn api:sync`.",
   "",
 ];
 for (const tag of [...byTag.keys()].sort()) {

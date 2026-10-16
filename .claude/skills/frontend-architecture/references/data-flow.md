@@ -2,7 +2,7 @@
 
 ```
 backend openapi-schema.json
-   │  npm run api:sync  (copies to openapi/openapi.json, then orval.config.ts)
+   │  yarn api:sync  (copies to openapi/openapi.json, then orval.config.ts)
    ▼
 src/api/generated/<tag>/*.ts     typed fetch functions, e.g. postApiBudgetsIdIncome
    │  every call goes through
@@ -87,6 +87,7 @@ export const budgetIncomeQuery = (id: string, params: ItemListParams) =>
 ```
 
 Rules:
+
 - Export **factories**, not hooks. A factory works in `useQuery`,
   `useSuspenseQuery`, `prefetchQuery`, and route loaders.
 - Derived values (`select`, or computed inline in render) — never
@@ -121,7 +122,7 @@ export const useCreateTransaction = () => {
       Promise.all([
         qc.invalidateQueries({ queryKey: queryKeys.transactions.all }),
         qc.invalidateQueries({ queryKey: queryKeys.accounts.all }), // balance changed
-        qc.invalidateQueries({ queryKey: queryKeys.budgets.all }),  // totals changed
+        qc.invalidateQueries({ queryKey: queryKeys.budgets.all }), // totals changed
       ]),
   });
 };
@@ -132,13 +133,13 @@ no flash of stale totals.
 
 ### Which mutations return what (current backend)
 
-| Endpoint                                   | Returns                   | Cache action        |
-| ------------------------------------------ | ------------------------- | ------------------- |
-| PATCH `/budgets/:id/income` / `/expense`   | `BudgetMutationResponse` (full budget) | `setQueryData` detail |
-| POST `/budgets/:id/income` / `/expense`    | item + totals             | invalidate detail   |
-| PUT `/budgets/:id/income/:itemId`          | item + totals             | invalidate detail   |
-| DELETE `/budgets/:id/income/:itemId`       | `ItemRemovalResponse`     | invalidate detail   |
-| any transaction create/update/delete       | transaction               | invalidate transactions + accounts + budgets |
+| Endpoint                                 | Returns                                | Cache action                                 |
+| ---------------------------------------- | -------------------------------------- | -------------------------------------------- |
+| PATCH `/budgets/:id/income` / `/expense` | `BudgetMutationResponse` (full budget) | `setQueryData` detail                        |
+| POST `/budgets/:id/income` / `/expense`  | item + totals                          | invalidate detail                            |
+| PUT `/budgets/:id/income/:itemId`        | item + totals                          | invalidate detail                            |
+| DELETE `/budgets/:id/income/:itemId`     | `ItemRemovalResponse`                  | invalidate detail                            |
+| any transaction create/update/delete     | transaction                            | invalidate transactions + accounts + budgets |
 
 Check the generated model's JSDoc before assuming — it states the shape.
 
@@ -168,6 +169,7 @@ AppError { kind, code, status, fieldErrors, isRetryable, isUnexpected }
 ```
 
 Rules:
+
 - The mutator throws `AppError` built from the backend body
   (`{ message, errorCode, errors[] }`). Don't re-catch to rethrow or rewrap.
 - Branch on `error.kind` (how to react) or `error.code` (which case) —

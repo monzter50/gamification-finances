@@ -4,7 +4,7 @@
 - Styling: Tailwind CSS (no inline styles, no CSS modules)
 - State: Zustand for global client state, React Query for server state
   (migration in progress — see frontend-architecture skill)
-- API client: Orval-generated from OpenAPI (`npm run api:gen`)
+- API client: Orval-generated from OpenAPI (`yarn api:gen`)
 - Router: React Router v7
 - Build: Vite
 
@@ -56,7 +56,7 @@ domain hooks in `src/hooks`.
 - Test behavior, not implementation — no snapshot tests
 - Mock API calls at the network layer (MSW), not at the module level
 - Coverage threshold: 80% for shared/components, 60% for features
-- Run: `npm test` — must pass before any commit
+- Run: `yarn test` — must pass before any commit
 
 ## Never Do
 
@@ -90,7 +90,7 @@ The backend OpenAPI spec is the contract. It's copied into
 `openapi/openapi.json` and the typed client is generated into
 `src/api/generated/` — never edit either by hand.
 
-- Backend changed? `npm run api:sync`, then review the git diff.
+- Backend changed? `yarn api:sync`, then review the git diff.
 - Available endpoints: `src/api/ENDPOINTS.md` (generated). Not listed = not
   in the contract — add it to the backend spec first, don't hand-write fetch.
 - Writing API hooks: `.claude/skills/frontend-architecture/references/data-flow.md`.

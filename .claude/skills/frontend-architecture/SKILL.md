@@ -54,19 +54,19 @@ shared/  components/ui (design system)  api/ (generated + queryKeys)  config/
 
 ## Where does it go?
 
-| You're writing…                                  | Put it in                                         |
-| ------------------------------------------------ | ------------------------------------------------- |
-| A route                                          | `src/pages/<route>/index.tsx` (default export)    |
-| Data fetch / mutation for a domain               | `src/features/<domain>/api/`                      |
-| Component used by one domain                     | `src/features/<domain>/components/`               |
-| Component used by 2+ domains, no domain logic    | `src/shared/components/`                          |
-| Design-system primitive (Money, Stat, Button…)   | `src/components/ui/` (see design-system skill)    |
-| Pure calc (totals, normalization, validation)    | `src/features/<domain>/model/`                    |
-| Generic hook (`useDebouncedValue`, `useMounted`) | `src/shared/hooks/`                               |
-| Query key                                        | `src/api/query-keys.ts` — the single registry     |
-| API transport, auth header, error mapping        | `src/api/orval-mutator.ts` (don't bypass it)      |
-| Error types, copy, toasts, reporting, boundaries | `src/shared/errors/` — see data-flow.md "Errors"  |
-| QueryClient, router, providers                   | `src/app/`                                        |
+| You're writing…                                  | Put it in                                        |
+| ------------------------------------------------ | ------------------------------------------------ |
+| A route                                          | `src/pages/<route>/index.tsx` (default export)   |
+| Data fetch / mutation for a domain               | `src/features/<domain>/api/`                     |
+| Component used by one domain                     | `src/features/<domain>/components/`              |
+| Component used by 2+ domains, no domain logic    | `src/shared/components/`                         |
+| Design-system primitive (Money, Stat, Button…)   | `src/components/ui/` (see design-system skill)   |
+| Pure calc (totals, normalization, validation)    | `src/features/<domain>/model/`                   |
+| Generic hook (`useDebouncedValue`, `useMounted`) | `src/shared/hooks/`                              |
+| Query key                                        | `src/api/query-keys.ts` — the single registry    |
+| API transport, auth header, error mapping        | `src/api/orval-mutator.ts` (don't bypass it)     |
+| Error types, copy, toasts, reporting, boundaries | `src/shared/errors/` — see data-flow.md "Errors" |
+| QueryClient, router, providers                   | `src/app/`                                       |
 
 Domains: `auth`, `accounts`, `budget` (incl. income/expense items),
 `transactions` (incl. xlsx-import), `profile`, `gamification`.
@@ -78,7 +78,7 @@ The backend's OpenAPI spec is the only source of truth for endpoints and
 shapes. It's copied into `openapi/openapi.json` (committed) and the client is
 generated from that copy.
 
-1. **Sync:** `npm run api:sync` (pull backend spec → regenerate client →
+1. **Sync:** `yarn api:sync` (pull backend spec → regenerate client →
    rewrite `src/api/ENDPOINTS.md`). Read the git diff — that's what changed.
 2. **Discover:** read `src/api/ENDPOINTS.md`. One line per endpoint: method,
    path, generated function, body, success shape.
@@ -87,10 +87,10 @@ generated from that copy.
 4. **Endpoint missing** → **stop**. Don't hand-write a `fetch` or infer
    types from backend source. It's a backend task: add the route's `@openapi`
    doc in `../api-gamification-finances`, `yarn export:schema`, commit, then
-   `npm run api:sync` here. If the user can't change the backend now, wrap the
+   `yarn api:sync` here. If the user can't change the backend now, wrap the
    legacy `src/services` method with `// TODO(openapi): <METHOD path>`.
 5. **Never edit** `src/api/generated/` or `openapi/` by hand — CI
-   (`npm run api:check`) fails if generated code doesn't match the contract.
+   (`yarn api:check`) fails if generated code doesn't match the contract.
 
 Details, CI, and breaking-change handling: `references/contract.md`.
 
@@ -114,8 +114,7 @@ const { data: budget, isPending } = useQuery(budgetDetailQuery(id));
 export const useAddIncomeItem = (budgetId: string) => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (item: AddIncomeItemRequest) =>
-      unwrap(postApiBudgetsIdIncome(budgetId, item)),
+    mutationFn: (item: AddIncomeItemRequest) => unwrap(postApiBudgetsIdIncome(budgetId, item)),
     // POST returns only the item + totals, not the budget → invalidate
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.budgets.detail(budgetId) }),
   });
@@ -123,6 +122,7 @@ export const useAddIncomeItem = (budgetId: string) => {
 ```
 
 Mutation cache rule — the backend is NOT uniform:
+
 - Returns the **full aggregate** (PATCH `/income`, PATCH `/expense`) →
   `qc.setQueryData(key, response)`.
 - Returns **only the touched item** (POST, PUT, DELETE on items) →
@@ -139,7 +139,7 @@ Full details, query-key registry, and error handling:
   **URL**, or a barrel-exported store selector. Never by passing server data
   through props across feature boundaries.
 - **Component → server:** always `component → feature api/ hook →
-  generated client → mutator`. Components never import from `@/api/generated`
+generated client → mutator`. Components never import from `@/api/generated`
   or `@/services` directly.
 - **Side-channel events** (session revoked) stay as the existing pub/sub in
   `src/config/session-revocation.ts`. Don't add more global event buses.
