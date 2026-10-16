@@ -23,15 +23,15 @@ Testing: Vitest + jsdom + React Testing Library + MSW (`yarn test`).
 
 ## Progress
 
-| Slice                                    | Status | Notes                                                                                         |
-| ---------------------------------------- | ------ | --------------------------------------------------------------------------------------------- |
-| 0. Bootstrap                             | ✅     | query client, keys, invalidation, unwrap, test harness                                        |
-| 1. accounts                              | ✅     | `features/accounts`; `AuthContext.accounts`/`refreshAccounts` are a bridge to the query cache |
-| 2. budget (detail, income, expense)      | ⏳     | next                                                                                          |
-| 3. transactions (+ summary, xlsx-import) | ⏳     |                                                                                               |
-| 4. profile, gamification                 | ⏳     |                                                                                               |
-| 5. auth                                  | ⏳     | remove the AuthContext accounts bridge here at the latest                                     |
-| 6. app shell                             | ⏳     | router → `app/`, lazy routes, delete `src/services` + domain hooks                            |
+| Slice                                    | Status | Notes                                                                                                    |
+| ---------------------------------------- | ------ | -------------------------------------------------------------------------------------------------------- |
+| 0. Bootstrap                             | ✅     | query client, keys, invalidation, unwrap, test harness                                                   |
+| 1. accounts                              | ✅     | `features/accounts`; `AuthContext.accounts`/`refreshAccounts` are a bridge to the query cache            |
+| 2. budget (detail, income, expense)      | ✅     | `features/budget`; list/get/create are legacy fetchers in `budget/api/budgetFetchers.ts` (TODO(openapi)) |
+| 3. transactions (+ summary, xlsx-import) | ⏳     | next — drop the `refreshAccounts`/`invalidateFor` bridges in the transactions + xlsx-import pages        |
+| 4. profile, gamification                 | ⏳     |                                                                                                          |
+| 5. auth                                  | ⏳     | remove the AuthContext accounts bridge here at the latest                                                |
+| 6. app shell                             | ⏳     | router → `app/`, lazy routes, delete `src/services` + domain hooks                                       |
 
 Update this table in each slice PR.
 
@@ -112,7 +112,7 @@ Lowest coupling first, highest-value second:
 2. **accounts** — read-only list, used everywhere; unlocks the
    `refreshAccounts` shim.
 3. **budget detail + income/expense items** — biggest win: removes the
-   manual-refetch workarounds documented in `useIncome.ts`.
+   manual-refetch workarounds that lived in `useIncome.ts` (done in slice 2).
 4. **transactions** (+ summary) — invalidates accounts & budgets.
 5. **profile, gamification**.
 6. **auth** last — touches session handling; keep the mutator's 440 flow intact.

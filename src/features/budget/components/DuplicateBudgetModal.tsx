@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 
 import {
@@ -12,15 +11,16 @@ import {
   SelectValue,
 } from "@/components/ui";
 import { Modal } from "@/components/ui/Modal";
-import { duplicateBudgetErrorCopy } from "@/features/budget";
+import { useDuplicateBudget } from "@/features/budget/api/useBudgetMutations";
+import { nextPeriod } from "@/features/budget/model/budget-totals";
+import { duplicateBudgetErrorCopy } from "@/features/budget/model/duplicate-budget-errors";
+import { periodLabel } from "@/features/budget/model/period";
 import { useSnackbar } from "@/hooks";
-import { budgetService } from "@/services/budget.service";
 import { notifyError } from "@/shared/errors";
-import { MONTHS } from "@/types/budget";
-import type { Budget } from "@/types/budget";
+import { MONTHS, type Budget } from "@/types/budget";
 
-interface DuplicateBudgetModalProps {
-  open: boolean;
+/** Mount only while open: every opening starts from the source's next month. */
+export interface DuplicateBudgetModalProps {
   sourceBudget: Pick<Budget, "id" | "year" | "month">;
   onClose: () => void;
   // eslint-disable-next-line no-unused-vars
@@ -32,61 +32,46 @@ interface DuplicateFormValues {
   month: number;
 }
 
-/**
- * Default target = source month + 1, rolling over December → next January.
- * Matches the 99% use case ("clone April's plan into May").
- */
-const nextPeriod = (source: Pick<Budget, "year" | "month">): DuplicateFormValues => ({
-  month: (source.month + 1) % 12,
-  year: source.month === 11 ? source.year + 1 : source.year,
-});
-
-export function DuplicateBudgetModal({
-  open,
+export const DuplicateBudgetModal = ({
   sourceBudget,
   onClose,
   onDuplicated,
-}: DuplicateBudgetModalProps) {
+}: DuplicateBudgetModalProps) => {
   const snackbar = useSnackbar();
+  const duplicate = useDuplicateBudget();
 
   const {
     register,
     handleSubmit,
     watch,
     setValue,
-    reset,
     formState: { errors, isSubmitting },
   } = useForm<DuplicateFormValues>({
     defaultValues: nextPeriod(sourceBudget),
     mode: "onTouched",
   });
 
-  // Re-seed defaults whenever the modal opens against a different source.
-  useEffect(() => {
-    if (open) {
-      reset(nextPeriod(sourceBudget));
-    }
-  }, [open, sourceBudget, reset]);
-
   const selectedMonth = watch("month");
 
+  // Default target = the month after the source ("clone April's plan into May").
   const onSubmit = handleSubmit(async ({ year, month }) => {
+    const target = periodLabel({ year, month });
     try {
-      const created = await budgetService.duplicateBudget(sourceBudget.id, { year, month });
-      snackbar.success({
-        title: "Budget duplicated",
-        description: `Cloned into ${MONTHS[month]} ${year}.`,
-      });
+      const created = await duplicate.mutateAsync({ sourceId: sourceBudget.id, year, month });
+      snackbar.success({ title: "Budget duplicated", description: `Cloned into ${target}.` });
       onDuplicated(created);
       onClose();
     } catch (err) {
-      const copy = duplicateBudgetErrorCopy(err, `${MONTHS[month]} ${year}`);
-      notifyError(err, { ...copy, context: { source: "budget.duplicate" } });
+      // `meta.silent`: this modal owns the copy (errorCode → title/description).
+      notifyError(err, {
+        ...duplicateBudgetErrorCopy(err, target),
+        context: { source: "budget.duplicate" },
+      });
     }
   });
 
   return (
-    <Modal open={open} onClose={onClose} title="Duplicate budget">
+    <Modal open onClose={onClose} title="Duplicate budget">
       <form onSubmit={onSubmit} className="px-6 pb-6 space-y-4" noValidate>
         <p className="text-sm text-muted-foreground">
           Clones income and expense items from{" "}
@@ -171,4 +156,4 @@ export function DuplicateBudgetModal({
       </form>
     </Modal>
   );
-}
+};

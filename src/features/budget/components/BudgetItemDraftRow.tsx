@@ -12,15 +12,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui";
-import { cn } from "@/lib/utils";
-
 import {
   BUDGET_ITEM_CELL,
   BUDGET_ITEM_GRID,
   NO_ACCOUNTS_MESSAGE,
   type BudgetItemOption,
   type BudgetItemValues,
-} from "./budgetItemTypes";
+} from "@/features/budget/components/budgetItemTypes";
+import { cn } from "@/lib/utils";
 
 type Field = "description" | "type" | "accountId" | "amount";
 

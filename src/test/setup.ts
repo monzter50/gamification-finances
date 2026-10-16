@@ -4,6 +4,15 @@ import { afterAll, afterEach, beforeAll } from "vitest";
 
 import { server } from "@/test/server";
 
+/*
+ * jsdom replaces the global AbortSignal, but fetch stays Node's (undici), which
+ * rejects jsdom signals ("Expected signal to be an instance of AbortSignal").
+ * The Orval mutator passes `AbortSignal.timeout(...)` to fetch; tests don't need
+ * request timeouts (MSW answers synchronously), so hand fetch no signal at all.
+ * Production code is untouched.
+ */
+AbortSignal.timeout = (() => undefined) as unknown as typeof AbortSignal.timeout;
+
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 afterEach(() => {
   cleanup();

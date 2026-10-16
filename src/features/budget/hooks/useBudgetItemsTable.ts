@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
-import { useDebouncedValue } from "./useDebouncedValue";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
 /** Minimal shape both IncomeItem and ExpenseItem satisfy. */
 interface FilterableItem {
@@ -8,7 +8,7 @@ interface FilterableItem {
   type: string;
 }
 
-export interface UseBudgetItemsResult<T> {
+export interface UseBudgetItemsTableResult<T> {
   /** Items for the current page (after filter + pagination). */
   pageItems: T[];
   /** Count after filtering (before pagination). */
@@ -35,27 +35,31 @@ export interface UseBudgetItemsResult<T> {
 }
 
 /**
- * Client-side filtering + pagination for a budget's income/expense items.
+ * Client-side filtering + pagination (UI state) for a budget's income/expense items.
  *
- * The full item set already lives in memory (`currentBudget.{income,expense}Items`,
- * kept current by every CRUD), and the backend endpoints only accept page/limit
+ * The full item set already lives in memory (`budgetDetailQuery` cache, refreshed by
+ * every item mutation), and the backend endpoints only accept page/limit
  * — so filtering + paging here is both correct (over the whole dataset) and
  * instant (no network on page/filter change).
  */
-export function useBudgetItems<T extends FilterableItem>(
+export function useBudgetItemsTable<T extends FilterableItem>(
   allItems: T[],
   defaultItemsPerPage = 5,
-): UseBudgetItemsResult<T> {
+): UseBudgetItemsTableResult<T> {
   const [typeFilter, setTypeFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [itemsPerPage, setItemsPerPage] = useState(defaultItemsPerPage);
   const [page, setPage] = useState(1);
   const debouncedSearch = useDebouncedValue(search, 250);
 
-  // Reset to the first page whenever the result set changes shape.
-  useEffect(() => {
-    setPage(1);
-  }, [typeFilter, debouncedSearch, itemsPerPage]);
+  // Changing what's shown always starts from the first page.
+  const resetting =
+    // eslint-disable-next-line no-unused-vars -- type-only parameter name
+    <V>(setter: (value: V) => void) =>
+      (value: V) => {
+        setter(value);
+        setPage(1);
+      };
 
   const filtered = useMemo(() => {
     const q = debouncedSearch.trim().toLowerCase();
@@ -89,15 +93,16 @@ export function useBudgetItems<T extends FilterableItem>(
     // already counts the new item (totalPages here would be one render stale).
     goToLastPage: () => setPage(Number.POSITIVE_INFINITY),
     typeFilter,
-    setTypeFilter,
+    setTypeFilter: resetting(setTypeFilter),
     search,
-    setSearch,
+    setSearch: resetting(setSearch),
     itemsPerPage,
-    setItemsPerPage,
+    setItemsPerPage: resetting(setItemsPerPage),
     hasActiveFilters,
     clearFilters: () => {
       setTypeFilter("all");
       setSearch("");
+      setPage(1);
     },
   };
 }
