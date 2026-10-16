@@ -1,23 +1,33 @@
 import { MonitorX } from "lucide-react";
 
-import { Button, Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui";
+import {
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui";
 import type { SessionBlockReason } from "@/config/session";
 
 interface SessionBlockedScreenProps {
-  reason: SessionBlockReason
-  onDismiss: () => void
+  reason: SessionBlockReason;
+  onDismiss: () => void;
 }
 
-const COPY: Record<SessionBlockReason, { title: string, description: string, action: string }> = {
+const COPY: Record<SessionBlockReason, { title: string; description: string; action: string }> = {
   revoked: {
-    title:       "Tu sesión finalizó",
-    description: "Tu cuenta se utilizó para iniciar sesión en otro dispositivo. Por seguridad, esta sesión se cerró.",
-    action:      "Volver a iniciar sesión",
+    title: "Tu sesión finalizó",
+    description:
+      "Tu cuenta se utilizó para iniciar sesión en otro dispositivo. Por seguridad, esta sesión se cerró.",
+    action: "Volver a iniciar sesión",
   },
   already_active: {
-    title:       "Ya tienes una sesión activa",
-    description: "Tu cuenta ya tiene una sesión activa en otro dispositivo. Cierra esa sesión, o espera unos minutos, e inténtalo de nuevo.",
-    action:      "Entendido",
+    title: "Ya tienes una sesión activa",
+    description:
+      "Tu cuenta ya tiene una sesión activa en otro dispositivo. Cierra esa sesión, o espera unos minutos, e inténtalo de nuevo.",
+    action: "Entendido",
   },
 };
 

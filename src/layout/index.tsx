@@ -11,9 +11,9 @@ import { useState } from "react";
 import { ReactNode } from "react";
 import { NavLink } from "react-router";
 
+import { useAuth } from "@/app/providers/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { useAuth } from "@/context/AuthContext";
 import { useSnackbar } from "@/hooks";
 
 interface LayoutProps {
@@ -23,21 +23,15 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps): ReactNode {
   const { logout } = useAuth();
   const snackbar = useSnackbar();
-  const [ collapsed, setCollapsed ] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
+  // logout() never rejects: the local session is always cleared.
   const handleLogout = async () => {
-    try {
-      await logout();
-      snackbar.success({
-        title: "Logged out",
-        description: "You have been successfully logged out.",
-      });
-    } catch (error) {
-      snackbar.error({
-        title: "Logout failed",
-        description: "An error occurred while logging out.",
-      });
-    }
+    await logout();
+    snackbar.success({
+      title: "Logged out",
+      description: "You have been successfully logged out.",
+    });
   };
 
   return (
@@ -59,7 +53,9 @@ export default function Layout({ children }: LayoutProps): ReactNode {
           {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
         </button>
         {/* Logo Dummy */}
-        <div className={`mb-8 flex items-center justify-center h-16 transition-all duration-300 ${collapsed ? "justify-center" : "justify-center"}`}>
+        <div
+          className={`mb-8 flex items-center justify-center h-16 transition-all duration-300 ${collapsed ? "justify-center" : "justify-center"}`}
+        >
           <div
             className={`w-10 h-10 rounded-full bg-muted flex items-center justify-center text-2xl font-bold text-primary transition-all duration-300 ${
               collapsed ? "scale-90" : ""
@@ -157,9 +153,7 @@ export default function Layout({ children }: LayoutProps): ReactNode {
             </div>
           </div>
         </header>
-        <main className="container mx-auto py-6 px-4 flex-1">
-          {children}
-        </main>
+        <main className="container mx-auto py-6 px-4 flex-1">{children}</main>
       </div>
     </div>
   );

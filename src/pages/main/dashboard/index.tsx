@@ -29,8 +29,8 @@ import {
   Stat,
   TransactionRow,
 } from "@/components/ui";
-import { useAuth } from "@/context/AuthContext";
 import { useAccountsList } from "@/features/accounts";
+import { useSessionUser } from "@/features/auth";
 import { useBudgetsList } from "@/features/budget";
 import { useProfile } from "@/features/profile";
 import { useMonthlySummary, useTransactionsList } from "@/features/transactions";
@@ -63,7 +63,7 @@ function AccountSnapshotRow({ account }: AccountSnapshotRowProps) {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { data: user } = useSessionUser();
   const { data: profile } = useProfile();
   const { data: accounts = NO_ACCOUNTS } = useAccountsList();
 
@@ -124,7 +124,7 @@ export default function Dashboard() {
   }, [accounts]);
 
   const hasAccounts = accounts.length > 0;
-  // The profile query updates as soon as the name is saved; the session user is the first-paint fallback.
+  // The profile query updates as soon as the name is saved; the session user is the fallback.
   const name = profile?.name ?? user?.name;
   const greeting = name ? `Hi, ${name.split(" ")[0]}` : "Welcome back";
 

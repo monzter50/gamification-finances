@@ -29,6 +29,8 @@ export const queryKeys = {
   },
   user: {
     all: ["user"] as const,
+    /** The signed-in user (`/auth/me`) — also verifies the stored token. */
+    me: () => ["user", "me"] as const,
     profile: () => ["user", "profile"] as const,
     stats: () => ["user", "stats"] as const,
   },

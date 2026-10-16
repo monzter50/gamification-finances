@@ -71,7 +71,10 @@ describe("invalidateFor", () => {
 
     await invalidateFor(qc, "transaction");
 
-    const stale = qc.getQueryCache().getAll().filter((q) => q.state.isInvalidated);
+    const stale = qc
+      .getQueryCache()
+      .getAll()
+      .filter((q) => q.state.isInvalidated);
     expect(stale).toHaveLength(6);
   });
 
@@ -88,10 +91,13 @@ describe("invalidateFor", () => {
 });
 
 describe("unwrap", () => {
-  const ok = <B,>(body: B) => Promise.resolve({ status: 200 as const, data: body, headers: new Headers() });
+  const ok = <B>(body: B) =>
+    Promise.resolve({ status: 200 as const, data: body, headers: new Headers() });
 
   it("returns the body", async () => {
-    await expect(unwrap(ok({ success: true, data: [1], pagination: { page: 1 } }))).resolves.toEqual({
+    await expect(
+      unwrap(ok({ success: true, data: [1], pagination: { page: 1 } })),
+    ).resolves.toEqual({
       success: true,
       data: [1],
       pagination: { page: 1 },
@@ -99,7 +105,9 @@ describe("unwrap", () => {
   });
 
   it("unwrapData returns the envelope's data and rejects when missing", async () => {
-    await expect(unwrapData(ok({ success: true, data: { id: "a" } }))).resolves.toEqual({ id: "a" });
+    await expect(unwrapData(ok({ success: true, data: { id: "a" } }))).resolves.toEqual({
+      id: "a",
+    });
     await expect(unwrapData(ok({ success: true }))).rejects.toBeInstanceOf(AppError);
   });
 });

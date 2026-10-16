@@ -3,22 +3,22 @@
 import { useEffect } from "react";
 import { useNavigate, Outlet } from "react-router";
 
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/app/providers/AuthProvider";
 import Layout from "@/layout";
 
 export const ProtectedRoutes = () => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, isCheckingSession } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Only check auth after loading is complete
-    if (!loading && !isAuthenticated) {
+    // Only redirect once a stored session has been verified (or there is none)
+    if (!isCheckingSession && !isAuthenticated) {
       navigate("/login");
     }
-  }, [ isAuthenticated, loading, navigate ]);
+  }, [isAuthenticated, isCheckingSession, navigate]);
 
   // Show loading state while checking authentication
-  if (loading) {
+  if (isCheckingSession) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="text-center">

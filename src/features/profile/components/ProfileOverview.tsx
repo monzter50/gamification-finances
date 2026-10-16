@@ -1,5 +1,5 @@
 import { BentoGrid, BentoItem } from "@/components/ui";
-import { useAuth } from "@/context/AuthContext";
+import { useSessionUser } from "@/features/auth";
 import { useProfile, useUserStats } from "@/features/profile/api/profileQueries";
 import { LevelProgressCard } from "@/features/profile/components/LevelProgressCard";
 import { LifetimeTotals } from "@/features/profile/components/LifetimeTotals";
@@ -11,8 +11,8 @@ import { ErrorPanel } from "@/shared/errors";
 export const ProfileOverview = () => {
   const profile = useProfile();
   const stats = useUserStats();
-  // TODO(slice 5: auth): read the session user from a query, not context.
-  const { user } = useAuth();
+  // `/auth/me` is the only source of XP-to-next-level and achievement counts.
+  const { data: user } = useSessionUser();
 
   if (profile.isError) {
     return (
