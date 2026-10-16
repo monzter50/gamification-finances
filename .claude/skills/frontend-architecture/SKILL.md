@@ -161,8 +161,9 @@ Full details, query-key registry, and error handling:
    `src/api/generated/`, wrap the legacy service method as the `queryFn` and
    add `// TODO(openapi): <METHOD path> missing from spec`.
 
-Step-by-step recipes, the legacy→target file map, and the bootstrap
-checklist (React Query isn't installed yet): `references/migration.md`.
+Step-by-step recipes, the legacy→target file map, and what the bootstrap
+already provides (`queryClient`, `queryKeys`, `invalidateFor`, `unwrap`):
+`references/migration.md`.
 Folder layout with examples: `references/structure.md`.
 
 ## Red flags — stop and restructure
