@@ -7,7 +7,9 @@ import { useNavigate, useParams } from "react-router";
 import { PageHeader, Stat } from "@/components/ui";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useSnackbar, useIncome, useBudgetItems, useAccounts } from "@/hooks";
+import { useAccountsList } from "@/features/accounts";
+import { useSnackbar, useIncome, useBudgetItems } from "@/hooks";
+import type { Account } from "@/types/api";
 import { MONTHS, INCOME_TYPES } from "@/types/budget";
 import type { AddIncomeItemDTO, IncomeType, IncomeItem } from "@/types/budget";
 import { calculateBudgetTotals } from "@/utils";
@@ -20,6 +22,7 @@ import {
 } from "../components/BudgetItemsTable";
 
 const CURRENCY = "MXN";
+const NO_ACCOUNTS: Account[] = [];
 
 const toIncomeDto = (item: IncomeItem, patch: BudgetItemPatch = {}): AddIncomeItemDTO => ({
   description: patch.description ?? item.description,
@@ -34,7 +37,7 @@ export default function BudgetIncome() {
   const snackbar = useSnackbar();
   const { currentBudget, fetchBudgetById, addIncomeItem, updateIncomeItem, deleteIncomeItem } =
     useIncome();
-  const { accounts, refresh: refreshAccounts } = useAccounts();
+  const { data: accounts = NO_ACCOUNTS } = useAccountsList();
   const hasFetched = useRef(false);
 
   // Client-side filtering + pagination over the full (already-loaded) item set.
@@ -44,9 +47,6 @@ export default function BudgetIncome() {
   useEffect(() => {
     if (id && !hasFetched.current) {
       hasFetched.current = true;
-      // The accounts list in context is only loaded at login and can be empty
-      // here; reload it so the Account column has options (as the Accounts page does).
-      void refreshAccounts();
       fetchBudgetById(id).catch((error) => {
         snackbar.error({
           title: "Failed to load budget",
@@ -55,7 +55,7 @@ export default function BudgetIncome() {
         navigate("/budget");
       });
     }
-  }, [id, fetchBudgetById, refreshAccounts, snackbar, navigate]);
+  }, [id, fetchBudgetById, snackbar, navigate]);
 
   // Full-screen state only for the INITIAL budget load — never on table ops.
   if (!currentBudget) {

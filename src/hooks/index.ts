@@ -5,7 +5,6 @@ export { useBudget } from "./useBudget";
 export { useIncome } from "./useIncome";
 export { useBudgetItems } from "./useBudgetItems";
 export { useDebouncedValue } from "./useDebouncedValue";
-export { useAccounts } from "./useAccounts";
 export { useMounted } from "./useMounted";
 export { useTransactions } from "./useTransactions";
 export { useBudgetBalance } from "./useBudgetBalance";
