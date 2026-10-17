@@ -1,7 +1,7 @@
-import { toast } from "@/hooks/use-toast";
 import type { AppError } from "@/shared/errors/AppError";
 import { toUserMessage, toUserTitle } from "@/shared/errors/messages";
 import { reportError, type ErrorContext } from "@/shared/errors/report";
+import { toast } from "@/shared/hooks";
 
 export interface NotifyErrorOptions {
   /** Override the heading ("Couldn't save budget"). Defaults to the error kind's title. */
