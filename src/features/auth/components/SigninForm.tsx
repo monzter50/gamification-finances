@@ -15,7 +15,7 @@ import {
 import { authLogger } from "@/config/logger";
 import { isSessionAlreadyActive } from "@/config/session";
 import { loginErrorMessage } from "@/features/auth/model/login-errors";
-import { useSnackbar } from "@/hooks";
+import { useSnackbar } from "@/shared/hooks";
 
 interface SigninFormValues {
   email: string;

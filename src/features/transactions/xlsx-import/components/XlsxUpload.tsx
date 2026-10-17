@@ -2,7 +2,7 @@ import { FileSpreadsheet } from "lucide-react";
 import { useRef } from "react";
 
 import { Button, Card, CardContent, EmptyState, Skeleton } from "@/components/ui";
-import { useSnackbar } from "@/hooks";
+import { useSnackbar } from "@/shared/hooks";
 
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10 MB

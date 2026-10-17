@@ -8,8 +8,8 @@ import {
 import { BudgetItemsSection } from "@/features/budget/components/BudgetItemsSection";
 import type { BudgetItemPatch } from "@/features/budget/components/BudgetItemsTable";
 import { calculateBudgetTotals } from "@/features/budget/model/budget-totals";
-import { useSnackbar } from "@/hooks";
 import { AppError } from "@/shared/errors";
+import { useSnackbar } from "@/shared/hooks";
 import type { Account } from "@/types/api";
 import { INCOME_TYPES, type Budget, type IncomeItem, type IncomeType } from "@/types/budget";
 

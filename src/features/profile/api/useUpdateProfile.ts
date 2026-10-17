@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { queryKeys } from "@/api/query-keys";
 import { updateProfile } from "@/features/profile/api/profileFetchers";
-import { useSnackbar } from "@/hooks";
+import { useSnackbar } from "@/shared/hooks";
 import type { UpdateProfileRequest } from "@/types/api";
 
 /**

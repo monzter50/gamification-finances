@@ -1,8 +1,7 @@
 import { queryOptions, useQuery } from "@tanstack/react-query";
 
 import { queryKeys } from "@/api/query-keys";
-import { accountService } from "@/services/account.service";
-import type { Account } from "@/types/api";
+import { fetchAccounts } from "@/features/accounts/api/accountFetchers";
 
 /**
  * All accounts of the signed-in user. Balances move with every transaction —
@@ -11,8 +10,7 @@ import type { Account } from "@/types/api";
 export const accountsListQuery = () =>
   queryOptions({
     queryKey: queryKeys.accounts.list(),
-    // TODO(openapi): GET /accounts missing from spec — legacy fetcher
-    queryFn: async (): Promise<Account[]> => (await accountService.getAll()).data ?? [],
+    queryFn: fetchAccounts, // TODO(openapi): legacy fetcher
   });
 
 export const useAccountsList = () => useQuery(accountsListQuery());

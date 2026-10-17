@@ -12,7 +12,7 @@ import {
 import { Modal } from "@/components/ui/Modal";
 import { useCreateBudget } from "@/features/budget/api/useBudgetMutations";
 import { periodLabel } from "@/features/budget/model/period";
-import { useSnackbar } from "@/hooks";
+import { useSnackbar } from "@/shared/hooks";
 import { MONTHS } from "@/types/budget";
 
 const YEARS_AROUND_NOW = 2;

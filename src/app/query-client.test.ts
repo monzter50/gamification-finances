@@ -7,8 +7,8 @@ import { unwrap, unwrapData } from "@/api/unwrap";
 import { queryClient } from "@/app/query-client";
 import { AppError } from "@/shared/errors";
 
-vi.mock("@/hooks/use-toast", () => ({ toast: vi.fn() }));
-const { toast } = await import("@/hooks/use-toast");
+vi.mock("@/shared/hooks/use-toast", () => ({ toast: vi.fn() }));
+const { toast } = await import("@/shared/hooks/use-toast");
 
 // eslint-disable-next-line no-unused-vars -- param names in a function type
 const retry = queryClient.getDefaultOptions().queries?.retry as (n: number, e: unknown) => boolean;
