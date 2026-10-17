@@ -34,7 +34,7 @@ export interface AppErrorOptions {
 
 /**
  * The single error type the app works with. Everything thrown — fetch
- * failures, backend envelopes, legacy `ApplicationError`, render crashes — is
+ * failures, backend envelopes, legacy `{ statusCode }` errors, render crashes — is
  * turned into this by `normalizeError`, so UI code never inspects raw shapes.
  *
  * `message` is the technical/backend message (for logs). For user-facing copy

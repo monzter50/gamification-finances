@@ -75,7 +75,7 @@ Use `@/shared/errors` — never show `error.message` to users or branch on it.
 - User copy: `toUserMessage(err)`. Failed action: `notifyError(err, { title })`.
 - Failed section: `<ErrorPanel error={err} onRetry={retry} />`.
 - Backend validation → `applyFieldErrors(err, setError, fields)`.
-- New code throws `AppError`, not `ApplicationError` / `Error`.
+- New code throws `AppError`, never a plain `Error`.
 
 ## Design System
 

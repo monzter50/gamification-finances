@@ -3,7 +3,6 @@
  * Central export for all API services
  */
 
-export { authService } from "./auth.service";
 export { accountService } from "./account.service";
 
 // Re-export types for convenience

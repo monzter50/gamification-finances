@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import { AppError, errorFromResponse, normalizeError } from "@/shared/errors";
-import { ApplicationError } from "@/utils/errors";
 
 describe("errorFromResponse", () => {
   it("reads code, message and field errors from the backend validation envelope", () => {
@@ -81,12 +80,15 @@ describe("normalizeError", () => {
     expect(e.code).toBe("FORBIDDEN"); // generic HTTP_ERROR is not a useful code
   });
 
-  it("makes legacy ApplicationError a real AppError", () => {
-    const legacy = new ApplicationError("Budget not found", "BUDGET_NOT_FOUND", 404);
-    expect(legacy).toBeInstanceOf(AppError);
-    expect(legacy.kind).toBe("not_found");
-    expect(legacy.statusCode).toBe(404);
-    expect(normalizeError(legacy)).toBe(legacy);
+  it("reads status and code off legacy Error shapes ({ statusCode, code })", () => {
+    const legacy = Object.assign(new Error("Budget not found"), {
+      statusCode: 404,
+      code: "BUDGET_NOT_FOUND",
+    });
+    const e = normalizeError(legacy);
+    expect(e).toBeInstanceOf(AppError);
+    expect(e.kind).toBe("not_found");
+    expect(e.code).toBe("BUDGET_NOT_FOUND");
   });
 
   it("treats a plain Error without status as a client bug", () => {

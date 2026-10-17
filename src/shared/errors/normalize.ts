@@ -64,7 +64,7 @@ const isApiCoreError = (e: unknown): e is Error & { status: number } =>
   e.name === "ApiError" &&
   typeof (e as { status?: unknown }).status === "number";
 
-/** Legacy `ApplicationError(message, code, statusCode)` from src/utils/errors.ts. */
+/** Legacy error shapes carrying `statusCode` / `status` (old services, third-party libs). */
 const legacyStatus = (e: unknown): number | undefined => {
   if (!isObject(e)) return undefined;
   const raw = e.statusCode ?? e.status;

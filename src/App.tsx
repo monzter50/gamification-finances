@@ -2,10 +2,10 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { lazy, Suspense } from "react";
 import { createBrowserRouter, Navigate, RouterProvider } from "react-router";
 
+import { AuthProvider } from "@/app/providers/AuthProvider";
 import { queryClient } from "@/app/query-client";
 import { SessionBlockedGate } from "@/components/session/SessionBlockedGate";
 import { Toaster } from "@/components/ui/toaster";
-import { AuthProvider } from "@/context/AuthContext.tsx";
 import { ThemeProvider } from "@/context/ThemeContext.tsx";
 import Accounts from "@/pages/main/accounts";
 import Budget from "@/pages/main/budget";

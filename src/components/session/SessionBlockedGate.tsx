@@ -1,4 +1,4 @@
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/app/providers/AuthProvider";
 
 import { SessionBlockedScreen } from "./SessionBlockedScreen";
 
@@ -10,7 +10,9 @@ import { SessionBlockedScreen } from "./SessionBlockedScreen";
 export const SessionBlockedGate = () => {
   const { sessionBlock, dismissSessionBlock } = useAuth();
 
-  if (!sessionBlock) { return null; }
+  if (!sessionBlock) {
+    return null;
+  }
 
   return <SessionBlockedScreen reason={sessionBlock} onDismiss={dismissSessionBlock} />;
 };

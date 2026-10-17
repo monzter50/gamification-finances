@@ -2,7 +2,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
-import { AuthProvider } from "@/context/AuthContext";
+import { AuthProvider } from "@/app/providers/AuthProvider";
 import { ThemeProvider } from "@/context/ThemeContext";
 import ProfilePage from "@/pages/main/profile";
 import { renderWithProviders } from "@/test/render";

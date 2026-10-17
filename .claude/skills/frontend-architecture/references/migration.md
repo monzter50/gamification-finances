@@ -30,8 +30,8 @@ Testing: Vitest + jsdom + React Testing Library + MSW (`yarn test`).
 | 2. budget (detail, income, expense)      | ✅     | `features/budget`; list/get/create are legacy fetchers in `budget/api/budgetFetchers.ts` (TODO(openapi))                            |
 | 3. transactions (+ summary, xlsx-import) | ✅     | `features/transactions` (+ `xlsx-import/`); AuthContext accounts bridge removed; CRUD/summaries are legacy fetchers (TODO(openapi)) |
 | 4. profile, gamification                 | ✅     | `features/profile`; achievements had no backend routes → service deleted, no gamification feature yet                               |
-| 5. auth                                  | ⏳     | next — session user as a query (`/auth/me`); profile page reads XP-to-next from it                                                  |
-| 6. app shell                             | ⏳     | router → `app/`, lazy routes, delete `src/services` + domain hooks                                                                  |
+| 5. auth                                  | ✅     | `features/auth` (generated client); `app/providers/AuthProvider` holds session only; user = `useSessionUser()`; `src/utils` deleted |
+| 6. app shell                             | ⏳     | next — router → `app/`, lazy routes, ThemeProvider → `app/providers`, last `src/services` (account) + `src/context`                 |
 
 Update this table in each slice PR.
 

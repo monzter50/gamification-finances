@@ -153,7 +153,7 @@ invalidate instead.
 All error handling goes through `@/shared/errors` (src/shared/errors/).
 
 ```
-fetch / backend envelope / legacy ApplicationError / render crash
+fetch / backend envelope / legacy { statusCode } error / render crash
         │ normalizeError()  — every boundary
         ▼
 AppError { kind, code, status, fieldErrors, isRetryable, isUnexpected }
