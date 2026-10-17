@@ -13,6 +13,18 @@ import { server } from "@/test/server";
  */
 AbortSignal.timeout = (() => undefined) as unknown as typeof AbortSignal.timeout;
 
+/*
+ * Same mismatch, from React Router: a data router builds a `Request` with a
+ * jsdom signal on every navigation (e.g. a <Navigate> redirect), which Node's
+ * Request rejects. Drop the signal — tests never abort navigations.
+ */
+const NodeRequest = globalThis.Request;
+globalThis.Request = class extends NodeRequest {
+  constructor(input: RequestInfo | URL, init?: RequestInit) {
+    super(input, init && { ...init, signal: undefined });
+  }
+} as typeof Request;
+
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 afterEach(() => {
   cleanup();

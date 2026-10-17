@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 
-import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useDebouncedValue } from "@/shared/hooks";
 
 /** Minimal shape both IncomeItem and ExpenseItem satisfy. */
 interface FilterableItem {

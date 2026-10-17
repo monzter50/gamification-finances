@@ -1,6 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Label } from "@/components/ui";
-import { ThemeSelector, ThemeToggle, ThemeToggleWithText } from "@/components/ui/ThemeToggle";
-import { useTheme } from "@/hooks/useTheme";
+import { ThemeSelector, ThemeToggle, ThemeToggleWithText, useTheme } from "@/shared/theme";
 
 // TODO(i18n)
 /** Theme controls. Client-only preference — no server state. */

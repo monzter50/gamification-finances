@@ -7,8 +7,10 @@ src/
     router.tsx                  # route table, React.lazy per page
     query-client.ts             # QueryClient + global MutationCache onError
     providers/
-      ThemeProvider.tsx
       AuthProvider.tsx          # session token only — profile comes from a query
+    layout/AppLayout.tsx        # sidebar + header; pages suspend in its <Outlet>
+    routes/                     # ProtectedRoutes (session guard), PageFallback
+    session/                    # single-active-session blocking overlay
 
   pages/                        # Route shells. Default export. ~50 lines max.
     dashboard/index.tsx
@@ -47,7 +49,9 @@ src/
   shared/
     components/                 # domain-free composites (not design-system primitives)
     errors/                     # AppError, normalizeError, toUserMessage, notifyError, ErrorPanel
-    hooks/                      # useDebouncedValue
+    hooks/                      # useDebouncedValue, toast / useSnackbar
+    theme/                      # ThemeProvider + useTheme + ThemeToggle — here, not app/,
+                                # because features and UI read the theme
     utils/                      # pure helpers
 
   components/ui/                # Design system — stays here (design-system.md contract)

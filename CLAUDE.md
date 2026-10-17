@@ -19,13 +19,14 @@
 
 ## Architecture & Folder Structure
 
-The codebase is migrating from layered (`src/services` → `src/hooks` →
-`src/pages`) to feature-sliced (`src/features/<domain>/{api,components,hooks,store,model}`).
+The code is feature-sliced (`src/features/<domain>/{api,components,hooks,store,model}`),
+with the app shell in `src/app/` and domain-free code in `src/shared/`. The
+migration from the old layered code is done: `src/services`, `src/hooks`,
+`src/context` and `src/utils` are gone — never recreate them.
 Before adding, moving, or refactoring non-UI code, use the
 **frontend-architecture** skill (`.claude/skills/frontend-architecture/`).
-It defines where files go, how features communicate, the React Query data
-flow, and the migration rules. New code never goes into `src/services` or
-domain hooks in `src/hooks`.
+It defines where files go, how features communicate, and the React Query data
+flow.
 
 ## Naming
 

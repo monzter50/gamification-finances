@@ -1,14 +1,16 @@
 ---
 name: frontend-architecture
-description: Use this skill whenever you add, move, or refactor non-trivial frontend code in this repo — a new feature, page, data hook, API call, mutation, store, or context; deciding where a file goes; wiring how components get server data or share state; or touching anything in the legacy src/services, src/hooks, or src/pages/*/components folders. Defines the target architecture (feature-sliced + React Query + Zustand + Orval) and the incremental migration rules from the current layered code.
+description: Use this skill whenever you add, move, or refactor non-trivial frontend code in this repo — a new feature, page, data hook, API call, mutation, store, or context; deciding where a file goes; wiring how components get server data or share state; or replacing a legacy fetcher (TODO(openapi)) with the generated client. Defines the architecture (feature-sliced + React Query + Zustand + Orval) and the rules that keep it that way.
 ---
 
 # Frontend Architecture Skill
 
-This repo is **mid-migration**. The code you'll find is layered
-(`src/services` → `src/hooks` → `src/pages`). The target is feature-sliced
-with React Query for server state. **New code follows the target. Old code
-moves when you touch it** — never big-bang, never extend the legacy layers.
+The layered → feature-sliced migration is **done** (slices 0–6, see
+`references/migration.md`). What's left of the legacy: routes missing from
+the OpenAPI spec are called through feature-local legacy fetchers
+(`features/<domain>/api/*Fetchers.ts` on `@/api/legacy-client`, marked
+`TODO(openapi)`), and hand-written types in `src/types/`. Both shrink as the
+backend spec grows.
 
 For UI (colors, Money, Stat, layout) use the `design-system` skill — this one
 covers structure, data flow, and communication only.
@@ -42,8 +44,10 @@ shared/  components/ui (design system)  api/ (generated + queryKeys)  config/
    params instead.
 3. **Is it local to one component tree?** → `useState`/`useReducer`.
    Prop-drill max 2 levels, then lift to the feature store.
-4. **Is it a cross-cutting dependency (theme, session)?** → Context, in
-   `src/app/providers/`. Nothing domain-specific goes in context.
+4. **Is it a cross-cutting dependency (theme, session)?** → Context. Wired
+   only by the app shell → `src/app/providers/` (session). Read by features or
+   `components/ui` too → `src/shared/` (theme), since those can't import `app/`.
+   Nothing domain-specific goes in context.
 5. **Does it need another feature?** → Import that feature's barrel
    (`@/features/accounts`), never its internals. If two features need each
    other, the shared piece moves to `shared/` or the composition moves up to
@@ -87,8 +91,10 @@ generated from that copy.
 4. **Endpoint missing** → **stop**. Don't hand-write a `fetch` or infer
    types from backend source. It's a backend task: add the route's `@openapi`
    doc in `../api-gamification-finances`, `yarn export:schema`, commit, then
-   `yarn api:sync` here. If the user can't change the backend now, wrap the
-   legacy `src/services` method with `// TODO(openapi): <METHOD path>`.
+   `yarn api:sync` here. If the user can't change the backend now, add a legacy
+   fetcher in `features/<domain>/api/*Fetchers.ts` (`apiClient` +
+   `legacyAuth`/`expectStatus` from `@/api/legacy-client`) marked
+   `// TODO(openapi): <METHOD path>`.
 5. **Never edit** `src/api/generated/` or `openapi/` by hand — CI
    (`yarn api:check`) fails if generated code doesn't match the contract.
 
@@ -146,9 +152,9 @@ generated client → mutator`. Components never import from `@/api/generated`
 
 ## Migration rules (legacy → target)
 
-1. **Never add to** `src/services/`, domain hooks in `src/hooks/`, or logic
-   files in `src/pages/**`. If a change needs one of these, migrate that
-   slice first (or in the same PR).
+1. **Never recreate** `src/services/`, `src/hooks/`, `src/context/` or
+   `src/utils/`, and never put logic files in `src/pages/**` — pages are thin
+   route shells.
 2. **Migrate by slice, not by layer:** one domain operation at a time
    (e.g. "budget detail read" or "add income item"), moving its hook,
    fetcher, types, and components together.
@@ -158,8 +164,9 @@ generated client → mutator`. Components never import from `@/api/generated`
 4. **Delete when empty:** a legacy hook/service is deleted in the PR that
    removes its last import. No `@deprecated` zombies.
 5. **Prefer the generated client.** If the endpoint isn't in
-   `src/api/generated/`, wrap the legacy service method as the `queryFn` and
-   add `// TODO(openapi): <METHOD path> missing from spec`.
+   `src/api/generated/`, use a feature-local legacy fetcher as the `queryFn`
+   and add `// TODO(openapi): <METHOD path> missing from spec`. When the route
+   lands in the spec, swap the fetcher for the generated function and delete it.
 
 Step-by-step recipes, the legacy→target file map, and what the bootstrap
 already provides (`queryClient`, `queryKeys`, `invalidateFor`, `unwrap`):

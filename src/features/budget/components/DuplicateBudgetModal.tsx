@@ -15,8 +15,8 @@ import { useDuplicateBudget } from "@/features/budget/api/useBudgetMutations";
 import { nextPeriod } from "@/features/budget/model/budget-totals";
 import { duplicateBudgetErrorCopy } from "@/features/budget/model/duplicate-budget-errors";
 import { periodLabel } from "@/features/budget/model/period";
-import { useSnackbar } from "@/hooks";
 import { notifyError } from "@/shared/errors";
+import { useSnackbar } from "@/shared/hooks";
 import { MONTHS, type Budget } from "@/types/budget";
 
 /** Mount only while open: every opening starts from the source's next month. */
