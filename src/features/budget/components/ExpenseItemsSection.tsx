@@ -7,7 +7,7 @@ import {
 import { BudgetItemsSection } from "@/features/budget/components/BudgetItemsSection";
 import type { BudgetItemPatch } from "@/features/budget/components/BudgetItemsTable";
 import { calculateBudgetTotals } from "@/features/budget/model/budget-totals";
-import { useSnackbar } from "@/hooks";
+import { useSnackbar } from "@/shared/hooks";
 import { EXPENSE_TYPES, type Budget, type ExpenseItem, type ExpenseType } from "@/types/budget";
 
 const toRequest = (item: ExpenseItem, patch: BudgetItemPatch = {}): AddExpenseItemRequest => ({

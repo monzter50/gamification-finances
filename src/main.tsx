@@ -13,9 +13,8 @@ import "@fontsource/jetbrains-mono/700.css";
 
 import "./index.css";
 
+import App from "@/app/App";
 import { installGlobalErrorHandlers } from "@/shared/errors";
-
-import App from "./App.tsx";
 
 // Report uncaught errors / unhandled rejections that escape React and try/catch.
 installGlobalErrorHandlers();

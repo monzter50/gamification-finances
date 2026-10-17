@@ -67,5 +67,6 @@ serves old + new → frontend migrates → backend removes old.
 
 The backend spec documents ~18 of ~40 routes. Undocumented today: accounts,
 users, most of transactions (list, summary, CRUD), budgets list/create/get.
-Those still go through `src/services/*` — mark with `TODO(openapi)` and
-document them in the backend when you touch them.
+Those go through feature-local legacy fetchers
+(`features/<domain>/api/*Fetchers.ts` on `@/api/legacy-client`) marked
+`TODO(openapi)` — document them in the backend when you touch them.

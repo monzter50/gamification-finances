@@ -10,8 +10,8 @@ import { XlsxReviewStep } from "@/features/transactions/xlsx-import/components/X
 import { useXlsxReducer } from "@/features/transactions/xlsx-import/hooks/useXlsxReducer";
 import { toConfirmPayload } from "@/features/transactions/xlsx-import/model/payloads";
 import { validateXlsx } from "@/features/transactions/xlsx-import/model/validate";
-import { useSnackbar } from "@/hooks";
 import { toUserMessage } from "@/shared/errors";
+import { useSnackbar } from "@/shared/hooks";
 import type { Account } from "@/types/api";
 import type { Budget } from "@/types/budget";
 

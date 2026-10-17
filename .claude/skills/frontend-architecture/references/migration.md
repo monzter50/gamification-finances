@@ -10,8 +10,8 @@ Already in place — use these, don't recreate them:
 | `src/api/query-keys.ts`   | `queryKeys.*` — the only place keys are defined                                                                                                                                                                             |
 | `src/api/invalidation.ts` | `invalidateFor(qc, "transaction" \| "budget" \| …)` — cross-feature staleness map                                                                                                                                           |
 | `src/api/unwrap.ts`       | `unwrap(res)` → body (paginated), `unwrapData(res)` → envelope `data`                                                                                                                                                       |
-| `App.tsx`                 | `QueryClientProvider` + lazy devtools (dev only)                                                                                                                                                                            |
-| `AuthContext.logout`      | `queryClient.clear()`                                                                                                                                                                                                       |
+| `src/app/App.tsx`         | `QueryClientProvider` + lazy devtools (dev only)                                                                                                                                                                            |
+| `AuthProvider.logout`     | `queryClient.clear()`                                                                                                                                                                                                       |
 
 Testing: Vitest + jsdom + React Testing Library + MSW (`yarn test`).
 
@@ -19,19 +19,19 @@ Testing: Vitest + jsdom + React Testing Library + MSW (`yarn test`).
   the app's error routing, router, Toaster; signed in by default.
 - `server.use(http.get(api("/accounts"), …))` (`src/test/server.ts`) — mock the
   network; unhandled requests fail the test.
-- Reference test: `src/pages/main/accounts/AccountsPage.test.tsx`.
+- Reference test: `src/pages/accounts/AccountsPage.test.tsx`.
 
 ## Progress
 
-| Slice                                    | Status | Notes                                                                                                                               |
-| ---------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------- |
-| 0. Bootstrap                             | ✅     | query client, keys, invalidation, unwrap, test harness                                                                              |
-| 1. accounts                              | ✅     | `features/accounts`                                                                                                                 |
-| 2. budget (detail, income, expense)      | ✅     | `features/budget`; list/get/create are legacy fetchers in `budget/api/budgetFetchers.ts` (TODO(openapi))                            |
-| 3. transactions (+ summary, xlsx-import) | ✅     | `features/transactions` (+ `xlsx-import/`); AuthContext accounts bridge removed; CRUD/summaries are legacy fetchers (TODO(openapi)) |
-| 4. profile, gamification                 | ✅     | `features/profile`; achievements had no backend routes → service deleted, no gamification feature yet                               |
-| 5. auth                                  | ✅     | `features/auth` (generated client); `app/providers/AuthProvider` holds session only; user = `useSessionUser()`; `src/utils` deleted |
-| 6. app shell                             | ⏳     | next — router → `app/`, lazy routes, ThemeProvider → `app/providers`, last `src/services` (account) + `src/context`                 |
+| Slice                                    | Status | Notes                                                                                                                                                                        |
+| ---------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0. Bootstrap                             | ✅     | query client, keys, invalidation, unwrap, test harness                                                                                                                       |
+| 1. accounts                              | ✅     | `features/accounts`                                                                                                                                                          |
+| 2. budget (detail, income, expense)      | ✅     | `features/budget`; list/get/create are legacy fetchers in `budget/api/budgetFetchers.ts` (TODO(openapi))                                                                     |
+| 3. transactions (+ summary, xlsx-import) | ✅     | `features/transactions` (+ `xlsx-import/`); AuthContext accounts bridge removed; CRUD/summaries are legacy fetchers (TODO(openapi))                                          |
+| 4. profile, gamification                 | ✅     | `features/profile`; achievements had no backend routes → service deleted, no gamification feature yet                                                                        |
+| 5. auth                                  | ✅     | `features/auth` (generated client); `app/providers/AuthProvider` holds session only; user = `useSessionUser()`; `src/utils` deleted                                          |
+| 6. app shell                             | ✅     | `app/router.tsx` (React.lazy per page), `app/{layout,routes,session}`; theme + generic hooks → `shared/`; `src/{services,hooks,context}` deleted; `pages/main/*` → `pages/*` |
 
 Update this table in each slice PR.
 
@@ -52,7 +52,7 @@ Update this table in each slice PR.
 | `src/hooks/useAccounts.ts`                                                           | `features/accounts/api/accountsQuery`                                             |
 | `src/hooks/useProfile.ts`                                                            | `features/profile/api/`                                                           |
 | `src/hooks/useDebouncedValue.ts` (`useMounted` deleted in slice 4)                   | `shared/hooks/`                                                                   |
-| `src/hooks/use-toast.ts`, `useSnackbar.ts`, `useTheme.ts`                            | `shared/hooks/` (consolidate toast/snackbar)                                      |
+| `src/hooks/use-toast.ts`, `useSnackbar.ts`, `useTheme.ts`                            | `shared/hooks/`; `useTheme` → `shared/theme`                                      |
 | `src/pages/main/<x>/components/*`                                                    | `features/<domain>/components/`                                                   |
 | `src/pages/main/<x>/use*.ts`, `validate.ts`, `types.ts`                              | `features/<domain>/hooks                                                          | model/` |
 | `src/pages/main/<x>/index.tsx`                                                       | `src/pages/<x>/index.tsx` (thin)                                                  |
@@ -60,7 +60,7 @@ Update this table in each slice PR.
 | `src/utils/errors.ts` (`ApplicationError`, `getApiErrorMessage`, …)                  | `@/shared/errors` (`AppError`, `toUserMessage`, …) — delete helpers as imports go |
 | `src/types/budget.ts`, `api.ts`                                                      | generated models first; leftovers → `features/<d>/model/`                         |
 | `src/context/AuthContext.tsx`                                                        | `app/providers/AuthProvider` — session only; `user` + `accounts` become queries   |
-| `src/context/ThemeContext.tsx`                                                       | `app/providers/ThemeProvider`                                                     |
+| `src/context/ThemeContext.tsx`                                                       | `shared/theme` (read by `components/ui`-level toggles and features)               |
 | `src/App.tsx` route table                                                            | `app/router.tsx` with `React.lazy` per page                                       |
 
 ## Recipe — migrating one slice
