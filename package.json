@@ -2,7 +2,7 @@
   "name": "finances-gamification",
   "private": true,
   "packageManager": "yarn@1.22.22",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
