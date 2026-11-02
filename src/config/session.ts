@@ -10,7 +10,7 @@
  * This is the ONE place the contract lives. Detection everywhere else goes
  * through `isSessionRevoked` / `isSessionAlreadyActive`.
  */
-import { ApplicationError } from "@/utils/errors";
+import { AppError } from "@/shared/errors/AppError";
 
 /** Mid-session: the token's session was superseded by a newer login elsewhere. */
 export const SESSION_REVOKED_STATUS = 440;
@@ -23,17 +23,22 @@ export type SessionBlockReason = "revoked" | "already_active";
 
 /** Pull an HTTP status off whatever error shape we were handed. */
 const statusOf = (err: unknown): number | undefined => {
-  if (err instanceof ApplicationError) { return err.statusCode; }
+  if (err instanceof AppError) {
+    return err.status;
+  }
   if (err && typeof err === "object") {
-    if ("statusCode" in err) { return Number((err as { statusCode: unknown }).statusCode); }
-    if ("status" in err) { return Number((err as { status: unknown }).status); }
+    if ("statusCode" in err) {
+      return Number((err as { statusCode: unknown }).statusCode);
+    }
+    if ("status" in err) {
+      return Number((err as { status: unknown }).status);
+    }
   }
   return undefined;
 };
 
 /** Mid-session revocation (handled globally via the event bus). */
-export const isSessionRevoked = (err: unknown): boolean =>
-  statusOf(err) === SESSION_REVOKED_STATUS;
+export const isSessionRevoked = (err: unknown): boolean => statusOf(err) === SESSION_REVOKED_STATUS;
 
 /**
  * Login rejected because a session is already active. NOTE: 409 is only the

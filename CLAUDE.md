@@ -1,11 +1,15 @@
 ## Stack
-- Framework: React 19 + TypeScript
+
+- Framework: React 18 + TypeScript
 - Styling: Tailwind CSS (no inline styles, no CSS modules)
-- State: Zustand for global, React Query for server state
+- State: Zustand for global client state, React Query for server state
+  (migration in progress — see frontend-architecture skill)
+- API client: Orval-generated from OpenAPI (`yarn api:gen`)
 - Router: React Router v7
 - Build: Vite
 
 ## Components
+
 - Use functional components only — no class components
 - One component per file; file name matches component name (PascalCase)
 - Co-locate: MyComponent.tsx, MyComponent.test.tsx, MyComponent.stories.tsx
@@ -13,22 +17,19 @@
 - Max component size: 200 lines — split if larger
 - Barrel exports via index.ts per feature folder
 
+## Architecture & Folder Structure
 
-## Folder Structure
-src/
-  features/          # Feature-sliced design
-    auth/
-      components/
-      hooks/
-      store/
-      api/
-  shared/
-    components/      # Reusable UI primitives
-    hooks/
-    utils/
-  pages/             # Route-level components only
+The code is feature-sliced (`src/features/<domain>/{api,components,hooks,store,model}`),
+with the app shell in `src/app/` and domain-free code in `src/shared/`. The
+migration from the old layered code is done: `src/services`, `src/hooks`,
+`src/context` and `src/utils` are gone — never recreate them.
+Before adding, moving, or refactoring non-UI code, use the
+**frontend-architecture** skill (`.claude/skills/frontend-architecture/`).
+It defines where files go, how features communicate, and the React Query data
+flow.
 
 ## Naming
+
 - Components: PascalCase
 - Hooks: camelCase prefixed with "use" (useUserData, not getUserData)
 - Constants: SCREAMING_SNAKE_CASE
@@ -36,12 +37,14 @@ src/
 - Event handlers: prefix with "handle" (handleSubmit, handleClick)
 
 ## Code Style
+
 - No default exports except for pages and lazy-loaded components
 - Always type component props explicitly — no implicit `any`
 - Prefer `const` arrow functions for components
 - Use absolute imports via @/ alias, not relative ../../
 
 ## Performance
+
 - Wrap expensive components in React.memo only when profiling shows benefit
 - Use useMemo/useCallback only with a clear justification comment
 - Images: always use lazy loading and specify width/height
@@ -49,13 +52,15 @@ src/
 - Split routes with React.lazy + Suspense
 
 ## Testing
+
 - Unit tests: Vitest + React Testing Library
 - Test behavior, not implementation — no snapshot tests
 - Mock API calls at the network layer (MSW), not at the module level
 - Coverage threshold: 80% for shared/components, 60% for features
-- Run: `npm test` — must pass before any commit
+- Run: `yarn test` — must pass before any commit
 
 ## Never Do
+
 - No prop drilling beyond 2 levels — use context or state manager
 - No direct DOM manipulation (no document.getElementById)
 - No `any` type without a TODO comment explaining why
@@ -63,16 +68,36 @@ src/
 - No console.log in committed code
 - No hardcoded strings for UI copy — use i18n keys
 
+## Errors
+
+Use `@/shared/errors` — never show `error.message` to users or branch on it.
+
+- Catch → `normalizeError(err)` → branch on `kind` / `code`.
+- User copy: `toUserMessage(err)`. Failed action: `notifyError(err, { title })`.
+- Failed section: `<ErrorPanel error={err} onRetry={retry} />`.
+- Backend validation → `applyFieldErrors(err, setError, fields)`.
+- New code throws `AppError`, never a plain `Error`.
+
 ## Design System
+
 When working on UI components, first read @docs/design-system.md — it is the
 implementation contract (tokens, components, ESLint rules).
 For the brand/visual intent behind those tokens (palette, typography, mood),
 see @docs/brand-brief.md. If the two conflict, design-system.md wins.
 
 ## API Contracts
-When writing API hooks, refer to @docs/api-schema.md
+
+The backend OpenAPI spec is the contract. It's copied into
+`openapi/openapi.json` and the typed client is generated into
+`src/api/generated/` — never edit either by hand.
+
+- Backend changed? `yarn api:sync`, then review the git diff.
+- Available endpoints: `src/api/ENDPOINTS.md` (generated). Not listed = not
+  in the contract — add it to the backend spec first, don't hand-write fetch.
+- Writing API hooks: `.claude/skills/frontend-architecture/references/data-flow.md`.
 
 ## Git
+
 - Branch naming: feat/, fix/, chore/, refactor/
 - Commit style: Conventional Commits (feat: add login page)
 - Never push directly to main or develop

@@ -6,11 +6,11 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type AddIncomeItemRequestType = typeof AddIncomeItemRequestType[keyof typeof AddIncomeItemRequestType];
+export type AddIncomeItemRequestType =
+  (typeof AddIncomeItemRequestType)[keyof typeof AddIncomeItemRequestType];
 
 export const AddIncomeItemRequestType = {
   Debit_Card: "Debit Card",
-  Credit_Card: "Credit Card",
   Cash: "Cash",
   Vales: "Vales",
   Transfer: "Transfer",

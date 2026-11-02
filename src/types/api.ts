@@ -162,7 +162,13 @@ export interface CreateTransactionDto {
   installmentOriginal?: number;
 }
 
-export interface UpdateTransactionDto extends Partial<CreateTransactionDto> {}
+export interface UpdateTransactionDto
+  extends Partial<Omit<CreateTransactionDto, "incomeItemId" | "expenseItemId">> {
+  /** `null` unlinks the transaction from its planned income item. */
+  incomeItemId?: string | null;
+  /** `null` unlinks the transaction from its planned expense item. */
+  expenseItemId?: string | null;
+}
 
 export interface TransactionFilters {
   page?: number;
@@ -255,8 +261,6 @@ export interface BudgetBalance {
 }
 
 // Legacy types (kept for backward compatibility)
-export interface CreateTransactionRequest extends CreateTransactionDto {}
-
 export interface TransactionSummary {
   income: {
     total: number;
@@ -299,8 +303,8 @@ export interface Account {
 export interface CreateAccountDto {
   name: string;
   type: AccountType;
-  balance?: number;   // defaults to 0 server-side
-  currency?: string;  // defaults to "MXN" server-side
+  balance?: number; // defaults to 0 server-side
+  currency?: string; // defaults to "MXN" server-side
 }
 
 /**
@@ -314,64 +318,4 @@ export interface UpdateAccountDto {
   balance?: number;
   currency?: string;
   isActive?: boolean;
-}
-
-// ==================== Achievement Types ====================
-
-export type AchievementRarity = "common" | "rare" | "epic" | "legendary";
-export type AchievementCategory = "savings" | "expense" | "income" | "streak" | "level";
-
-export interface AchievementCriteria {
-  type: string;
-  value: number;
-  timeframe: string;
-}
-
-export interface AchievementReward {
-  experience: number;
-  coins: number;
-}
-
-export interface Achievement {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  category: AchievementCategory;
-  criteria: AchievementCriteria;
-  reward: AchievementReward;
-  rarity: AchievementRarity;
-  rarityColor: string;
-  isActive: boolean;
-}
-
-export interface UserAchievement extends Achievement {
-  isUnlocked: boolean;
-  unlockDate: string | null;
-  progress: number;
-}
-
-export interface UserAchievementsResponse {
-  achievements: UserAchievement[];
-  totalAchievements: number;
-  unlockedAchievements: number;
-  completionPercentage: number;
-}
-
-export interface UnlockAchievementResponse {
-  achievement: {
-    id: string;
-    name: string;
-    description: string;
-    icon: string;
-    rarity: AchievementRarity;
-    rarityColor: string;
-  };
-  rewards: AchievementReward;
-  userStats: {
-    level: number;
-    experience: number;
-    coins: number;
-    totalAchievements: number;
-  };
 }

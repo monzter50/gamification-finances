@@ -13,14 +13,14 @@ export interface Transaction {
   /** Type of transaction */
   type: TransactionType;
   /**
-     * Amount in MXN
-     * @minimum 0.01
-     */
+   * Amount in MXN
+   * @minimum 0.01
+   */
   amount: number;
   /**
-     * Description of the transaction
-     * @minLength 1
-     */
+   * Description of the transaction
+   * @minLength 1
+   */
   description: string;
   /** Date of the transaction (ISO 8601) */
   date: string;

@@ -9,7 +9,8 @@
 /**
  * Type of transaction
  */
-export type CreateTransactionRequestType = typeof CreateTransactionRequestType[keyof typeof CreateTransactionRequestType];
+export type CreateTransactionRequestType =
+  (typeof CreateTransactionRequestType)[keyof typeof CreateTransactionRequestType];
 
 export const CreateTransactionRequestType = {
   income: "income",

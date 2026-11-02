@@ -1,13 +1,8 @@
 // Budget Type Definitions
 
-export type IncomeType =
-  | "Debit Card"
-  | "Credit Card"
-  | "Cash"
-  | "Vales"
-  | "Transfer"
-  | "Check"
-  | "Other";
+// "Credit Card" is intentionally absent: the API rejects it (credit is debt,
+// not income). Keep this list in sync with the backend's INCOME_TYPES.
+export type IncomeType = "Debit Card" | "Cash" | "Vales" | "Transfer" | "Check" | "Other";
 
 export type ExpenseType = "Fixed" | "Variable";
 
@@ -16,6 +11,7 @@ export interface IncomeItem {
   description: string;
   amount: number;
   type: IncomeType;
+  accountId: string;
 }
 
 export interface ExpenseItem {
@@ -52,6 +48,7 @@ export interface AddIncomeItemDTO {
   description: string;
   amount: number;
   type: IncomeType;
+  accountId: string;
 }
 
 export interface AddExpenseItemDTO {
@@ -89,7 +86,6 @@ export interface PaginatedResponse<T> {
 
 export const INCOME_TYPES: IncomeType[] = [
   "Debit Card",
-  "Credit Card",
   "Cash",
   "Vales",
   "Transfer",
@@ -97,10 +93,7 @@ export const INCOME_TYPES: IncomeType[] = [
   "Other",
 ];
 
-export const EXPENSE_TYPES: ExpenseType[] = [
-  "Fixed",
-  "Variable",
-];
+export const EXPENSE_TYPES: ExpenseType[] = ["Fixed", "Variable"];
 
 export const MONTHS = [
   "January",

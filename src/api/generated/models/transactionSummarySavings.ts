@@ -9,6 +9,4 @@
 export type TransactionSummarySavings = {
   total?: number;
   count?: number;
-  experience?: number;
-  coins?: number;
 };

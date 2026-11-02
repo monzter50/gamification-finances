@@ -13,9 +13,9 @@ export interface ExpenseItem {
   /** Description of the expense item */
   description: string;
   /**
-     * Amount in MXN
-     * @minimum 0.01
-     */
+   * Amount in MXN
+   * @minimum 0.01
+   */
   amount: number;
   /** Expense classification */
   type: ExpenseItemType;

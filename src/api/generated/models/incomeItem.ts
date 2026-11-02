@@ -13,9 +13,9 @@ export interface IncomeItem {
   /** Description of the income item */
   description: string;
   /**
-     * Amount in MXN
-     * @minimum 0.01
-     */
+   * Amount in MXN
+   * @minimum 0.01
+   */
   amount: number;
   /** Payment/receipt method */
   type: IncomeItemType;

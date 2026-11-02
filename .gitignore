@@ -31,3 +31,8 @@ dist-ssr
 .env.*.local
 
 .claude/*
+# Project skills are shared, versioned docs — keep them in git.
+!.claude/skills/
+
+# yarn is the package manager — never commit an npm lockfile
+package-lock.json

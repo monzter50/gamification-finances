@@ -5,11 +5,17 @@
  * API para gestión de finanzas personales con gamificación
  * OpenAPI spec version: 1.0.0
  */
-import type { ErrorResponse } from "./errorResponse";
-import type { ErrorStatus } from "./errorStatus";
+import type { ErrorErrorsItem } from "./errorErrorsItem";
 
+/**
+ * Standard error envelope produced by the global errorHandler. Branch on `errorCode` or the HTTP status, not on the text.
+ */
 export interface Error {
-  response?: ErrorResponse;
-  status?: ErrorStatus;
-  statusCode?: number;
+  success: boolean;
+  message: string;
+  /** Same text as `message` (kept for older clients) */
+  error?: string;
+  errorCode: string;
+  /** Per-field details, only on VALIDATION_ERROR */
+  errors?: ErrorErrorsItem[];
 }

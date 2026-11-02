@@ -9,11 +9,10 @@
 /**
  * Payment/receipt method
  */
-export type IncomeItemType = typeof IncomeItemType[keyof typeof IncomeItemType];
+export type IncomeItemType = (typeof IncomeItemType)[keyof typeof IncomeItemType];
 
 export const IncomeItemType = {
   Debit_Card: "Debit Card",
-  Credit_Card: "Credit Card",
   Cash: "Cash",
   Vales: "Vales",
   Transfer: "Transfer",
