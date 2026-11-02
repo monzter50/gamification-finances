@@ -5,6 +5,30 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0](https://github.com/monzter50/gamification-finances/compare/finances-gamification-v0.2.0...finances-gamification-v0.3.0) (2026-11-02)
+
+
+### Features
+
+* **app:** show the running version and commit in the sidebar ([#29](https://github.com/monzter50/gamification-finances/issues/29)) ([a21dc0e](https://github.com/monzter50/gamification-finances/commit/a21dc0ef9dc1772c67a98ebfdc6ce6008c7f3d70))
+* Notion-style inline editing for budget items and transactions ([#13](https://github.com/monzter50/gamification-finances/issues/13)) ([812ce2f](https://github.com/monzter50/gamification-finances/commit/812ce2f17c3aab127faff77f5b7f8db85aa27d00))
+
+
+### Bug Fixes
+
+* **api:** sync contract with backend [#16](https://github.com/monzter50/gamification-finances/issues/16) and fix duplicate-budget errors ([#20](https://github.com/monzter50/gamification-finances/issues/20)) ([c2369bf](https://github.com/monzter50/gamification-finances/commit/c2369bf38c7e830bf7813f8f536027f7b6ba28f1))
+* **types:** make type-check real and fix duplicate-budget narrowing ([#21](https://github.com/monzter50/gamification-finances/issues/21)) ([0acd56c](https://github.com/monzter50/gamification-finances/commit/0acd56c86873960cc2dd3465548a9ed954225e68))
+
+
+### Refactors
+
+* **accounts:** migrate accounts to features/accounts + React Query ([#19](https://github.com/monzter50/gamification-finances/issues/19)) ([7076cc2](https://github.com/monzter50/gamification-finances/commit/7076cc2f5a9870753e99b67f98c7bad521e9c2f0))
+* **app:** move the app shell into app/ and finish the migration (slice 6) ([#27](https://github.com/monzter50/gamification-finances/issues/27)) ([24b7c18](https://github.com/monzter50/gamification-finances/commit/24b7c18a93b08aa8b7e1dc90d820eacb1dd84c38))
+* **auth:** migrate auth slice; session-only AuthProvider + useSessionUser ([#25](https://github.com/monzter50/gamification-finances/issues/25)) ([8d73ded](https://github.com/monzter50/gamification-finances/commit/8d73ded31ce0a4d5b2de02e9169ef40fdca43739))
+* **budget:** migrate budget slice to features/budget + React Query ([#22](https://github.com/monzter50/gamification-finances/issues/22)) ([c597b72](https://github.com/monzter50/gamification-finances/commit/c597b726711d61191b98bab1ae8f9c6201d3069d))
+* **profile:** migrate profile slice to features/profile + React Query ([#24](https://github.com/monzter50/gamification-finances/issues/24)) ([3756138](https://github.com/monzter50/gamification-finances/commit/37561387209b64cfccb6163c7e6cc88b77523889))
+* **transactions:** migrate transactions slice to features/transactions + React Query ([#23](https://github.com/monzter50/gamification-finances/issues/23)) ([1d41bd1](https://github.com/monzter50/gamification-finances/commit/1d41bd1cb6e79fea42760ab4354237dc9133aa2e))
+
 ## [0.2.0](https://github.com/monzter50/gamification-finances/compare/finances-gamification-v0.1.0...finances-gamification-v0.2.0) (2026-07-10)
 
 
