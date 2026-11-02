@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 import { AuthProvider } from "@/app/providers/AuthProvider";
 import { createQueryClient } from "@/app/query-client";
 import { routes } from "@/app/router";
+import { buildLabel } from "@/config/env";
 import { saveSession } from "@/features/auth";
 import { ThemeProvider } from "@/shared/theme";
 import { api, server } from "@/test/server";
@@ -51,6 +52,8 @@ describe("router", () => {
 
     expect(await screen.findByRole("heading", { name: "Accounts" })).toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: "Main" })).toBeInTheDocument();
+    // The running build is named in the sidebar (bug reports).
+    expect(screen.getByText(buildLabel())).toBeInTheDocument();
   });
 
   it("marks the current page in the sidebar; Dashboard links to the index route", async () => {

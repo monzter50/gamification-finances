@@ -14,6 +14,7 @@ import { NavLink, Outlet } from "react-router";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { PageFallback } from "@/app/routes/PageFallback";
 import { Button } from "@/components/ui";
+import { buildLabel, env } from "@/config/env";
 import { cn } from "@/lib/utils";
 import { useSnackbar } from "@/shared/hooks";
 import { ThemeToggle } from "@/shared/theme";
@@ -99,6 +100,16 @@ export const AppLayout = () => {
             </NavLink>
           ))}
         </nav>
+
+        {/* Which build is running — the full SHA is in the tooltip. */}
+        {!collapsed && (
+          <p
+            className="px-3 pt-4 font-mono text-xs text-muted-foreground tabular-nums"
+            title={`Version ${env.appVersion}, commit ${env.appCommit}`}
+          >
+            {buildLabel()}
+          </p>
+        )}
       </aside>
 
       <div className="flex min-h-screen flex-1 flex-col">

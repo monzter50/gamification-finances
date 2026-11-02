@@ -15,7 +15,8 @@ interface ImportMeta {
 
 // Build-time globals injected by Vite's `define` (see vite.config.ts).
 // `__APP_VERSION__` mirrors package.json::version (kept in sync by
-// release-please). `__APP_COMMIT__` is the deploy's git SHA, or "dev"
-// for local builds where VITE_GIT_SHA isn't set.
+// release-please). `__APP_COMMIT__` is the deploy's git SHA (VITE_GIT_SHA,
+// else Vercel's VERCEL_GIT_COMMIT_SHA), or "dev" for local builds.
+// Read them through `env.appVersion` / `env.appCommit` (src/config/env.ts).
 declare const __APP_VERSION__: string;
-declare const __APP_COMMIT__:  string;
+declare const __APP_COMMIT__: string;
