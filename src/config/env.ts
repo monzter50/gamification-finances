@@ -46,12 +46,21 @@ export const env = {
   /** Base URL the API client should hit */
   apiBaseUrl: requireEnv("VITE_API_BASE_URL", "http://localhost:3000/api"),
 
+  /** package.json version, kept in sync by release-please (build-time). */
+  appVersion: __APP_VERSION__,
+  /** Full git SHA of this build, or "dev" for local builds (build-time). */
+  appCommit: __APP_COMMIT__,
+
   /** Whether to emit verbose client-side logs */
-  enableDebugLogs: parseBool(
-    import.meta.env.VITE_ENABLE_DEBUG_LOGS,
-    import.meta.env.DEV,
-  ),
+  enableDebugLogs: parseBool(import.meta.env.VITE_ENABLE_DEBUG_LOGS, import.meta.env.DEV),
 } as const;
+
+/**
+ * "v0.3.0 · 1a2b3c4" — shown in the app so a bug report can name the exact
+ * build. Local builds read "v0.3.0 · dev".
+ */
+export const buildLabel = (version = env.appVersion, commit = env.appCommit): string =>
+  `v${version} · ${commit === "dev" ? "dev" : commit.slice(0, 7)}`;
 
 export const isStaging = env.appEnv === "staging";
 export const isProduction = env.appEnv === "production";
